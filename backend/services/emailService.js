@@ -10,6 +10,9 @@ const createTransporter = () => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS.replace(/\s+/g, ""), // Trim spaces from 16-digit app password
       },
+      connectionTimeout: 5000, // 5 seconds connection timeout
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
     });
   }
   return null;
