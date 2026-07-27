@@ -1,0 +1,392 @@
+const Order = require("../models/Order");
+const Cart = require("../models/Cart");
+const Restaurant = require("../models/Restaurant");
+
+const createOrder = async (req, res, next) => {
+  try {
+    const {
+      deliveryAddress,
+      paymentMethod: inputPaymentMethod,
+      paymentStatus: inputPaymentStatus,
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+    } = req.body;
+
+    if (!deliveryAddress || !deliveryAddress.addressLine) {
+      return res.status(400).json({
+        success: false,
+        message: "Delivery address line is required",
+      });
+    }
+
+    const cart = await Cart.findOne({ user: req.user._id });
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cart is empty",
+      });
+    }
+
+    const restaurant = await Restaurant.findById(cart.restaurant);
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
+    const subtotal = cart.subtotal;
+    const deliveryFee = restaurant.deliveryFee || 0;
+    const taxes = subtotal * 0.05; // 5% tax as requested
+    const totalAmount = subtotal + deliveryFee + taxes;
+
+    const orderItems = cart.items.map((item) => ({
+      menuItem: item.menuItem,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    }));
+
+    const finalPaymentMethod = ["cod", "razorpay"].includes(inputPaymentMethod)
+      ? inputPaymentMethod
+      : "cod";
+    const finalPaymentStatus = ["pending", "paid", "failed", "refunded"].includes(inputPaymentStatus)
+      ? inputPaymentStatus
+      : finalPaymentMethod === "razorpay"
+      ? "paid"
+      : "pending";
+
+    const order = new Order({
+      customer: req.user._id,
+      restaurant: restaurant._id,
+      items: orderItems,
+      deliveryAddress,
+      paymentMethod: finalPaymentMethod,
+      paymentStatus: finalPaymentStatus,
+      razorpayOrderId: razorpayOrderId || null,
+      razorpayPaymentId: razorpayPaymentId || null,
+      razorpaySignature: razorpaySignature || null,
+      subtotal,
+      deliveryFee,
+      taxes,
+      totalAmount,
+      status: "placed",
+    });
+
+    await order.save();
+
+    // Send dual notifications (In-App + System Push)
+    try {
+      const { notifyUserDual } = require("../lib/push");
+      // Notify customer
+      notifyUserDual(
+        req.user._id,
+        "Order Placed Successfully! 🛒",
+        `Your order #${order._id.toString().slice(-6)} has been placed at ${restaurant.name}.`,
+        `/orders/${order._id}`
+      );
+
+      // Notify restaurant owner
+      if (restaurant.owner) {
+        notifyUserDual(
+          restaurant.owner,
+          "New Order Received! 🛎️",
+          `New COD Order #${order._id.toString().slice(-6)} received for ₹${totalAmount.toFixed(2)}.`,
+          "/restaurant-owner/dashboard"
+        );
+      }
+    } catch (e) {
+      console.error("Error dispatching notifications on order creation:", e);
+    }
+
+    // Clear cart entirely
+    cart.items = [];
+    cart.restaurant = null;
+    await cart.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Order placed successfully",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find({ customer: req.user._id })
+      .populate("restaurant")
+      .populate("review")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getOrderById = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("restaurant")
+      .populate("items.menuItem")
+      .populate("review");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.customer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view this order",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/orders/merchant/incoming - Get all orders for the owner's restaurant
+const getMerchantOrders = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found for this partner account.",
+      });
+    }
+
+    const orders = await Order.find({ restaurant: restaurant._id })
+      .populate("customer", "name email phone")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/orders/merchant/:id/status - Update order status (owner only)
+const updateOrderStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const allowedStatuses = [
+      "placed",
+      "accepted",
+      "preparing",
+      "ready_for_pickup",
+      "picked_up",
+      "out_for_delivery",
+      "delivered",
+      "cancelled",
+    ];
+
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Allowed values: ${allowedStatuses.join(", ")}`,
+      });
+    }
+
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found for this partner account.",
+      });
+    }
+
+    const updateFields = { status };
+    if (status === "ready_for_pickup") {
+      updateFields.readyAt = new Date();
+    }
+
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, restaurant: restaurant._id },
+      updateFields,
+      { new: true, runValidators: true }
+    ).populate("customer", "name email phone");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found or you do not have permission to manage this order.",
+      });
+    }
+
+    // Trigger Web Push Notification & In-App Notification for Customer when status changes
+    if (order.customer?._id) {
+      try {
+        const { notifyUserDual } = require("../lib/push");
+        const orderShortId = order._id.toString().slice(-6);
+        let title = `Order Update from ${restaurant.name}`;
+        let msg = `Your order #${orderShortId} status is now: ${status}`;
+
+        if (status === "accepted") {
+          title = `Order Accepted by ${restaurant.name}! 🎉`;
+          msg = `Your order #${orderShortId} has been accepted and is being prepared.`;
+        } else if (status === "preparing") {
+          title = `Food is Being Prepared! 🍳`;
+          msg = `${restaurant.name} is preparing your delicious meal #${orderShortId}.`;
+        } else if (status === "ready_for_pickup") {
+          title = `Order Ready! 📦`;
+          msg = `Your order #${orderShortId} at ${restaurant.name} is packed and ready.`;
+        } else if (status === "out_for_delivery") {
+          title = `Out for Delivery! 🛵`;
+          msg = `Rider is on the way with your order #${orderShortId}.`;
+        } else if (status === "delivered") {
+          title = `Order Delivered! 😋`;
+          msg = `Your order #${orderShortId} from ${restaurant.name} has been delivered. Enjoy!`;
+        } else if (status === "cancelled") {
+          title = `Order Cancelled by ${restaurant.name} ❌`;
+          msg = `Your order #${orderShortId} was rejected/cancelled by ${restaurant.name}.`;
+        }
+
+        notifyUserDual(order.customer._id, title, msg, `/orders/${order._id}`);
+      } catch (pushErr) {
+        console.error("Customer dual notification dispatch failed:", pushErr);
+      }
+    }
+
+    // Trigger Web Push Notification asynchronously if marked ready_for_pickup
+    if (status === "ready_for_pickup") {
+      try {
+        const { notifyOnlineDeliveryPartners } = require("../lib/push");
+        notifyOnlineDeliveryPartners(
+          `New Delivery Available near ${restaurant.name}`,
+          `New order ready for pickup at ${restaurant.name} — estimated earnings ₹40`,
+          "/delivery-partner/nearby-orders"
+        ).catch((err) => console.error("Web Push Error:", err));
+      } catch (pushErr) {
+        console.error("Web push dispatch failed:", pushErr);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Order status updated to ${status} successfully.`,
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/orders/:id/cancel - Customer cancels placed order
+const cancelOrder = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const order = await Order.findById(req.params.id)
+      .populate("restaurant")
+      .populate("customer", "name email phone");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    if (order.customer._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to cancel this order.",
+      });
+    }
+
+    const cancelableStatuses = ["placed", "accepted"];
+    if (!cancelableStatuses.includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: "This order can no longer be cancelled",
+      });
+    }
+
+    order.status = "cancelled";
+    order.cancelledAt = new Date();
+    if (reason) {
+      order.cancellationReason = reason;
+    }
+
+    // Process Razorpay refund if paid online
+    if (order.paymentMethod === "razorpay" && order.paymentStatus === "paid" && order.razorpayPaymentId) {
+      try {
+        const razorpayInstance = require("../lib/razorpay");
+        const refundAmountPaise = Math.round(order.totalAmount * 100);
+        const refund = await razorpayInstance.payments.refund(order.razorpayPaymentId, {
+          amount: refundAmountPaise,
+        });
+        order.paymentStatus = "refunded";
+        console.log(`[Razorpay Refund] Successfully refunded payment ${order.razorpayPaymentId} for Order #${order._id}. Refund ID: ${refund.id}`);
+      } catch (refundErr) {
+        console.error(`[Razorpay Refund Failure] Failed to refund Order #${order._id}:`, refundErr);
+        // TODO: Queue for admin retry if API call fails
+      }
+    }
+
+    await order.save();
+
+    // Trigger dual notifications (In-App + Web Push) to Restaurant Owner & Customer
+    try {
+      const { notifyUserDual } = require("../lib/push");
+      const orderShortId = order._id.toString().slice(-6);
+      const customerName = order.customer?.name || "Customer";
+
+      // 1. Notify Restaurant Owner
+      if (order.restaurant && order.restaurant.owner) {
+        notifyUserDual(
+          order.restaurant.owner,
+          "Order Cancelled by Customer 🚫",
+          `Order #${orderShortId} at ${order.restaurant.name} was cancelled by ${customerName}.`,
+          "/restaurant-owner/orders"
+        );
+      }
+
+      // 2. Notify Customer (Confirmation)
+      notifyUserDual(
+        order.customer._id,
+        "Order Cancelled ℹ️",
+        `Your order #${orderShortId} at ${order.restaurant.name} has been successfully cancelled.`,
+        `/orders/${order._id}`
+      );
+    } catch (pushErr) {
+      console.error("Error dispatching dual notification for order cancellation:", pushErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Order cancelled successfully.",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createOrder,
+  getOrders,
+  getOrderById,
+  getMerchantOrders,
+  updateOrderStatus,
+  cancelOrder,
+};

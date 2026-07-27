@@ -1,0 +1,776 @@
+const Restaurant = require("../models/Restaurant");
+const Order = require("../models/Order");
+const User = require("../models/User");
+const DeliveryProfile = require("../models/DeliveryProfile");
+const mongoose = require("mongoose");
+
+// GET /api/admin/restaurants
+exports.getRestaurants = async (req, res, next) => {
+  try {
+    const { status = "pending" } = req.query;
+
+    let filter = {};
+    if (status !== "all") {
+      filter.approvalStatus = status;
+    }
+
+    const restaurants = await Restaurant.find(filter)
+      .populate("owner", "name email phone")
+      .sort({ submittedAt: -1, createdAt: -1 });
+
+    // Include counts for each status
+    const pendingCount = await Restaurant.countDocuments({ approvalStatus: "pending" });
+    const approvedCount = await Restaurant.countDocuments({ approvalStatus: "approved" });
+    const rejectedCount = await Restaurant.countDocuments({ approvalStatus: "rejected" });
+
+    return res.status(200).json({
+      success: true,
+      data: restaurants,
+      counts: {
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        all: pendingCount + approvedCount + rejectedCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/admin/restaurants/:id
+exports.getRestaurantById = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id)
+      .populate("owner", "name email phone")
+      .populate("reviewedBy", "name email");
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant application not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/restaurants/:id/approve
+exports.approveRestaurant = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant application not found",
+      });
+    }
+
+    restaurant.approvalStatus = "approved";
+    restaurant.reviewedAt = new Date();
+    restaurant.reviewedBy = req.user._id;
+    restaurant.rejectionReason = null; // Clear prior rejection reason
+
+    // Update the owner's role to 'owner' so they can access dashboard
+    if (restaurant.owner) {
+      await User.findByIdAndUpdate(restaurant.owner, { role: "owner" });
+    }
+
+    await restaurant.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant approved successfully",
+      data: restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/restaurants/:id/reject
+exports.rejectRestaurant = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+
+    if (!reason || reason.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Rejection reason is required",
+      });
+    }
+
+    const restaurant = await Restaurant.findById(req.params.id);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant application not found",
+      });
+    }
+
+    restaurant.approvalStatus = "rejected";
+    restaurant.rejectionReason = reason;
+    restaurant.reviewedAt = new Date();
+    restaurant.reviewedBy = req.user._id;
+
+    await restaurant.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant rejected successfully",
+      data: restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/restaurants/:id/deactivate
+exports.deactivateRestaurant = async (req, res, next) => {
+  try {
+    const { reason, suspendOwner } = req.body;
+
+    if (!reason || reason.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Deactivation reason is required",
+      });
+    }
+
+    const restaurant = await Restaurant.findById(req.params.id);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
+    restaurant.adminDeactivated = true;
+    restaurant.deactivationReason = reason.trim();
+    restaurant.deactivatedAt = new Date();
+    restaurant.deactivatedBy = req.user._id;
+
+    await restaurant.save();
+
+    if (suspendOwner && restaurant.owner) {
+      await User.findByIdAndUpdate(restaurant.owner, { status: "suspended" });
+    }
+
+    const updatedRestaurant = await Restaurant.findById(restaurant._id)
+      .populate("owner", "name email phone status")
+      .populate("reviewedBy", "name email")
+      .populate("deactivatedBy", "name email");
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant deactivated successfully",
+      data: updatedRestaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/restaurants/:id/reactivate
+exports.reactivateRestaurant = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findById(req.params.id);
+
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant not found",
+      });
+    }
+
+    restaurant.adminDeactivated = false;
+    restaurant.deactivationReason = null;
+    restaurant.deactivatedAt = null;
+    restaurant.deactivatedBy = null;
+
+    await restaurant.save();
+
+    const updatedRestaurant = await Restaurant.findById(restaurant._id)
+      .populate("owner", "name email phone status")
+      .populate("reviewedBy", "name email");
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant reactivated successfully",
+      data: updatedRestaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/admin/dashboard
+exports.getDashboardData = async (req, res, next) => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 1. totalOrdersToday
+    const totalOrdersToday = await Order.countDocuments({
+      createdAt: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    // 2. platformRevenueToday
+    const revenueAggregation = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: todayStart, $lte: todayEnd },
+          status: { $ne: "cancelled" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalAmount" },
+        },
+      },
+    ]);
+    const platformRevenueToday = revenueAggregation[0]?.total || 0;
+
+    // 3. activeRestaurants
+    const activeRestaurants = await Restaurant.countDocuments({
+      approvalStatus: "approved",
+      isOpen: true,
+      adminDeactivated: { $ne: true },
+    });
+
+    // 4. activeDeliveryPartners
+    const activeDeliveryPartners = await User.countDocuments({
+      role: "delivery",
+      status: "active",
+    });
+
+    // 5. pendingApprovals (Combined Restaurants + Delivery Partners)
+    const pendingRestaurantsCount = await Restaurant.countDocuments({
+      approvalStatus: "pending",
+    });
+    const pendingDeliveryCount = await DeliveryProfile.countDocuments({
+      approvalStatus: "pending",
+    });
+    const pendingApprovals = pendingRestaurantsCount + pendingDeliveryCount;
+
+    // 6. pendingApprovalsList (Combined list sorted by date)
+    const pendingRestaurantList = await Restaurant.find({ approvalStatus: "pending" })
+      .select("name submittedAt createdAt")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    const pendingDeliveryList = await DeliveryProfile.find({ approvalStatus: "pending" })
+      .populate("user", "name")
+      .select("submittedAt createdAt user city")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    const pendingApprovalsList = [
+      ...pendingRestaurantList.map((r) => ({
+        id: r._id,
+        name: r.name,
+        type: "restaurant",
+        submittedAt: r.submittedAt || r.createdAt,
+      })),
+      ...pendingDeliveryList.map((d) => ({
+        id: d._id,
+        name: d.user?.name || "Delivery Applicant",
+        type: "delivery_partner",
+        submittedAt: d.submittedAt || d.createdAt,
+      })),
+    ]
+      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+      .slice(0, 5);
+
+    // 7. recentActivity Feed
+    // Get recent restaurant applications
+    const recentApps = await Restaurant.find()
+      .populate("owner", "name")
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    // Get recent orders
+    const recentOrders = await Order.find()
+      .populate("customer", "name")
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    const activityFeed = [];
+
+    recentApps.forEach((app) => {
+      // Application submission activity
+      activityFeed.push({
+        id: `app-sub-${app._id}`,
+        message: `New restaurant applied: "${app.name}"`,
+        timestamp: app.submittedAt || app.createdAt,
+        type: "application",
+      });
+
+      // Application review activity (if reviewed)
+      if (app.reviewedAt) {
+        activityFeed.push({
+          id: `app-rev-${app._id}`,
+          message: `Restaurant "${app.name}" was ${app.approvalStatus}${
+            app.rejectionReason ? ` (Reason: ${app.rejectionReason})` : ""
+          }`,
+          timestamp: app.reviewedAt,
+          type: "review",
+        });
+      }
+    });
+
+    recentOrders.forEach((order) => {
+      activityFeed.push({
+        id: `order-${order._id}`,
+        message: `New order placed by ${order.customer?.name || "Guest User"} - ₹${order.totalAmount}`,
+        timestamp: order.createdAt,
+        type: "order",
+      });
+    });
+
+    // Sort by timestamp desc and limit to 10
+    const recentActivity = activityFeed
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10);
+
+    // 8. orderTrend for the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const trendAggregation = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sevenDaysAgo },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "+05:30" },
+          },
+          orderCount: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    // Build map of aggregate results
+    const trendMap = new Map();
+    trendAggregation.forEach((item) => {
+      trendMap.set(item._id, item.orderCount);
+    });
+
+    // Fill missing days to ensure we have exactly 7 days
+    const orderTrend = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      const orderCount = trendMap.get(dateStr) || 0;
+
+      // Format date for chart tooltip (e.g., "Jul 21")
+      const formattedDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      orderTrend.push({
+        date: formattedDate,
+        fullDate: dateStr,
+        orderCount,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalOrdersToday,
+        platformRevenueToday,
+        activeRestaurants,
+        activeDeliveryPartners,
+        pendingApprovals,
+        pendingApprovalsList,
+        recentActivity,
+        orderTrend,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/admin/users
+exports.getUsers = async (req, res, next) => {
+  try {
+    const { role, search, status = "all", page = 1, limit = 20 } = req.query;
+
+    if (!role || !["customer", "owner", "delivery"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid role query parameter is required.",
+      });
+    }
+
+    let filter = { role };
+
+    // Status filter
+    if (status === "all") {
+      filter.status = { $ne: "deleted" };
+    } else if (["active", "suspended"].includes(status)) {
+      filter.status = status;
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status query parameter.",
+      });
+    }
+
+    // Search filter (name, email, phone)
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      filter.$or = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex },
+      ];
+    }
+
+    // Pagination
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    const users = await User.find(filter)
+      .select("-password -otpHash -otpExpires")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    const totalCount = await User.countDocuments(filter);
+
+    // Counts mapping (reflects totals regardless of current search/status filters)
+    const customerCount = await User.countDocuments({ role: "customer", status: { $ne: "deleted" } });
+    const ownerCount = await User.countDocuments({ role: "owner", status: { $ne: "deleted" } });
+    const deliveryCount = await User.countDocuments({ role: "delivery", status: { $ne: "deleted" } });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        users,
+        totalCount,
+        counts: {
+          customer: customerCount,
+          owner: ownerCount,
+          delivery: deliveryCount,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/admin/users/:id
+exports.getUserById = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password -otpHash -otpExpires");
+    if (!user || user.status === "deleted") {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    let stats = {};
+
+    if (user.role === "customer") {
+      const totalOrdersCount = await Order.countDocuments({ customer: user._id });
+      
+      const revenueAggregation = await Order.aggregate([
+        { $match: { customer: user._id, status: { $ne: "cancelled" } } },
+        { $group: { _id: null, totalSpent: { $sum: "$totalAmount" } } }
+      ]);
+      const totalSpent = revenueAggregation[0]?.totalSpent || 0;
+
+      const lastOrders = await Order.find({ customer: user._id })
+        .populate("restaurant", "name")
+        .sort({ createdAt: -1 })
+        .limit(5);
+
+      const formattedOrders = lastOrders.map(o => ({
+        id: o._id,
+        restaurantName: o.restaurant ? o.restaurant.name : "Unknown Restaurant",
+        amount: o.totalAmount,
+        date: o.createdAt
+      }));
+
+      stats = {
+        totalOrdersCount,
+        totalSpent,
+        lastOrders: formattedOrders
+      };
+    } else if (user.role === "owner") {
+      const restaurant = await Restaurant.findOne({ owner: user._id }).select("name approvalStatus");
+      
+      let totalOrdersReceived = 0;
+      let totalRevenueGenerated = 0;
+
+      if (restaurant) {
+        totalOrdersReceived = await Order.countDocuments({ restaurant: restaurant._id });
+        
+        const revenueAggregation = await Order.aggregate([
+          { $match: { restaurant: restaurant._id, status: { $ne: "cancelled" } } },
+          { $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } } }
+        ]);
+        totalRevenueGenerated = revenueAggregation[0]?.totalRevenue || 0;
+      }
+
+      stats = {
+        restaurant: restaurant ? {
+          name: restaurant.name,
+          approvalStatus: restaurant.approvalStatus
+        } : null,
+        totalOrdersReceived,
+        totalRevenueGenerated
+      };
+    } else if (user.role === "delivery") {
+      stats = {
+        totalDeliveriesCompleted: 0,
+        averageRating: 0
+      };
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user,
+        stats
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/users/:id/status
+exports.updateUserStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+
+    if (!status || !["active", "suspended"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either 'active' or 'suspended'.",
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user || user.status === "deleted") {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.status = status;
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select("-password -otpHash -otpExpires");
+
+    return res.status(200).json({
+      success: true,
+      message: `User status updated to ${status} successfully.`,
+      data: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /api/admin/users/:id
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.status === "deleted") {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // SOFT DELETE: Status set to "deleted"
+    user.status = "deleted";
+    // Anonymize personal details (free up email for future signup)
+    user.email = `deleted_${user._id}@cravingza.local`;
+    user.name = "Deleted User";
+    user.phone = null;
+    user.addresses = []; // Clear addresses for privacy
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "User account deleted successfully (soft-deleted).",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper function to mask bank details in admin controllers
+const maskDeliveryProfile = (profile) => {
+  if (!profile) return null;
+  const profileObj = profile.toObject ? profile.toObject() : { ...profile };
+  if (profileObj.bankDetails && profileObj.bankDetails.accountNumber) {
+    const accNum = profileObj.bankDetails.accountNumber;
+    profileObj.bankDetails.accountNumber =
+      accNum.length > 4
+        ? "*".repeat(accNum.length - 4) + accNum.slice(-4)
+        : "****" + accNum;
+  }
+  return profileObj;
+};
+
+// GET /api/admin/delivery & GET /api/admin/delivery-partners
+exports.getDeliveryProfiles = async (req, res, next) => {
+  try {
+    const { status = "pending" } = req.query;
+
+    let filter = {};
+    if (status !== "all") {
+      filter.approvalStatus = status;
+    }
+
+    const rawProfiles = await DeliveryProfile.find(filter)
+      .populate("user", "name email phone role")
+      .sort({ submittedAt: -1, createdAt: -1 });
+
+    const profiles = rawProfiles
+      .filter((p) => p.user && p.user.role !== "admin")
+      .map((p) => maskDeliveryProfile(p));
+
+    const pendingCount = await DeliveryProfile.countDocuments({ approvalStatus: "pending" });
+    const approvedCount = await DeliveryProfile.countDocuments({ approvalStatus: "approved" });
+    const rejectedCount = await DeliveryProfile.countDocuments({ approvalStatus: "rejected" });
+
+    return res.status(200).json({
+      success: true,
+      data: profiles,
+      counts: {
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        all: pendingCount + approvedCount + rejectedCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/admin/delivery/:id & GET /api/admin/delivery-partners/:id
+exports.getDeliveryProfileById = async (req, res, next) => {
+  try {
+    const profile = await DeliveryProfile.findById(req.params.id)
+      .populate("user", "name email phone")
+      .populate("reviewedBy", "name email");
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Delivery partner application not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: maskDeliveryProfile(profile),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/delivery/:id/approve & PATCH /api/admin/delivery-partners/:id/approve
+exports.approveDeliveryPartner = async (req, res, next) => {
+  try {
+    const profile = await DeliveryProfile.findById(req.params.id);
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Delivery partner application not found",
+      });
+    }
+
+    profile.approvalStatus = "approved";
+    profile.reviewedAt = new Date();
+    profile.reviewedBy = req.user._id;
+    profile.rejectionReason = null;
+
+    if (profile.user) {
+      await User.findByIdAndUpdate(profile.user, { role: "delivery" });
+    }
+
+    await profile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery partner approved successfully",
+      data: maskDeliveryProfile(profile),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/delivery/:id/reject & PATCH /api/admin/delivery-partners/:id/reject
+exports.rejectDeliveryPartner = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+
+    if (!reason || reason.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Rejection reason is required",
+      });
+    }
+
+    const profile = await DeliveryProfile.findById(req.params.id);
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Delivery partner application not found",
+      });
+    }
+
+    profile.approvalStatus = "rejected";
+    profile.rejectionReason = reason;
+    profile.reviewedAt = new Date();
+    profile.reviewedBy = req.user._id;
+
+    await profile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery partner rejected successfully",
+      data: maskDeliveryProfile(profile),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
