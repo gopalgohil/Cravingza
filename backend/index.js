@@ -49,6 +49,12 @@ const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Base route for status check
+app.get("/", (req, res) => {
+  res.status(200).json({ success: true, message: "Cravingza Backend API Server is Live & Running!" });
+});
+app.get("/api", (req, res) => {
+  res.status(200).json({ success: true, message: "Cravingza Backend API Server is Live & Running!" });
+});
 app.get("/health", (req, res) => {
   res.status(200).json({ success: true, message: "Backend is healthy" });
 });
