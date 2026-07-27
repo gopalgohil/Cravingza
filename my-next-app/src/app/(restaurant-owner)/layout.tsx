@@ -429,30 +429,6 @@ export default function RestaurantOwnerLayout({
                 </div>
               </nav>
 
-              {/* Profile footer inside mobile drawer */}
-              <div className="border-t border-outline-variant pt-lg mt-lg space-y-md">
-                <div className="flex items-center gap-md">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-orange-500 text-white flex items-center justify-center font-bold shadow-md shadow-primary/20">
-                    {mounted ? displayInitials : ""}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-label-md text-label-md truncate font-bold text-on-surface">
-                      {mounted ? displayName : "\u00A0"}
-                    </p>
-                    <p className="font-caption text-caption text-on-surface-variant">Restaurant Partner</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full text-left flex items-center gap-md px-md py-2.5 text-error font-body-md hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined">logout</span>
-                  <span>Sign Out</span>
-                </button>
-              </div>
             </div>
             
             <style dangerouslySetInnerHTML={{ __html: `
