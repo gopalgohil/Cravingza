@@ -1,7 +1,8 @@
 const { Resend } = require("resend");
 
-// Initialize Resend with API Key from environment variables
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend with API Key from environment variables or safe fallback
+const resendApiKey = process.env.RESEND_API_KEY || "re_dummy_fallback_key_123456789";
+const resend = new Resend(resendApiKey);
 
 /**
  * Sends a registration OTP verification email
