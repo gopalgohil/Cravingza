@@ -365,6 +365,7 @@ const login = async (req, res) => {
       success: true,
       message: "Logged in successfully",
       data: {
+        token,
         user: {
           id: user._id,
           name: user.name,
@@ -661,6 +662,7 @@ const googleLogin = async (req, res) => {
       success: true,
       message: "Logged in successfully",
       data: {
+        token,
         user: {
           id: user._id,
           name: user.name,

@@ -81,6 +81,15 @@ export const apiSlice = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
     credentials: "include", // Crucial for sending JWT cookie
+    prepareHeaders: (headers) => {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("cravingza_token");
+        if (token) {
+          headers.set("authorization", `Bearer ${token}`);
+        }
+      }
+      return headers;
+    },
   }),
   tagTypes: ["Cart", "Orders", "Restaurants", "Reviews", "User", "Addresses", "Menu", "MerchantOrders", "AdminDashboard", "AdminRestaurants", "AdminUsers", "Delivery", "Notifications", "Offers", "MyApplication"],
   endpoints: (builder) => ({

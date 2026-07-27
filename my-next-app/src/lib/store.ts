@@ -88,6 +88,7 @@ export const useAppStore = create<AppState>((set) => ({
         localStorage.removeItem("cravingza_user");
         localStorage.removeItem("cravingza_application_status");
         localStorage.removeItem("cravingza_restaurant_name");
+        localStorage.removeItem("cravingza_token");
       }
     }
     set({ user });

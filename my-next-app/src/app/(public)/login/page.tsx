@@ -113,6 +113,9 @@ function LoginContent() {
         return;
       }
 
+      if (data.data?.token && typeof window !== "undefined") {
+        localStorage.setItem("cravingza_token", data.data.token);
+      }
       setUser(data.data.user);
       triggerLoginNotification(data.data.user.name);
       setSuccessMsg("Logged in successfully! Redirecting...");
@@ -153,6 +156,9 @@ function LoginContent() {
         return;
       }
 
+      if (data.data?.token && typeof window !== "undefined") {
+        localStorage.setItem("cravingza_token", data.data.token);
+      }
       setUser(data.data.user);
       triggerLoginNotification(data.data.user.name);
       setSuccessMsg("Logged in successfully! Redirecting...");
