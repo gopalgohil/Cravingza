@@ -23,8 +23,8 @@ const loginLimiter = rateLimiter({
 
 const otpLimiter = rateLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: "Too many OTP requests or verification attempts. Please try again after 15 minutes.",
+  max: 50,
+  message: "Too many OTP requests or verification attempts. Please try again later.",
 });
 
 // Authentication Routes
