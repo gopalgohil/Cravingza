@@ -1,6 +1,21 @@
+const nodemailer = require("nodemailer");
 const { Resend } = require("resend");
 
-// Initialize Resend with API Key from environment variables or safe fallback
+// 1. Nodemailer Transporter (Gmail SMTP)
+const createTransporter = () => {
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS.replace(/\s+/g, ""), // Trim spaces from 16-digit app password
+      },
+    });
+  }
+  return null;
+};
+
+// 2. Resend Client Fallback
 const resendApiKey = process.env.RESEND_API_KEY || "re_dummy_fallback_key_123456789";
 const resend = new Resend(resendApiKey);
 
@@ -13,6 +28,7 @@ const resend = new Resend(resendApiKey);
 const sendOTPEmail = async (to, name, otp) => {
   try {
     console.log(`[DEBUG OTP] Sending OTP verification email to ${to}: Code is ${otp}`);
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -20,76 +36,16 @@ const sendOTPEmail = async (to, name, otp) => {
         <meta charset="utf-8">
         <title>Verify Your Cravingza Account</title>
         <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #F8F9FA;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #FFFFFF;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #E9ECEF;
-          }
-          .header {
-            background-color: #FF5A5F;
-            padding: 32px;
-            text-align: center;
-          }
-          .header h1 {
-            color: #FFFFFF;
-            margin: 0;
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-          }
-          .content {
-            padding: 40px 32px;
-            color: #333333;
-          }
-          .content h2 {
-            font-size: 20px;
-            margin-top: 0;
-            color: #212529;
-          }
-          .content p {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #495057;
-            margin-bottom: 24px;
-          }
-          .otp-container {
-            background-color: #F8F9FA;
-            border: 1px solid #E9ECEF;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            margin: 32px 0;
-          }
-          .otp-code {
-            font-size: 36px;
-            font-weight: 800;
-            letter-spacing: 6px;
-            color: #FF5A5F;
-            margin: 0;
-          }
-          .footer {
-            background-color: #F8F9FA;
-            padding: 24px;
-            text-align: center;
-            border-top: 1px solid #E9ECEF;
-            font-size: 14px;
-            color: #6C757D;
-          }
-          .footer a {
-            color: #FF5A5F;
-            text-decoration: none;
-            font-weight: bold;
-          }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8F9FA; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 40px auto; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #E9ECEF; }
+          .header { background-color: #FF5A5F; padding: 32px; text-align: center; }
+          .header h1 { color: #FFFFFF; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+          .content { padding: 40px 32px; color: #333333; }
+          .content h2 { font-size: 20px; margin-top: 0; color: #212529; }
+          .content p { font-size: 16px; line-height: 1.6; color: #495057; margin-bottom: 24px; }
+          .otp-container { background-color: #F8F9FA; border: 1px solid #E9ECEF; border-radius: 12px; padding: 20px; text-align: center; margin: 32px 0; }
+          .otp-code { font-size: 36px; font-weight: 800; letter-spacing: 6px; color: #FF5A5F; margin: 0; }
+          .footer { background-color: #F8F9FA; padding: 24px; text-align: center; border-top: 1px solid #E9ECEF; font-size: 14px; color: #6C757D; }
         </style>
       </head>
       <body>
@@ -109,21 +65,33 @@ const sendOTPEmail = async (to, name, otp) => {
             <p>Happy eating,<br>The Cravingza Team</p>
           </div>
           <div class="footer">
-            &copy; 2026 Cravingza Inc. All rights reserved.<br>
-            If you need assistance, please visit our <a href="#">Help Center</a>.
+            &copy; 2026 Cravingza Inc. All rights reserved.
           </div>
         </div>
       </body>
       </html>
     `;
 
+    const transporter = createTransporter();
+    if (transporter) {
+      console.log(`[Gmail SMTP] Sending OTP email to ${to} via Gmail...`);
+      const info = await transporter.sendMail({
+        from: `"Cravingza" <${process.env.EMAIL_USER}>`,
+        to,
+        subject: "Verify your Cravingza Account",
+        html: htmlContent,
+      });
+      console.log("[Gmail SMTP Success]:", info.messageId);
+      return { success: true, messageId: info.messageId };
+    }
+
+    // Resend fallback
     const data = await resend.emails.send({
       from: "Cravingza <onboarding@resend.dev>",
       to: [to],
       subject: "Verify your Cravingza Account",
       html: htmlContent,
     });
-
     console.log("Resend API response:", data);
     return { success: true, data };
   } catch (error) {
@@ -141,6 +109,7 @@ const sendOTPEmail = async (to, name, otp) => {
 const sendPasswordResetEmail = async (to, name, otp) => {
   try {
     console.log(`[DEBUG OTP] Sending password reset email to ${to}: Code is ${otp}`);
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -148,76 +117,16 @@ const sendPasswordResetEmail = async (to, name, otp) => {
         <meta charset="utf-8">
         <title>Reset Your Cravingza Password</title>
         <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #F8F9FA;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #FFFFFF;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #E9ECEF;
-          }
-          .header {
-            background-color: #FF5A5F;
-            padding: 32px;
-            text-align: center;
-          }
-          .header h1 {
-            color: #FFFFFF;
-            margin: 0;
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-          }
-          .content {
-            padding: 40px 32px;
-            color: #333333;
-          }
-          .content h2 {
-            font-size: 20px;
-            margin-top: 0;
-            color: #212529;
-          }
-          .content p {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #495057;
-            margin-bottom: 24px;
-          }
-          .otp-container {
-            background-color: #F8F9FA;
-            border: 1px solid #E9ECEF;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            margin: 32px 0;
-          }
-          .otp-code {
-            font-size: 36px;
-            font-weight: 800;
-            letter-spacing: 6px;
-            color: #FF5A5F;
-            margin: 0;
-          }
-          .footer {
-            background-color: #F8F9FA;
-            padding: 24px;
-            text-align: center;
-            border-top: 1px solid #E9ECEF;
-            font-size: 14px;
-            color: #6C757D;
-          }
-          .footer a {
-            color: #FF5A5F;
-            text-decoration: none;
-            font-weight: bold;
-          }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8F9FA; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 40px auto; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #E9ECEF; }
+          .header { background-color: #FF5A5F; padding: 32px; text-align: center; }
+          .header h1 { color: #FFFFFF; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+          .content { padding: 40px 32px; color: #333333; }
+          .content h2 { font-size: 20px; margin-top: 0; color: #212529; }
+          .content p { font-size: 16px; line-height: 1.6; color: #495057; margin-bottom: 24px; }
+          .otp-container { background-color: #F8F9FA; border: 1px solid #E9ECEF; border-radius: 12px; padding: 20px; text-align: center; margin: 32px 0; }
+          .otp-code { font-size: 36px; font-weight: 800; letter-spacing: 6px; color: #FF5A5F; margin: 0; }
+          .footer { background-color: #F8F9FA; padding: 24px; text-align: center; border-top: 1px solid #E9ECEF; font-size: 14px; color: #6C757D; }
         </style>
       </head>
       <body>
@@ -237,21 +146,33 @@ const sendPasswordResetEmail = async (to, name, otp) => {
             <p>Happy eating,<br>The Cravingza Team</p>
           </div>
           <div class="footer">
-            &copy; 2026 Cravingza Inc. All rights reserved.<br>
-            If you need assistance, please visit our <a href="#">Help Center</a>.
+            &copy; 2026 Cravingza Inc. All rights reserved.
           </div>
         </div>
       </body>
       </html>
     `;
 
+    const transporter = createTransporter();
+    if (transporter) {
+      console.log(`[Gmail SMTP] Sending Reset OTP email to ${to} via Gmail...`);
+      const info = await transporter.sendMail({
+        from: `"Cravingza" <${process.env.EMAIL_USER}>`,
+        to,
+        subject: "Reset your Cravingza Password",
+        html: htmlContent,
+      });
+      console.log("[Gmail SMTP Success]:", info.messageId);
+      return { success: true, messageId: info.messageId };
+    }
+
+    // Resend fallback
     const data = await resend.emails.send({
       from: "Cravingza <onboarding@resend.dev>",
       to: [to],
       subject: "Reset your Cravingza Password",
       html: htmlContent,
     });
-
     console.log("Resend API response (Password Reset):", data);
     return { success: true, data };
   } catch (error) {
