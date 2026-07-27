@@ -16,6 +16,11 @@ export interface User {
   email: string;
   role: string;
   avatar?: string;
+  phone?: string;
+  notifications?: {
+    orderUpdates?: boolean;
+    promotionalOffers?: boolean;
+  };
 }
 
 export interface Order {

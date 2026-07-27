@@ -82,7 +82,7 @@ export const apiSlice = createApi({
     baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
     credentials: "include", // Crucial for sending JWT cookie
   }),
-  tagTypes: ["Cart", "Orders", "Restaurants", "Reviews", "User", "Addresses", "Menu", "MerchantOrders", "AdminDashboard", "AdminRestaurants", "AdminUsers", "Delivery", "Notifications", "Offers"],
+  tagTypes: ["Cart", "Orders", "Restaurants", "Reviews", "User", "Addresses", "Menu", "MerchantOrders", "AdminDashboard", "AdminRestaurants", "AdminUsers", "Delivery", "Notifications", "Offers", "MyApplication"],
   endpoints: (builder) => ({
     // Notifications Endpoints
     getNotificationsList: builder.query<any, void>({
