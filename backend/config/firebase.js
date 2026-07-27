@@ -1,11 +1,19 @@
 const admin = require("firebase-admin");
 
 if (!admin.apps.length) {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
-    : undefined;
+  const projectId = process.env.FIREBASE_PROJECT_ID ? process.env.FIREBASE_PROJECT_ID.trim() : undefined;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL ? process.env.FIREBASE_CLIENT_EMAIL.trim() : undefined;
+  
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  if (privateKey) {
+    privateKey = privateKey.trim();
+    // Remove leading/trailing quotes if present
+    if ((privateKey.startsWith('"') && privateKey.endsWith('"')) || (privateKey.startsWith("'") && privateKey.endsWith("'"))) {
+      privateKey = privateKey.slice(1, -1);
+    }
+    // Convert escaped newlines \n to actual newlines
+    privateKey = privateKey.replace(/\\n/g, "\n");
+  }
 
   if (projectId && clientEmail && privateKey) {
     try {
@@ -21,7 +29,11 @@ if (!admin.apps.length) {
       console.error("Error initializing Firebase Admin SDK:", error);
     }
   } else {
-    console.warn("Firebase Admin SDK credentials not fully configured. Google login will not be operational until credentials are provided in .env");
+    console.warn("Firebase Admin SDK credentials missing or incomplete.", {
+      hasProjectId: !!projectId,
+      hasClientEmail: !!clientEmail,
+      hasPrivateKey: !!privateKey,
+    });
   }
 }
 

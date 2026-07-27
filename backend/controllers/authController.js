@@ -567,7 +567,11 @@ const googleLogin = async (req, res) => {
     let decodedToken;
     try {
       if (!admin.apps || !admin.apps.length) {
-        throw new Error("Firebase Admin SDK is not configured on the server. Please check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in .env");
+        const missing = [];
+        if (!process.env.FIREBASE_PROJECT_ID) missing.push("FIREBASE_PROJECT_ID");
+        if (!process.env.FIREBASE_CLIENT_EMAIL) missing.push("FIREBASE_CLIENT_EMAIL");
+        if (!process.env.FIREBASE_PRIVATE_KEY) missing.push("FIREBASE_PRIVATE_KEY");
+        throw new Error(`Firebase Admin SDK is not configured on the server. Missing on Render: ${missing.length ? missing.join(", ") : "Invalid private key format"}`);
       }
       decodedToken = await admin.auth().verifyIdToken(idToken);
     } catch (verifyError) {
