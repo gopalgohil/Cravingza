@@ -3,24 +3,29 @@ const { Resend } = require("resend");
 
 // 1. Nodemailer Transporter (Gmail SMTP)
 const createTransporter = () => {
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    return nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // Use SSL/TLS
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS.replace(/\s+/g, ""), // Trim spaces from 16-digit app password
-      },
-      tls: {
-        rejectUnauthorized: false, // Prevent SSL certificate rejection on cloud servers
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-    });
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  if (!user || !pass) {
+    console.error(`[Email Config Warning] EMAIL_USER or EMAIL_PASS missing on server! EMAIL_USER: ${user ? "FOUND (" + user + ")" : "NOT FOUND"}, EMAIL_PASS: ${pass ? "FOUND" : "NOT FOUND"}`);
+    return null;
   }
-  return null;
+
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // Use SSL/TLS
+    auth: {
+      user: user,
+      pass: pass.replace(/\s+/g, ""), // Trim spaces from 16-digit app password
+    },
+    tls: {
+      rejectUnauthorized: false, // Prevent SSL certificate rejection on cloud servers
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
 };
 
 // 2. Resend Client Fallback
