@@ -228,42 +228,8 @@ export default function CartPage() {
           </div>
         </div>
 
-        {/* Right Side: Promo & Bill Summary */}
+        {/* Right Side: Bill Summary */}
         <div className="space-y-4">
-          {/* Promo Code Card */}
-          <div className="bg-white rounded-2xl border border-outline-variant/60 p-5 shadow-sm space-y-3">
-            <h4 className="font-bold text-on-surface text-body-md">Promo Code</h4>
-            {!promoApplied ? (
-              <form onSubmit={handleApplyPromo} className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  placeholder="Enter code (e.g. CRAVING10)"
-                  className="flex-1 min-w-0 px-4 py-2.5 bg-[#FFF2EE] border border-transparent rounded-xl text-body-sm focus:outline-none focus:border-primary/50 outline-none uppercase placeholder:normal-case placeholder:text-on-surface-variant/50 font-medium"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 bg-[#251510] text-white font-bold text-body-sm px-5 py-2.5 rounded-xl hover:bg-black active:scale-95 transition-all cursor-pointer shadow-sm"
-                >
-                  Apply
-                </button>
-              </form>
-            ) : (
-              <div className="flex justify-between items-center bg-green-50 text-green-800 px-4 py-2.5 rounded-xl border border-green-200">
-                <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-base">local_offer</span>
-                  <span className="font-bold text-body-sm">CRAVING10 Applied</span>
-                </div>
-                <button
-                  onClick={handleRemovePromo}
-                  className="text-green-800 hover:text-red-500 text-caption font-bold hover:underline cursor-pointer"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-          </div>
 
           {/* Bill Summary Card */}
           <div className="bg-white rounded-2xl border border-outline-variant/60 p-6 shadow-sm space-y-5">
