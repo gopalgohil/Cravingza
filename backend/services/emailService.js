@@ -37,9 +37,12 @@ const resend = new Resend(resendApiKey);
  */
 const sendMailHelper = async (to, subject, htmlContent) => {
   const transporter = createTransporter();
+  let gmailErrorReason = null;
 
   // 1. Try Gmail SMTP first if credentials are present
-  if (transporter) {
+  if (!transporter) {
+    gmailErrorReason = `EMAIL_USER (${process.env.EMAIL_USER ? "FOUND: " + process.env.EMAIL_USER : "NOT SET"}) or EMAIL_PASS (${process.env.EMAIL_PASS ? "FOUND" : "NOT SET"}) missing in Render environment variables.`;
+  } else {
     try {
       console.log(`[Gmail SMTP] Sending email to ${to}...`);
       const info = await transporter.sendMail({
@@ -51,6 +54,7 @@ const sendMailHelper = async (to, subject, htmlContent) => {
       console.log("[Gmail SMTP Success]:", info.messageId);
       return { success: true, messageId: info.messageId, provider: "gmail" };
     } catch (gmailError) {
+      gmailErrorReason = `Gmail SMTP Error: ${gmailError.message}`;
       console.error("[Gmail SMTP Failed] Falling back to Resend API:", gmailError.message);
     }
   }
@@ -67,14 +71,16 @@ const sendMailHelper = async (to, subject, htmlContent) => {
 
     if (response.error) {
       console.error("[Resend API Error]:", response.error.message || response.error);
-      return { success: false, error: response.error.message || "Resend API error", provider: "resend" };
+      const combinedError = `[Gmail SMTP Issue]: ${gmailErrorReason} | [Resend Issue]: ${response.error.message || "Resend error"}`;
+      return { success: false, error: combinedError, provider: "resend" };
     }
 
     console.log("[Resend API Success]:", response.data);
     return { success: true, data: response.data, provider: "resend" };
   } catch (resendError) {
     console.error("[Resend API Exception]:", resendError.message);
-    return { success: false, error: resendError.message };
+    const combinedError = `[Gmail SMTP Issue]: ${gmailErrorReason} | [Resend Exception]: ${resendError.message}`;
+    return { success: false, error: combinedError };
   }
 };
 
