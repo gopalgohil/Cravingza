@@ -5,14 +5,19 @@ const { Resend } = require("resend");
 const createTransporter = () => {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     return nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // Use SSL/TLS
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS.replace(/\s+/g, ""), // Trim spaces from 16-digit app password
       },
-      connectionTimeout: 5000, // 5 seconds connection timeout
-      greetingTimeout: 5000,
-      socketTimeout: 10000,
+      tls: {
+        rejectUnauthorized: false, // Prevent SSL certificate rejection on cloud servers
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
   }
   return null;
