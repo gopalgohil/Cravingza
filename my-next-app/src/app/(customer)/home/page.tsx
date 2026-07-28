@@ -14,57 +14,65 @@ function HomeContent() {
   const focusSearch = searchParams.get("focus") === "search";
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<string>("");
   const [selectedSort, setSelectedSort] = useState<string>("rating");
 
+  // Keep debounced search synced with searchQuery
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768 && !isFocused) {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Keep searchQuery synced with URL parameter if updated externally (e.g. desktop header)
+  useEffect(() => {
+    if (!isFocused && initialSearch !== searchQuery) {
       setSearchQuery(initialSearch);
+      setDebouncedSearch(initialSearch);
     }
   }, [initialSearch, isFocused]);
 
-  // Sync mobile input debounced search back to the URL search param
+  // Sync debounced search to URL without stealing input focus
   useEffect(() => {
-    if (typeof window === "undefined" || window.innerWidth >= 768) return;
+    const currentParam = searchParams.get("search") || "";
+    const cleanSearch = debouncedSearch.trim();
+
+    if (cleanSearch === currentParam) return;
 
     const params = new URLSearchParams(searchParams.toString());
-    const currentSearch = params.get("search") || "";
-    
-    // Determine effective target search string based on the 3-character threshold
-    const targetSearch = searchQuery.length >= 3 ? searchQuery : "";
-
-    if (targetSearch === currentSearch) return;
-
-    if (targetSearch === "") {
-      params.delete("search");
-      const queryString = params.toString();
-      router.replace(`/home${queryString ? `?${queryString}` : ""}`, { scroll: false });
+    if (cleanSearch) {
+      params.set("search", cleanSearch);
     } else {
-      const handler = setTimeout(() => {
-        if (searchQuery.length < 3) return;
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.set("search", searchQuery);
-        router.replace(`/home?${newParams.toString()}`, { scroll: false });
-      }, 350);
-      return () => clearTimeout(handler);
+      params.delete("search");
     }
-  }, [searchQuery, router, searchParams]);
+    router.replace(`/home${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+  }, [debouncedSearch, router, searchParams]);
 
   const [isCategoryLoading, setIsCategoryLoading] = useState(false);
 
   // Fetch restaurants from MongoDB using RTK Query
   const { data: response, isLoading, isFetching, isError } = useGetRestaurantsQuery({
     cuisine: activeCategory,
-    search: initialSearch.length >= 3 ? initialSearch : "",
+    search: debouncedSearch.trim(),
     sort: selectedSort,
   });
 
   const restaurants = response?.data || [];
 
-  // Price mapping based on minOrderAmount
-  // $ <= 10, $$ <= 15, $$$ > 15
+  // Filter restaurants locally by search query, price, etc.
   const filteredRestaurants = restaurants.filter((restaurant: any) => {
+    // 1. Search Query Filter (Name & Cuisines)
+    if (searchQuery.trim().length > 0) {
+      const q = searchQuery.trim().toLowerCase();
+      const nameMatch = restaurant.name?.toLowerCase().includes(q);
+      const cuisineMatch = restaurant.cuisineTags?.some((c: string) => c.toLowerCase().includes(q));
+      if (!nameMatch && !cuisineMatch) return false;
+    }
+
+    // 2. Price mapping based on minOrderAmount
     if (!selectedPrice) return true;
     const minOrder = restaurant.minOrderAmount || 0;
     if (selectedPrice === "$") return minOrder <= 10;
