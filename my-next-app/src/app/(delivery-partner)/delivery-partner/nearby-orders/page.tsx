@@ -25,8 +25,18 @@ export default function NearbyOrdersPage() {
   const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
   const [updateStatus, { isLoading: isTogglingOnline }] = useUpdateDeliveryStatusMutation();
 
-  // Local state to store declined order IDs (client-side filter)
-  const [declinedOrderIds, setDeclinedOrderIds] = useState<string[]>([]);
+  // Local state to store declined order IDs (persisted in localStorage so they don't reappear on reload)
+  const [declinedOrderIds, setDeclinedOrderIds] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("cravingza_declined_orders");
+        return saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const isOnline = response?.isOnline ?? true;
@@ -37,7 +47,15 @@ export default function NearbyOrdersPage() {
   const orders = rawOrders.filter((o: any) => !declinedOrderIds.includes(o._id));
 
   const handleDecline = (orderId: string) => {
-    setDeclinedOrderIds((prev) => [...prev, orderId]);
+    setDeclinedOrderIds((prev) => {
+      const updated = [...prev, orderId];
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("cravingza_declined_orders", JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
     toast.info("Order hidden from your list.");
   };
 
