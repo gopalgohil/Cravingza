@@ -1,106 +1,117 @@
+/**
+ * emailService.js — Cravingza Email Service (Nodemailer + Gmail SMTP)
+ *
+ * Uses Gmail SMTP to send OTP and password reset emails to ANY recipient.
+ * Gmail accounts have a ~500 emails/day limit — sufficient for a portfolio/
+ * testing project. For production scale, use a verified domain on a dedicated
+ * transactional email provider (e.g. Resend, SendGrid, Mailgun).
+ *
+ * Setup:
+ *   - Enable 2-Step Verification on your Google account
+ *   - Generate a 16-char App Password at: myaccount.google.com/apppasswords
+ *   - Set EMAIL_USER and EMAIL_PASS in your .env / Render environment vars
+ */
+
 const nodemailer = require("nodemailer");
-const { Resend } = require("resend");
 const dns = require("dns");
 
-// Force IPv4 first to prevent ENETUNREACH IPv6 routing errors on cloud hosts like Render
+// Force IPv4 DNS resolution to prevent ENETUNREACH IPv6 errors on cloud
+// hosting providers (Render, AWS, Railway, etc.) that disable IPv6 routing
 if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder("ipv4first");
 }
 
-// 1. Nodemailer Transporter (Gmail SMTP)
-const createTransporter = () => {
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
+// ---------------------------------------------------------------------------
+// Transporter — Gmail SMTP via Nodemailer
+// ---------------------------------------------------------------------------
 
-  if (!user || !pass) {
-    console.error(`[Email Config Warning] EMAIL_USER or EMAIL_PASS missing on server! EMAIL_USER: ${user ? "FOUND (" + user + ")" : "NOT FOUND"}, EMAIL_PASS: ${pass ? "FOUND" : "NOT FOUND"}`);
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // STARTTLS for cloud servers (Render/AWS)
-    auth: {
-      user: user,
-      pass: pass.replace(/\s+/g, ""), // Trim spaces from 16-digit app password
-    },
-    tls: {
-      rejectUnauthorized: false, // Prevent SSL certificate rejection on cloud servers
-    },
-    family: 4, // Force IPv4 to fix Render ENETUNREACH IPv6 error
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
-  });
-};
-
-// 2. Resend Client Fallback
-const resendApiKey = process.env.RESEND_API_KEY || "re_dummy_fallback_key_123456789";
-const resend = new Resend(resendApiKey);
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // STARTTLS — more reliable than port 465 on cloud servers
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+      ? process.env.EMAIL_PASS.replace(/\s+/g, "") // strip spaces from App Password
+      : undefined,
+  },
+  tls: {
+    rejectUnauthorized: false, // allow self-signed certs on cloud proxies
+  },
+  family: 4, // force IPv4 socket connection
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
+});
 
 /**
- * Helper to send email using Gmail SMTP with seamless Resend API fallback
+ * verifyTransporter — call once at server startup to catch misconfiguration
+ * early rather than only when a user triggers an email send.
  */
-const sendMailHelper = async (to, subject, htmlContent) => {
-  const transporter = createTransporter();
-  let gmailErrorReason = null;
-
-  // 1. Try Gmail SMTP first if credentials are present
-  if (!transporter) {
-    gmailErrorReason = `EMAIL_USER (${process.env.EMAIL_USER ? "FOUND: " + process.env.EMAIL_USER : "NOT SET"}) or EMAIL_PASS (${process.env.EMAIL_PASS ? "FOUND" : "NOT SET"}) missing in Render environment variables.`;
-  } else {
-    try {
-      console.log(`[Gmail SMTP] Sending email to ${to}...`);
-      const info = await transporter.sendMail({
-        from: `"Cravingza" <${process.env.EMAIL_USER}>`,
-        to,
-        subject,
-        html: htmlContent,
-      });
-      console.log("[Gmail SMTP Success]:", info.messageId);
-      return { success: true, messageId: info.messageId, provider: "gmail" };
-    } catch (gmailError) {
-      gmailErrorReason = `Gmail SMTP Error: ${gmailError.message}`;
-      console.error("[Gmail SMTP Failed] Falling back to Resend API:", gmailError.message);
-    }
-  }
-
-  // 2. Fallback to Resend API if Gmail SMTP fails or is not configured
+const verifyTransporter = async () => {
   try {
-    console.log(`[Resend API] Sending email to ${to}...`);
-    const response = await resend.emails.send({
-      from: "Cravingza <onboarding@resend.dev>",
-      to: [to],
-      subject,
-      html: htmlContent,
-    });
-
-    if (response.error) {
-      console.error("[Resend API Error]:", response.error.message || response.error);
-      const combinedError = `[Gmail SMTP Issue]: ${gmailErrorReason} | [Resend Issue]: ${response.error.message || "Resend error"}`;
-      return { success: false, error: combinedError, provider: "resend" };
-    }
-
-    console.log("[Resend API Success]:", response.data);
-    return { success: true, data: response.data, provider: "resend" };
-  } catch (resendError) {
-    console.error("[Resend API Exception]:", resendError.message);
-    const combinedError = `[Gmail SMTP Issue]: ${gmailErrorReason} | [Resend Exception]: ${resendError.message}`;
-    return { success: false, error: combinedError };
+    await transporter.verify();
+    console.log(
+      `[Email Service] ✅ Gmail SMTP ready. Sending as: ${process.env.EMAIL_USER}`
+    );
+  } catch (err) {
+    console.error(
+      "[Email Service] ❌ Gmail SMTP verification failed. Common causes:\n" +
+        "  • EMAIL_USER or EMAIL_PASS not set in environment variables\n" +
+        "  • 2-Step Verification not enabled on Gmail account\n" +
+        "  • App Password not used (must use App Password, not normal password)\n" +
+        `  • Error: ${err.message}`
+    );
   }
 };
 
+// ---------------------------------------------------------------------------
+// Core send helper
+// ---------------------------------------------------------------------------
+
 /**
- * Sends a registration OTP verification email
- * @param {string} to - Destination email address
- * @param {string} name - Recipient's name
- * @param {string} otp - 6-digit OTP code
+ * @param {string} to       - Recipient email address
+ * @param {string} subject  - Email subject line
+ * @param {string} html     - HTML body content
+ * @returns {{ success: boolean, messageId?: string, error?: string }}
+ */
+const sendMail = async (to, subject, html) => {
+  try {
+    const info = await transporter.sendMail({
+      from: `"Cravingza" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
+    console.log(`[Email Service] ✅ Sent to ${to} — messageId: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    // Log full error server-side for debugging; do NOT leak to user
+    console.error(`[Email Service] ❌ Failed to send to ${to}:`, err.message);
+    return { success: false, error: err.message };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Sends a 6-digit OTP verification email after registration.
+ *
+ * @param {string} to   - Recipient email
+ * @param {string} name - Recipient name
+ * @param {string} otp  - 6-digit OTP string
  */
 const sendOTPEmail = async (to, name, otp) => {
-  console.log(`[DEBUG OTP] Sending OTP verification email to ${to}: Code is ${otp}`);
+  console.log(`[Email Service] Sending OTP email to ${to}…`);
 
-  const htmlContent = `
+  // Dev-mode console fallback — safety net in case SMTP fails during dev
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[DEV FALLBACK] OTP for ${to}: ${otp}`);
+  }
+
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -108,7 +119,7 @@ const sendOTPEmail = async (to, name, otp) => {
       <title>Verify Your Cravingza Account</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8F9FA; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 40px auto; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #E9ECEF; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #E9ECEF; }
         .header { background-color: #FF5A5F; padding: 32px; text-align: center; }
         .header h1 { color: #FFFFFF; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
         .content { padding: 40px 32px; color: #333333; }
@@ -121,41 +132,41 @@ const sendOTPEmail = async (to, name, otp) => {
     </head>
     <body>
       <div class="container">
-        <div class="header">
-          <h1>Cravingza</h1>
-        </div>
+        <div class="header"><h1>Cravingza</h1></div>
         <div class="content">
           <h2>Hi ${name},</h2>
-          <p>Thank you for signing up for Cravingza! To complete your registration and verify your email address, please use the 6-digit verification code below:</p>
-          
+          <p>Thank you for signing up for Cravingza! Please use the 6-digit verification code below to complete your registration:</p>
           <div class="otp-container">
             <div class="otp-code">${otp}</div>
           </div>
-          
-          <p><strong>Note:</strong> This verification code is valid for 5 minutes. If you did not request this, you can safely ignore this email.</p>
+          <p><strong>Note:</strong> This code is valid for 5 minutes. If you did not request this, you can safely ignore this email.</p>
           <p>Happy eating,<br>The Cravingza Team</p>
         </div>
-        <div class="footer">
-          &copy; 2026 Cravingza Inc. All rights reserved.
-        </div>
+        <div class="footer">&copy; 2026 Cravingza Inc. All rights reserved.</div>
       </div>
     </body>
     </html>
   `;
 
-  return await sendMailHelper(to, "Verify your Cravingza Account", htmlContent);
+  return await sendMail(to, "Verify your Cravingza Account", html);
 };
 
 /**
- * Sends a password reset OTP email
- * @param {string} to - Destination email address
- * @param {string} name - Recipient's name
- * @param {string} otp - 6-digit OTP code
+ * Sends a 6-digit OTP password reset email.
+ *
+ * @param {string} to   - Recipient email
+ * @param {string} name - Recipient name
+ * @param {string} otp  - 6-digit OTP string
  */
 const sendPasswordResetEmail = async (to, name, otp) => {
-  console.log(`[DEBUG OTP] Sending password reset email to ${to}: Code is ${otp}`);
+  console.log(`[Email Service] Sending password reset email to ${to}…`);
 
-  const htmlContent = `
+  // Dev-mode console fallback — safety net in case SMTP fails during dev
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[DEV FALLBACK] Password reset OTP for ${to}: ${otp}`);
+  }
+
+  const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -163,7 +174,7 @@ const sendPasswordResetEmail = async (to, name, otp) => {
       <title>Reset Your Cravingza Password</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8F9FA; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 40px auto; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #E9ECEF; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #E9ECEF; }
         .header { background-color: #FF5A5F; padding: 32px; text-align: center; }
         .header h1 { color: #FFFFFF; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
         .content { padding: 40px 32px; color: #333333; }
@@ -176,32 +187,27 @@ const sendPasswordResetEmail = async (to, name, otp) => {
     </head>
     <body>
       <div class="container">
-        <div class="header">
-          <h1>Cravingza</h1>
-        </div>
+        <div class="header"><h1>Cravingza</h1></div>
         <div class="content">
           <h2>Hi ${name},</h2>
-          <p>We received a request to reset your password. Please use the 6-digit OTP code below to reset your password:</p>
-          
+          <p>We received a request to reset your password. Use the 6-digit OTP below to reset it:</p>
           <div class="otp-container">
             <div class="otp-code">${otp}</div>
           </div>
-          
-          <p><strong>Note:</strong> This OTP code is valid for 10 minutes. If you did not request a password reset, you can safely ignore this email; your password will remain unchanged.</p>
+          <p><strong>Note:</strong> This code is valid for 10 minutes. If you did not request this, ignore this email — your password will remain unchanged.</p>
           <p>Happy eating,<br>The Cravingza Team</p>
         </div>
-        <div class="footer">
-          &copy; 2026 Cravingza Inc. All rights reserved.
-        </div>
+        <div class="footer">&copy; 2026 Cravingza Inc. All rights reserved.</div>
       </div>
     </body>
     </html>
   `;
 
-  return await sendMailHelper(to, "Reset your Cravingza Password", htmlContent);
+  return await sendMail(to, "Reset your Cravingza Password", html);
 };
 
 module.exports = {
+  verifyTransporter,
   sendOTPEmail,
   sendPasswordResetEmail,
 };

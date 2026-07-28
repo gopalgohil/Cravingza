@@ -5,9 +5,13 @@ const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const { verifyTransporter } = require("./services/emailService");
 
 // Initialize database connection
 connectDB();
+
+// Verify Gmail SMTP on startup — catch misconfiguration early in logs
+verifyTransporter();
 
 const app = express();
 
