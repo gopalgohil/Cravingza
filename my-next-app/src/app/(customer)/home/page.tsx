@@ -21,9 +21,13 @@ function HomeContent() {
 
   // Keep debounced search synced with searchQuery
   useEffect(() => {
+    if (!searchQuery.trim()) {
+      setDebouncedSearch("");
+      return;
+    }
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 300);
+    }, 250);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -176,6 +180,22 @@ function HomeContent() {
             className="w-full bg-transparent border-none text-body-md font-body-md placeholder:text-on-surface-variant focus:outline-none focus:ring-0"
             autoFocus={focusSearch}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setDebouncedSearch("");
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("search");
+                router.replace(`/home${params.toString() ? `?${params.toString()}` : ""}`, { scroll: false });
+              }}
+              className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0 cursor-pointer"
+              title="Clear search"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+          )}
         </form>
       </div>
 
