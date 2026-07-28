@@ -1,5 +1,11 @@
 const nodemailer = require("nodemailer");
 const { Resend } = require("resend");
+const dns = require("dns");
+
+// Force IPv4 first to prevent ENETUNREACH IPv6 routing errors on cloud hosts like Render
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 // 1. Nodemailer Transporter (Gmail SMTP)
 const createTransporter = () => {
@@ -22,6 +28,7 @@ const createTransporter = () => {
     tls: {
       rejectUnauthorized: false, // Prevent SSL certificate rejection on cloud servers
     },
+    family: 4, // Force IPv4 to fix Render ENETUNREACH IPv6 error
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
