@@ -76,6 +76,16 @@ const createOrder = async (req, res, next) => {
 
     await order.save();
 
+    // Auto-sync entered phone number to Customer profile if provided
+    if (deliveryAddress && deliveryAddress.phone) {
+      try {
+        const User = require("../models/User");
+        await User.findByIdAndUpdate(req.user._id, { phone: deliveryAddress.phone.trim() });
+      } catch (userErr) {
+        console.error("Failed to sync phone to user profile:", userErr);
+      }
+    }
+
     // Send dual notifications (In-App + System Push)
     try {
       const { notifyUserDual } = require("../lib/push");

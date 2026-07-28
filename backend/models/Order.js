@@ -38,6 +38,7 @@ const orderSchema = new mongoose.Schema(
       label: { type: String, default: "Home" },
       addressLine: { type: String, required: true },
       city: { type: String, default: "" },
+      phone: { type: String, default: "" },
       lat: { type: Number, default: 0 },
       lng: { type: Number, default: 0 },
     },

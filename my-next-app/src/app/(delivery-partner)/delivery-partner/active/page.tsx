@@ -290,7 +290,7 @@ export default function ActiveDeliveryPage() {
             </div>
 
             <a
-              href={`tel:${order.customer?.phone || ""}`}
+              href={`tel:${order.deliveryAddress?.phone || order.customer?.phone || ""}`}
               className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors"
             >
               <span className="material-symbols-outlined text-base">call</span>
