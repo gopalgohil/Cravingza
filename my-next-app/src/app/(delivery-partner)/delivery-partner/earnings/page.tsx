@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useGetDeliveryEarningsQuery } from "@/lib/redux/apiSlice";
 import { toast } from "sonner";
 
-const ITEMS_PER_PAGE = 2;
+const ITEMS_PER_PAGE = 4;
 
 export default function RiderEarningsPage() {
   const { data: response, isLoading, isError, refetch } = useGetDeliveryEarningsQuery(undefined, {
