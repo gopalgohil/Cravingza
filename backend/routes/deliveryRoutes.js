@@ -12,6 +12,7 @@ const {
   getActiveDelivery,
   updateActiveDeliveryStatus,
   subscribePush,
+  getEarningsData,
 } = require("../controllers/deliveryController");
 
 router.post("/apply", protect, applyAsDeliveryPartner);
@@ -20,6 +21,7 @@ router.post("/reapply", protect, reapplyAsDeliveryPartner);
 
 router.patch("/status", protect, updateOnlineStatus);
 router.get("/dashboard", protect, getDashboardData);
+router.get("/earnings", protect, getEarningsData);
 
 // Order Fulfillment Routes
 router.get("/nearby-orders", protect, getNearbyOrders);

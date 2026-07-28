@@ -348,6 +348,10 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Delivery", "Orders"],
     }),
+    getDeliveryEarnings: builder.query<any, void>({
+      query: () => "/delivery/earnings",
+      providesTags: ["Delivery", "Orders"],
+    }),
     subscribePush: builder.mutation<any, any>({
       query: (subscription) => ({
         url: "/delivery/push-subscribe",
@@ -622,6 +626,7 @@ export const {
   useGetActiveDeliveryQuery,
   useUpdateActiveDeliveryStatusMutation,
   useSubscribePushMutation,
+  useGetDeliveryEarningsQuery,
   useGetAdminDeliveryProfilesQuery,
   useGetAdminDeliveryProfileByIdQuery,
   useApproveDeliveryPartnerMutation,

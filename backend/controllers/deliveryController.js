@@ -567,4 +567,76 @@ module.exports = {
       next(error);
     }
   },
+  getEarningsData: async (req, res, next) => {
+    try {
+      const profile = await DeliveryProfile.findOne({ user: req.user._id });
+      if (!profile || profile.approvalStatus !== "approved") {
+        return res.status(403).json({
+          success: false,
+          message: "Approved delivery partner profile required.",
+        });
+      }
+
+      const deliveries = await Delivery.find({
+        deliveryPartner: req.user._id,
+        status: "delivered",
+      })
+        .populate({
+          path: "order",
+          populate: { path: "restaurant", select: "name image location" },
+        })
+        .sort({ deliveredAt: -1, createdAt: -1 });
+
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+
+      let totalEarnings = 0;
+      let todayEarnings = 0;
+      let weeklyEarnings = 0;
+
+      const history = deliveries.map((d) => {
+        const amount = d.earnings || 40;
+        const deliveredDate = d.deliveredAt || d.updatedAt || d.createdAt;
+        totalEarnings += amount;
+
+        if (new Date(deliveredDate) >= startOfToday) {
+          todayEarnings += amount;
+        }
+        if (new Date(deliveredDate) >= startOfWeek) {
+          weeklyEarnings += amount;
+        }
+
+        return {
+          _id: d._id,
+          orderId: d.order?._id || d._id,
+          restaurantName: d.order?.restaurant?.name || "Restaurant",
+          restaurantImage: d.order?.restaurant?.image || "",
+          restaurantAddress: d.order?.restaurant?.location?.address || "",
+          amount,
+          deliveredAt: deliveredDate,
+          paymentStatus: "Completed",
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalEarnings,
+          todayEarnings,
+          weeklyEarnings,
+          completedCount: history.length,
+          avgPerDelivery: history.length > 0 ? (totalEarnings / history.length).toFixed(2) : "0.00",
+          bankDetails: profile.bankDetails || {
+            accountNumber: profile.accountNumber || "N/A",
+            ifsc: profile.ifscCode || "N/A",
+            bankName: profile.bankName || "HDFC Bank",
+          },
+          history,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
