@@ -267,9 +267,32 @@ export default function DeliveryPartnerLayout({
       </header>
       
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg pb-20 sm:pb-lg">
         {children}
       </main>
+
+      {/* Mobile Bottom Navigation Bar (sm:hidden) */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2.5 flex items-center justify-around z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        {[
+          { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
+          { label: "Nearby Orders", href: "/nearby-orders", icon: "moped" },
+          { label: "Earnings", href: "/earnings", icon: "account_balance_wallet" },
+        ].map((link) => {
+          const isActive = pathname.endsWith(link.href);
+          return (
+            <Link
+              key={link.href}
+              href={`/delivery-partner${link.href}`}
+              className={`flex flex-col items-center gap-0.5 text-xs transition-colors ${
+                isActive ? "text-primary font-bold" : "text-slate-500"
+              }`}
+            >
+              <span className="material-symbols-outlined text-xl">{link.icon}</span>
+              <span>{link.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

@@ -171,7 +171,7 @@ export default function OffersPage() {
               </div>
 
               {/* Bottom Actions & Code Copy */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
+              <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Promo Code</span>
                   <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80">
