@@ -19,8 +19,8 @@ const createTransporter = () => {
 
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // Use SSL/TLS
+    port: 587,
+    secure: false, // STARTTLS for cloud servers (Render/AWS)
     auth: {
       user: user,
       pass: pass.replace(/\s+/g, ""), // Trim spaces from 16-digit app password
@@ -29,9 +29,9 @@ const createTransporter = () => {
       rejectUnauthorized: false, // Prevent SSL certificate rejection on cloud servers
     },
     family: 4, // Force IPv4 to fix Render ENETUNREACH IPv6 error
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
 };
 
