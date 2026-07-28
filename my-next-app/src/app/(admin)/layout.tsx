@@ -82,7 +82,7 @@ export default function AdminLayout({
     { label: "Approvals", href: "/admin/approvals", icon: "rule" },
     { label: "User Management", href: "/admin/users", icon: "group" },
     { label: "Analytics", href: "/admin/analytics", icon: "insights" },
-    { label: "Commission Settings", href: "/admin/commission-settings", icon: "settings_suggest" },
+    { label: "Settings", href: "/admin/settings", icon: "settings" },
   ];
 
   return (
@@ -146,29 +146,7 @@ export default function AdminLayout({
           </div>
         </div>
 
-        {/* Footer with settings & logout */}
-        <div className="p-lg border-t border-outline-variant space-y-md">
-          <Link
-            href="/admin/settings"
-            className={`flex items-center gap-md px-md py-2.5 font-body-md rounded-xl transition-colors cursor-pointer ${
-              pathname === "/admin/settings"
-                ? "bg-primary/10 text-primary font-bold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-            title="Settings"
-          >
-            <span className="material-symbols-outlined shrink-0">settings</span>
-            <span className="hidden lg:block">Settings</span>
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-md px-md py-2.5 text-error font-body-md hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-            title="Sign Out"
-          >
-            <span className="material-symbols-outlined shrink-0">logout</span>
-            <span className="hidden lg:block">Sign Out</span>
-          </button>
-        </div>
+
       </aside>
 
       {/* Main Content Area */}
@@ -324,27 +302,7 @@ export default function AdminLayout({
                 </div>
               </nav>
 
-              <div className="border-t border-outline-variant pt-lg mt-md space-y-md">
-                <Link
-                  href="/admin/settings"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-md px-md py-2.5 font-body-md rounded-xl transition-colors cursor-pointer ${
-                    pathname === "/admin/settings"
-                      ? "bg-primary/10 text-primary font-bold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <span className="material-symbols-outlined">settings</span>
-                  <span>Settings</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left flex items-center gap-md px-md py-2 text-error font-body-md hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined">logout</span>
-                  <span>Sign Out</span>
-                </button>
-              </div>
+
             </div>
           </div>
         )}
