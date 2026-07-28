@@ -159,7 +159,7 @@ export const apiSlice = createApi({
     }),
 
     // Order Endpoints
-    createOrder: builder.mutation<any, { deliveryAddress: { addressLine: string; label?: string; city?: string } }>({
+    createOrder: builder.mutation<any, { deliveryAddress: { addressLine: string; label?: string; city?: string; phone?: string } }>({
       query: (body) => ({
         url: "/orders",
         method: "POST",

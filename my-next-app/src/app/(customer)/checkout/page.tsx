@@ -41,6 +41,7 @@ export default function CheckoutPage() {
 
   // Form & Coupon states
   const [deliveryAddress, setDeliveryAddress] = useState(address);
+  const [customerPhone, setCustomerPhone] = useState(user?.phone || "");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "razorpay">("razorpay");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; title: string } | null>(null);
@@ -122,6 +123,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!customerPhone.trim() || customerPhone.trim().length < 10) {
+      toast.error("Please enter a valid 10-digit contact phone number.");
+      return;
+    }
+
     // Save final address to Zustand global state
     setAddress(deliveryAddress);
     setIsPlacingOrder(true);
@@ -137,6 +143,7 @@ export default function CheckoutPage() {
             addressLine: deliveryAddress,
             city: "City Centre",
             label: "Home",
+            phone: customerPhone.trim(),
           },
         }).unwrap();
 
@@ -172,7 +179,7 @@ export default function CheckoutPage() {
           prefill: {
             name: user.name,
             email: user.email,
-            contact: user.phone || "",
+            contact: customerPhone.trim(),
           },
           theme: {
             color: "#FF5A36",
@@ -257,7 +264,7 @@ export default function CheckoutPage() {
               <span className="material-symbols-outlined text-primary">person</span>
               Contact Information
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
               <div>
                 <label className="font-label-sm text-label-sm text-on-surface-variant block mb-sm">Full Name</label>
                 <input
@@ -274,6 +281,17 @@ export default function CheckoutPage() {
                   value={user.email}
                   disabled
                   className="w-full px-md py-2.5 border border-outline-variant rounded-xl bg-surface-container text-on-surface-variant focus:outline-none text-body-md outline-none"
+                />
+              </div>
+              <div>
+                <label className="font-label-sm text-label-sm text-on-surface-variant block mb-sm">Phone Number <span className="text-red-500">*</span></label>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="10-digit mobile number"
+                  required
+                  className="w-full px-md py-2.5 border border-outline-variant rounded-xl focus:border-primary bg-white text-on-surface text-body-md outline-none font-medium"
                 />
               </div>
             </div>
