@@ -10,7 +10,7 @@ const { verifyTransporter } = require("./services/emailService");
 // Initialize database connection
 connectDB();
 
-// Verify Gmail SMTP on startup — catch misconfiguration early in logs
+// Verify Brevo API config on startup — catches missing env vars immediately in logs
 verifyTransporter();
 
 const app = express();

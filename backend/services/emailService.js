@@ -1,72 +1,47 @@
 /**
- * emailService.js — Cravingza Email Service (Nodemailer + Gmail SMTP)
+ * emailService.js — Cravingza Email Service (Brevo HTTP API)
  *
- * Uses Gmail SMTP to send OTP and password reset emails to ANY recipient.
- * Gmail accounts have a ~500 emails/day limit — sufficient for a portfolio/
- * testing project. For production scale, use a verified domain on a dedicated
- * transactional email provider (e.g. Resend, SendGrid, Mailgun).
+ * Uses Brevo's transactional email REST API (HTTPS port 443) which works
+ * on all hosting providers including Render free tier. Unlike SMTP-based
+ * senders, Brevo API calls are never port-blocked by cloud firewalls.
+ *
+ * Free tier: 300 emails/day — sufficient for portfolio/testing projects.
+ * For higher scale, upgrade to a paid Brevo plan.
  *
  * Setup:
- *   - Enable 2-Step Verification on your Google account
- *   - Generate a 16-char App Password at: myaccount.google.com/apppasswords
- *   - Set EMAIL_USER and EMAIL_PASS in your .env / Render environment vars
+ *   1. Sign up free at brevo.com
+ *   2. Dashboard → SMTP & API → API Keys → Generate API Key
+ *   3. Dashboard → Senders & IP → Add & verify a sender email address
+ *   4. Set BREVO_API_KEY, BREVO_FROM_EMAIL, BREVO_FROM_NAME in .env
  */
 
-const nodemailer = require("nodemailer");
-const dns = require("dns");
-
-// Force IPv4 DNS resolution to prevent ENETUNREACH IPv6 errors on cloud
-// hosting providers (Render, AWS, Railway, etc.) that disable IPv6 routing
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder("ipv4first");
-}
+const { BrevoClient } = require("@getbrevo/brevo");
 
 // ---------------------------------------------------------------------------
-// Transporter — Gmail SMTP via Nodemailer
+// Startup sanity check — log clear warnings if env vars are missing
 // ---------------------------------------------------------------------------
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // STARTTLS — more reliable than port 465 on cloud servers
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-      ? process.env.EMAIL_PASS.replace(/\s+/g, "") // strip spaces from App Password
-      : undefined,
-  },
-  tls: {
-    rejectUnauthorized: false, // allow self-signed certs on cloud proxies
-  },
-  family: 4, // force IPv4 socket connection
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 20000,
-});
+const verifyTransporter = () => {
+  const key = process.env.BREVO_API_KEY;
+  const from = process.env.BREVO_FROM_EMAIL;
 
-/**
- * verifyTransporter — call once at server startup to catch misconfiguration
- * early rather than only when a user triggers an email send.
- */
-const verifyTransporter = async () => {
-  try {
-    await transporter.verify();
-    console.log(
-      `[Email Service] ✅ Gmail SMTP ready. Sending as: ${process.env.EMAIL_USER}`
-    );
-  } catch (err) {
+  if (!key || !from) {
     console.error(
-      "[Email Service] ❌ Gmail SMTP verification failed. Common causes:\n" +
-        "  • EMAIL_USER or EMAIL_PASS not set in environment variables\n" +
-        "  • 2-Step Verification not enabled on Gmail account\n" +
-        "  • App Password not used (must use App Password, not normal password)\n" +
-        `  • Error: ${err.message}`
+      "[Email Service] ❌ Brevo configuration missing!\n" +
+        `  BREVO_API_KEY    : ${key ? "✅ found" : "❌ NOT SET"}\n` +
+        `  BREVO_FROM_EMAIL : ${from ? "✅ found (" + from + ")" : "❌ NOT SET"}\n` +
+        "  → Add these to your Render environment variables and redeploy."
     );
+    return;
   }
+
+  console.log(
+    `[Email Service] ✅ Brevo ready. Sending from: ${from}`
+  );
 };
 
 // ---------------------------------------------------------------------------
-// Core send helper
+// Core send helper — HTTPS call to Brevo REST API
 // ---------------------------------------------------------------------------
 
 /**
@@ -77,18 +52,30 @@ const verifyTransporter = async () => {
  */
 const sendMail = async (to, subject, html) => {
   try {
-    const info = await transporter.sendMail({
-      from: `"Cravingza" <${process.env.EMAIL_USER}>`,
-      to,
+    const client = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
+
+    const result = await client.transactionalEmails.sendTransacEmail({
+      sender: {
+        name: process.env.BREVO_FROM_NAME || "Cravingza",
+        email: process.env.BREVO_FROM_EMAIL,
+      },
+      to: [{ email: to }],
       subject,
-      html,
+      htmlContent: html,
     });
-    console.log(`[Email Service] ✅ Sent to ${to} — messageId: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+
+    console.log(`[Email Service] ✅ Sent to ${to} — messageId: ${result?.body?.messageId || "ok"}`);
+    return { success: true, messageId: result?.body?.messageId };
   } catch (err) {
-    // Log full error server-side for debugging; do NOT leak to user
-    console.error(`[Email Service] ❌ Failed to send to ${to}:`, err.message);
-    return { success: false, error: err.message };
+    // Log full Brevo error server-side for debugging
+    const brevoMsg = err?.response?.body?.message || err?.message || "Unknown Brevo error";
+    const brevoCode = err?.response?.body?.code || err?.status || "";
+    console.error(
+      `[Email Service] ❌ Brevo API error sending to ${to}:\n` +
+        `  code: ${brevoCode}\n` +
+        `  message: ${brevoMsg}`
+    );
+    return { success: false, error: brevoMsg };
   }
 };
 
@@ -98,15 +85,11 @@ const sendMail = async (to, subject, html) => {
 
 /**
  * Sends a 6-digit OTP verification email after registration.
- *
- * @param {string} to   - Recipient email
- * @param {string} name - Recipient name
- * @param {string} otp  - 6-digit OTP string
  */
 const sendOTPEmail = async (to, name, otp) => {
   console.log(`[Email Service] Sending OTP email to ${to}…`);
 
-  // Dev-mode console fallback — safety net in case SMTP fails during dev
+  // Dev-mode console fallback — safety net for local testing without real API
   if (process.env.NODE_ENV !== "production") {
     console.log(`[DEV FALLBACK] OTP for ${to}: ${otp}`);
   }
@@ -153,15 +136,11 @@ const sendOTPEmail = async (to, name, otp) => {
 
 /**
  * Sends a 6-digit OTP password reset email.
- *
- * @param {string} to   - Recipient email
- * @param {string} name - Recipient name
- * @param {string} otp  - 6-digit OTP string
  */
 const sendPasswordResetEmail = async (to, name, otp) => {
   console.log(`[Email Service] Sending password reset email to ${to}…`);
 
-  // Dev-mode console fallback — safety net in case SMTP fails during dev
+  // Dev-mode console fallback — safety net for local testing without real API
   if (process.env.NODE_ENV !== "production") {
     console.log(`[DEV FALLBACK] Password reset OTP for ${to}: ${otp}`);
   }
