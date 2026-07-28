@@ -23,25 +23,28 @@ function SearchBarContent() {
   // Handle debounced search routing as user types
   useEffect(() => {
     const currentSearch = searchParams.get("search") || "";
-    const cleanSearch = searchVal.trim();
+    
+    // Determine effective target search string based on the 3-character threshold
+    const effectiveSearchVal = searchVal.length >= 3 ? searchVal : "";
 
-    if (cleanSearch === currentSearch) return;
+    if (effectiveSearchVal === currentSearch) return;
 
-    if (cleanSearch === "") {
-      // Clear search instantly if input is empty
+    if (effectiveSearchVal === "") {
+      // Clear search instantly if it falls below 3 characters
       const params = new URLSearchParams(searchParams.toString());
       params.delete("search");
       const queryString = params.toString();
       const newUrl = `/home${queryString ? `?${queryString}` : ""}`;
       router.push(newUrl);
     } else {
-      // Debounce user keystrokes
+      // Debounce user keystrokes when query length is >= 3
       const handler = setTimeout(() => {
+        if (searchVal.length < 3) return;
         const newParams = new URLSearchParams(searchParams.toString());
-        newParams.set("search", cleanSearch);
+        newParams.set("search", searchVal);
         const newUrl = `/home?${newParams.toString()}`;
         router.push(newUrl);
-      }, 250);
+      }, 350);
       return () => clearTimeout(handler);
     }
   }, [searchVal, router, searchParams]);
@@ -49,9 +52,8 @@ function SearchBarContent() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
-    const cleanSearch = searchVal.trim();
-    if (cleanSearch) {
-      params.set("search", cleanSearch);
+    if (searchVal.length >= 3) {
+      params.set("search", searchVal);
       router.push(`/home?${params.toString()}`);
     } else {
       params.delete("search");
