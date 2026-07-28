@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useGetDeliveryEarningsQuery } from "@/lib/redux/apiSlice";
 import { toast } from "sonner";
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 2;
 
 export default function RiderEarningsPage() {
   const { data: response, isLoading, isError, refetch } = useGetDeliveryEarningsQuery(undefined, {
@@ -303,7 +303,7 @@ export default function RiderEarningsPage() {
         )}
 
         {/* Pagination Bar Controls */}
-        {filteredItems.length > ITEMS_PER_PAGE && (
+        {filteredItems.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs">
             <span className="text-slate-400 font-medium text-center sm:text-left">
               Showing <strong className="text-slate-700">{startIndex + 1}</strong> -{" "}
