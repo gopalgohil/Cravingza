@@ -5,12 +5,16 @@ import Link from "next/link";
 import { useGetDeliveryEarningsQuery } from "@/lib/redux/apiSlice";
 import { toast } from "sonner";
 
+const ITEMS_PER_PAGE = 4;
+
 export default function RiderEarningsPage() {
   const { data: response, isLoading, isError, refetch } = useGetDeliveryEarningsQuery(undefined, {
     pollingInterval: 15000,
   });
 
   const [activeFilter, setActiveFilter] = useState<"all" | "today" | "week">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isPageChanging, setIsPageChanging] = useState(false);
 
   const earnings = response?.data;
   const history = earnings?.history || [];
@@ -31,6 +35,25 @@ export default function RiderEarningsPage() {
   };
 
   const filteredItems = filterHistory();
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1;
+
+  // Slice items for current page
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage === currentPage || newPage < 1 || newPage > totalPages) return;
+    setIsPageChanging(true);
+    setCurrentPage(newPage);
+    setTimeout(() => {
+      setIsPageChanging(false);
+    }, 380); // Smooth skeleton transition
+  };
+
+  const handleFilterChange = (filter: "all" | "today" | "week") => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
 
   if (isLoading) {
     return (
@@ -162,13 +185,13 @@ export default function RiderEarningsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <h3 className="font-extrabold text-slate-900 text-base">Completed Job Payouts</h3>
-            <p className="text-xs text-slate-400">Detailed list of food orders delivered by you</p>
+            <p className="text-xs text-slate-400">Detailed list of food orders delivered by you (Showing 4 per page)</p>
           </div>
 
           {/* Filter Pills */}
           <div className="flex bg-slate-100 p-1 rounded-xl self-start sm:self-auto text-xs font-bold">
             <button
-              onClick={() => setActiveFilter("all")}
+              onClick={() => handleFilterChange("all")}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeFilter === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
@@ -176,7 +199,7 @@ export default function RiderEarningsPage() {
               All ({history.length})
             </button>
             <button
-              onClick={() => setActiveFilter("today")}
+              onClick={() => handleFilterChange("today")}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeFilter === "today" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
@@ -184,7 +207,7 @@ export default function RiderEarningsPage() {
               Today
             </button>
             <button
-              onClick={() => setActiveFilter("week")}
+              onClick={() => handleFilterChange("week")}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeFilter === "week" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
@@ -194,7 +217,7 @@ export default function RiderEarningsPage() {
           </div>
         </div>
 
-        {/* Trips History List */}
+        {/* Trips History List with Skeleton Loading */}
         {filteredItems.length === 0 ? (
           <div className="text-center py-12 space-y-3">
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
@@ -211,9 +234,32 @@ export default function RiderEarningsPage() {
               Find Nearby Orders
             </Link>
           </div>
-        ) : (
+        ) : isPageChanging ? (
+          /* Skeleton Loader (4 items) during page transition */
           <div className="space-y-3">
-            {filteredItems.map((item: any) => {
+            {Array.from({ length: ITEMS_PER_PAGE }).map((_, idx) => (
+              <div
+                key={idx}
+                className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200/60 animate-pulse flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-[76px]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-200 rounded-xl shrink-0"></div>
+                  <div className="space-y-2">
+                    <div className="w-36 h-4 bg-slate-200 rounded"></div>
+                    <div className="w-28 h-3 bg-slate-200 rounded"></div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/50">
+                  <div className="w-20 h-6 bg-slate-200 rounded-full"></div>
+                  <div className="w-16 h-6 bg-slate-200 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Actual Paginated Order Cards */
+          <div className="space-y-3">
+            {paginatedItems.map((item: any) => {
               const formattedDate = new Date(item.deliveredAt).toLocaleString("en-IN", {
                 day: "numeric",
                 month: "short",
@@ -253,6 +299,55 @@ export default function RiderEarningsPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination Bar Controls */}
+        {filteredItems.length > ITEMS_PER_PAGE && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs">
+            <span className="text-slate-400 font-medium text-center sm:text-left">
+              Showing <strong className="text-slate-700">{startIndex + 1}</strong> -{" "}
+              <strong className="text-slate-700">{Math.min(startIndex + ITEMS_PER_PAGE, filteredItems.length)}</strong> of{" "}
+              <strong className="text-slate-700">{filteredItems.length}</strong> payouts
+            </span>
+
+            <div className="flex items-center justify-center gap-1.5">
+              {/* Prev Button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || isPageChanging}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">chevron_left</span>
+                <span>Prev</span>
+              </button>
+
+              {/* Page Number Buttons */}
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  disabled={isPageChanging}
+                  className={`w-8 h-8 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                    currentPage === pageNum
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || isPageChanging}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span>Next</span>
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
