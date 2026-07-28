@@ -73,6 +73,10 @@ const register = async (req, res) => {
     const emailRes = await sendOTPEmail(email, name, rawOtp);
     if (!emailRes.success) {
       console.error("Failed to send OTP verification email:", emailRes.error);
+      return res.status(500).json({
+        success: false,
+        message: `Registration completed but OTP email failed: ${emailRes.error || "Email delivery failed"}`,
+      });
     }
 
     return res.status(201).json({
@@ -470,6 +474,10 @@ const forgotPassword = async (req, res) => {
     const emailRes = await sendPasswordResetEmail(email, user.name, rawOtp);
     if (!emailRes.success) {
       console.error("Failed to send password reset email:", emailRes.error);
+      return res.status(500).json({
+        success: false,
+        message: `Email sending failed: ${emailRes.error || "Please check server email settings."}`,
+      });
     }
 
     return res.status(200).json({
