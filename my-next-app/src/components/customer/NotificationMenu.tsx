@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAppStore } from "@/lib/store";
+import { useIsTabVisible } from "@/hooks/useIsTabVisible";
 import {
   useGetNotificationsListQuery,
   useMarkNotificationsReadMutation,
@@ -12,12 +14,17 @@ import { toast } from "sonner";
 
 export default function NotificationMenu() {
   const router = useRouter();
+  const { user } = useAppStore();
+  const isTabVisible = useIsTabVisible();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const prevIsTabVisible = useRef(isTabVisible);
 
-  // Poll notifications every 10 seconds for real-time order updates
+  // Poll notifications every 30 seconds (30000ms)
+  // Pauses automatically if user is unauthenticated OR tab is not visible
   const { data: response, refetch } = useGetNotificationsListQuery(undefined, {
-    pollingInterval: 10000,
+    skip: !user || !isTabVisible,
+    pollingInterval: 30000,
   });
 
   const [markRead] = useMarkNotificationsReadMutation();
@@ -25,6 +32,14 @@ export default function NotificationMenu() {
 
   const notifications = response?.data || [];
   const unreadCount = response?.unreadCount || 0;
+
+  // Immediate refetch when tab becomes visible again
+  useEffect(() => {
+    if (isTabVisible && !prevIsTabVisible.current && user) {
+      refetch();
+    }
+    prevIsTabVisible.current = isTabVisible;
+  }, [isTabVisible, user, refetch]);
 
   // Request browser Notification permission on mount
   useEffect(() => {
@@ -49,6 +64,12 @@ export default function NotificationMenu() {
   const handleOpenToggle = async () => {
     const nextState = !isOpen;
     setIsOpen(nextState);
+
+    // Instant manual refetch when bell icon is clicked
+    if (user) {
+      refetch();
+    }
+
     if (nextState && unreadCount > 0) {
       try {
         await markRead({}).unwrap();
