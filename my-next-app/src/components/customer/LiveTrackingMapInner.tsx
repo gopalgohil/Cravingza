@@ -16,40 +16,6 @@ interface LiveTrackingMapInnerProps {
   customerLng?: number;
 }
 
-/**
- * Helper to resolve coordinates:
- * 1. Uses explicit lat/lng if provided (> 0)
- * 2. Fallbacks to a deterministic coordinate generated from address text so every distinct address
- *    gets its own unique location marker on the map!
- */
-function resolveCoords(
-  lat?: number,
-  lng?: number,
-  addressStr?: string,
-  baseLat: number = 22.3072,
-  baseLng: number = 73.1812
-): [number, number] {
-  if (lat && lng && (lat !== 0 || lng !== 0)) {
-    return [lat, lng];
-  }
-
-  if (!addressStr || addressStr === "Customer Address" || addressStr === "Pickup Location") {
-    return [baseLat, baseLng];
-  }
-
-  // Create hash from address string to derive unique offsets
-  let hash = 0;
-  for (let i = 0; i < addressStr.length; i++) {
-    hash = (hash << 5) - hash + addressStr.charCodeAt(i);
-    hash |= 0;
-  }
-
-  const latOffset = ((Math.abs(hash) % 400) - 200) / 10000; // ±0.02 deg (~1-3 km)
-  const lngOffset = ((Math.abs(hash * 31) % 400) - 200) / 10000;
-
-  return [baseLat + latOffset, baseLng + lngOffset];
-}
-
 // Function to auto-center and fit map bounds ONLY once on initial render
 // Prevents auto-resetting user's manual zoom during 5-second polling updates
 function MapBoundsFitter({ bounds }: { bounds: L.LatLngBoundsExpression }) {
@@ -115,25 +81,13 @@ export default function LiveTrackingMapInner({
   restaurantName = "Restaurant",
   restaurantAddress = "",
   deliveryAddress = "Customer Address",
-  restaurantLat,
-  restaurantLng,
-  customerLat,
-  customerLng,
+  restaurantLat = 22.3072,
+  restaurantLng = 73.1812,
+  customerLat = 22.3175,
+  customerLng = 73.155,
 }: LiveTrackingMapInnerProps) {
-  const storePos: [number, number] = resolveCoords(
-    restaurantLat,
-    restaurantLng,
-    restaurantName + restaurantAddress,
-    22.3072,
-    73.1812
-  );
-  const customerPos: [number, number] = resolveCoords(
-    customerLat,
-    customerLng,
-    deliveryAddress,
-    22.3275,
-    73.155
-  );
+  const storePos: [number, number] = [restaurantLat || 22.3072, restaurantLng || 73.1812];
+  const customerPos: [number, number] = [customerLat || 22.3175, customerLng || 73.155];
 
   const mapBounds: L.LatLngBoundsExpression = [storePos, customerPos];
   const routePolyline: [number, number][] = [storePos, customerPos];
