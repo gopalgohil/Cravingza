@@ -18,6 +18,7 @@ const LiveTrackingMapInner = dynamic(
 interface LiveTrackingMapProps {
   status: string;
   restaurantName?: string;
+  restaurantAddress?: string;
   deliveryAddress?: string;
   restaurantLat?: number;
   restaurantLng?: number;

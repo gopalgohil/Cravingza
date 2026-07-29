@@ -8,6 +8,7 @@ import { getUIStageInfo } from "@/lib/utils/orderStatus";
 interface LiveTrackingMapInnerProps {
   status: string;
   restaurantName?: string;
+  restaurantAddress?: string;
   deliveryAddress?: string;
   restaurantLat?: number;
   restaurantLng?: number;
@@ -63,6 +64,7 @@ const createCustomIcon = (type: "store" | "home") => {
 export default function LiveTrackingMapInner({
   status,
   restaurantName = "Restaurant",
+  restaurantAddress = "",
   deliveryAddress = "Customer Address",
   restaurantLat = 22.3072,
   restaurantLng = 73.1812,
@@ -104,9 +106,11 @@ export default function LiveTrackingMapInner({
         {/* Store Marker (Pickup) */}
         <Marker position={storePos} icon={createCustomIcon("store")}>
           <Popup>
-            <div className="p-1 text-center font-sans">
-              <strong className="text-slate-900 block text-xs">{restaurantName}</strong>
-              <span className="text-[10px] text-slate-500">Pickup Location</span>
+            <div className="p-1 text-center font-sans max-w-[200px]">
+              <strong className="text-slate-900 block text-xs font-bold">{restaurantName}</strong>
+              <span className="text-[10px] text-slate-500 font-medium block mt-0.5 leading-tight">
+                {restaurantAddress || "Pickup Location"}
+              </span>
             </div>
           </Popup>
         </Marker>
@@ -114,9 +118,11 @@ export default function LiveTrackingMapInner({
         {/* Customer Marker (Drop) */}
         <Marker position={customerPos} icon={createCustomIcon("home")}>
           <Popup>
-            <div className="p-1 text-center font-sans">
-              <strong className="text-slate-900 block text-xs">Delivery Address</strong>
-              <span className="text-[10px] text-slate-500">{deliveryAddress}</span>
+            <div className="p-1 text-center font-sans max-w-[200px]">
+              <strong className="text-slate-900 block text-xs font-bold">Delivery Address</strong>
+              <span className="text-[10px] text-slate-500 font-medium block mt-0.5 leading-tight">
+                {deliveryAddress}
+              </span>
             </div>
           </Popup>
         </Marker>

@@ -401,7 +401,16 @@ export default function OrderDetailsPage({ params }: PageProps) {
           <LiveTrackingMap
             status={order.status}
             restaurantName={order.restaurant?.name}
-            deliveryAddress={order.deliveryAddress?.addressLine}
+            restaurantAddress={
+              order.restaurant?.location?.address
+                ? `${order.restaurant.location.address}${order.restaurant.location.city ? `, ${order.restaurant.location.city}` : ""}`
+                : "Pickup Location"
+            }
+            deliveryAddress={
+              order.deliveryAddress?.addressLine
+                ? `${order.deliveryAddress.addressLine}${order.deliveryAddress.city ? `, ${order.deliveryAddress.city}` : ""}${order.deliveryAddress.pincode ? ` - ${order.deliveryAddress.pincode}` : ""}`
+                : "Customer Address"
+            }
           />
         </div>
 
