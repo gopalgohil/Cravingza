@@ -16,6 +16,7 @@ import {
   useUpdateNotificationsMutation,
 } from "@/lib/redux/apiSlice";
 import { toast } from "sonner";
+import { sanitizePhone, isValidPhone } from "@/lib/validators";
 
 interface DaySchedule {
   isOpen: boolean;
@@ -82,6 +83,7 @@ export default function RestaurantSettingsPage() {
   // 4. Owner Account
   const [ownerName, setOwnerName] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
 
   // Password Change
   const [currentPassword, setCurrentPassword] = useState("");
@@ -251,6 +253,11 @@ export default function RestaurantSettingsPage() {
   // 4. Owner Account Update
   const handleSaveOwnerAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPhoneTouched(true);
+    if (ownerPhone && !isValidPhone(ownerPhone)) {
+      toast.error("Please enter a valid 10-digit mobile number.");
+      return;
+    }
     try {
       const res = await updateOwnerUser({ name: ownerName, phone: ownerPhone }).unwrap();
       if (res.user) setUser(res.user);
@@ -677,13 +684,32 @@ export default function RestaurantSettingsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700">Owner Phone Number</label>
-              <input
-                type="text"
-                value={ownerPhone}
-                onChange={(e) => setOwnerPhone(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary"
-                placeholder="+91 9876543210"
-              />
+              <div className="relative flex items-center">
+                <div className="absolute left-3 flex items-center gap-1 text-slate-500 font-bold text-xs pointer-events-none select-none z-10">
+                  <span className="material-symbols-outlined text-sm text-primary">call</span>
+                  <span className="text-slate-700 font-bold border-r border-slate-300 pr-1.5">+91</span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={ownerPhone}
+                  onChange={(e) => {
+                    setOwnerPhone(sanitizePhone(e.target.value));
+                    if (!phoneTouched) setPhoneTouched(true);
+                  }}
+                  onBlur={() => setPhoneTouched(true)}
+                  placeholder="9876543210"
+                  className={`w-full pl-16 pr-4 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                    phoneTouched && ownerPhone.length > 0 && !isValidPhone(ownerPhone)
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-slate-200 focus:border-primary"
+                  }`}
+                />
+              </div>
+              {phoneTouched && ownerPhone.length > 0 && !isValidPhone(ownerPhone) && (
+                <span className="text-red-500 text-xs mt-1 block font-semibold">Please enter a valid 10-digit mobile number</span>
+              )}
             </div>
           </div>
           <div className="flex justify-end">
