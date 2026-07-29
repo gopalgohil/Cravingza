@@ -159,7 +159,7 @@ export const apiSlice = createApi({
     }),
 
     // Order Endpoints
-    createOrder: builder.mutation<any, { deliveryAddress: { addressLine: string; label?: string; city?: string; phone?: string } }>({
+    createOrder: builder.mutation<any, { deliveryAddress: { addressLine: string; label?: string; city?: string; phone?: string }; couponCode?: string }>({
       query: (body) => ({
         url: "/orders",
         method: "POST",
@@ -542,13 +542,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["MyApplication", "Restaurants", "AdminRestaurants"],
     }),
-    createRazorpayOrder: builder.mutation<{ success: boolean; razorpayOrderId: string; amount: number; currency: string; keyId: string }, void>({
-      query: () => ({
+    createRazorpayOrder: builder.mutation<{ success: boolean; razorpayOrderId: string; amount: number; currency: string; keyId: string }, { couponCode?: string } | void>({
+      query: (data) => ({
         url: "/payment/create-razorpay-order",
         method: "POST",
+        body: data || {},
       }),
     }),
-    verifyRazorpayPayment: builder.mutation<any, { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; deliveryAddress: any }>({
+    verifyRazorpayPayment: builder.mutation<any, { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; deliveryAddress: any; couponCode?: string }>({
       query: (data) => ({
         url: "/payment/verify",
         method: "POST",

@@ -44,7 +44,13 @@ export default function CheckoutPage() {
   const [customerPhone, setCustomerPhone] = useState(user?.phone || "");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "razorpay">("razorpay");
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; title: string } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    title: string;
+    category?: string;
+    isFreeDelivery?: boolean;
+  } | null>(null);
 
   // Loading simulation states
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -68,7 +74,8 @@ export default function CheckoutPage() {
   const subtotal = cart.subtotal || 0;
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-  const deliveryFee = restaurant?.deliveryFee || 0;
+  const isFreeDelivery = appliedCoupon?.isFreeDelivery || appliedCoupon?.category === "delivery";
+  const deliveryFee = isFreeDelivery ? 0 : (restaurant?.deliveryFee || 0);
   const taxAmount = discountedSubtotal * 0.05; // 5% tax on discounted subtotal
   const total = discountedSubtotal + deliveryFee + taxAmount;
 
@@ -81,12 +88,19 @@ export default function CheckoutPage() {
 
     try {
       const res = await applyCouponMutation({ code: couponCode.trim() }).unwrap();
+      const freeDel = res.data.isFreeDelivery || res.data.category === "delivery";
       setAppliedCoupon({
         code: res.data.code,
         discountAmount: res.data.discountAmount,
         title: res.data.title,
+        category: res.data.category,
+        isFreeDelivery: freeDel,
       });
-      toast.success(`Coupon ${res.data.code} applied! Saved ₹${res.data.discountAmount}`);
+      toast.success(
+        `Coupon ${res.data.code} applied! Saved ₹${res.data.discountAmount}${
+          freeDel ? " + Free Delivery" : ""
+        }`
+      );
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to apply coupon code.");
     }
@@ -145,6 +159,7 @@ export default function CheckoutPage() {
             label: "Home",
             phone: customerPhone.trim(),
           },
+          couponCode: appliedCoupon?.code,
         }).unwrap();
 
         setLoadingStep("Order confirmed!");
@@ -160,7 +175,9 @@ export default function CheckoutPage() {
       } else {
         // Razorpay Online Flow
         setLoadingStep("Initiating online payment...");
-        const razorpayOrderData = await createRazorpayOrder().unwrap();
+        const razorpayOrderData = await createRazorpayOrder({
+          couponCode: appliedCoupon?.code,
+        }).unwrap();
 
         const isLoaded = await loadRazorpayScript();
         if (!isLoaded) {
@@ -196,6 +213,7 @@ export default function CheckoutPage() {
                   city: "City Centre",
                   label: "Home",
                 },
+                couponCode: appliedCoupon?.code,
               }).unwrap();
 
               toast.success("Payment successful & order placed!");
@@ -469,7 +487,7 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between">
                 <span className="text-on-surface-variant">Delivery Fee</span>
-                <span className="text-on-surface font-semibold">
+                <span className={deliveryFee === 0 ? "text-emerald-600 font-bold" : "text-on-surface font-semibold"}>
                   {deliveryFee === 0 ? "Free" : `₹${Math.round(deliveryFee)}`}
                 </span>
               </div>

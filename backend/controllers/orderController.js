@@ -11,6 +11,7 @@ const createOrder = async (req, res, next) => {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
+      couponCode,
     } = req.body;
 
     if (!deliveryAddress || !deliveryAddress.addressLine) {
@@ -37,9 +38,40 @@ const createOrder = async (req, res, next) => {
     }
 
     const subtotal = cart.subtotal;
-    const deliveryFee = restaurant.deliveryFee || 0;
-    const taxes = subtotal * 0.05; // 5% tax as requested
-    const totalAmount = subtotal + deliveryFee + taxes;
+    let discountAmount = 0;
+    let isFreeDelivery = false;
+    let appliedCouponCode = null;
+
+    if (couponCode) {
+      const Coupon = require("../models/Coupon");
+      const coupon = await Coupon.findOne({
+        code: String(couponCode).toUpperCase().trim(),
+        isActive: true,
+        validTill: { $gt: new Date() },
+      });
+
+      if (coupon && subtotal >= coupon.minOrderAmount) {
+        appliedCouponCode = coupon.code;
+        if (coupon.discountType === "percentage") {
+          discountAmount = (subtotal * coupon.discountValue) / 100;
+          if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+            discountAmount = coupon.maxDiscountAmount;
+          }
+        } else {
+          discountAmount = coupon.discountValue;
+        }
+        discountAmount = Math.min(discountAmount, subtotal);
+        if (coupon.category === "delivery") {
+          isFreeDelivery = true;
+        }
+      }
+    }
+
+    discountAmount = Math.round(discountAmount * 100) / 100;
+    const deliveryFee = isFreeDelivery ? 0 : (restaurant.deliveryFee || 0);
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+    const taxes = Math.round((discountedSubtotal * 0.05) * 100) / 100; // 5% tax on discounted subtotal
+    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
 
     const orderItems = cart.items.map((item) => ({
       menuItem: item.menuItem,
@@ -68,6 +100,8 @@ const createOrder = async (req, res, next) => {
       razorpayPaymentId: razorpayPaymentId || null,
       razorpaySignature: razorpaySignature || null,
       subtotal,
+      couponCode: appliedCouponCode,
+      discount: discountAmount,
       deliveryFee,
       taxes,
       totalAmount,

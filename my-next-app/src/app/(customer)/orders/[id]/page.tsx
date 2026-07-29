@@ -480,9 +480,15 @@ export default function OrderDetailsPage({ params }: PageProps) {
                 <span>Subtotal</span>
                 <span className="font-semibold text-slate-900">₹{order.subtotal.toFixed(2)}</span>
               </div>
+              {order.discount > 0 && (
+                <div className="flex justify-between text-xs text-emerald-600 font-semibold">
+                  <span>Coupon Discount {order.couponCode ? `(${order.couponCode})` : ""}</span>
+                  <span>-₹{order.discount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-xs text-slate-600">
                 <span>Delivery Fee</span>
-                <span className="font-semibold text-slate-900">
+                <span className={order.deliveryFee === 0 ? "font-bold text-emerald-600" : "font-semibold text-slate-900"}>
                   {order.deliveryFee === 0 ? "Free" : `₹${order.deliveryFee.toFixed(2)}`}
                 </span>
               </div>

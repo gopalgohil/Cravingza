@@ -145,6 +145,8 @@ const applyCoupon = async (req, res, next) => {
         discountAmount: Math.round(discountAmount * 100) / 100,
         subtotal,
         finalSubtotal: Math.max(0, Math.round((subtotal - discountAmount) * 100) / 100),
+        category: coupon.category,
+        isFreeDelivery: coupon.category === "delivery",
       },
     });
   } catch (error) {

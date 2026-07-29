@@ -10,6 +10,8 @@ const Order = require("../models/Order");
  */
 const createRazorpayOrder = async (req, res, next) => {
   try {
+    const { couponCode } = req.body || {};
+
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
@@ -27,9 +29,38 @@ const createRazorpayOrder = async (req, res, next) => {
     }
 
     const subtotal = cart.subtotal;
-    const deliveryFee = restaurant.deliveryFee || 0;
-    const taxes = subtotal * 0.05; // 5% tax
-    const totalAmount = subtotal + deliveryFee + taxes;
+    let discountAmount = 0;
+    let isFreeDelivery = false;
+
+    if (couponCode) {
+      const Coupon = require("../models/Coupon");
+      const coupon = await Coupon.findOne({
+        code: String(couponCode).toUpperCase().trim(),
+        isActive: true,
+        validTill: { $gt: new Date() },
+      });
+
+      if (coupon && subtotal >= coupon.minOrderAmount) {
+        if (coupon.discountType === "percentage") {
+          discountAmount = (subtotal * coupon.discountValue) / 100;
+          if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+            discountAmount = coupon.maxDiscountAmount;
+          }
+        } else {
+          discountAmount = coupon.discountValue;
+        }
+        discountAmount = Math.min(discountAmount, subtotal);
+        if (coupon.category === "delivery") {
+          isFreeDelivery = true;
+        }
+      }
+    }
+
+    discountAmount = Math.round(discountAmount * 100) / 100;
+    const deliveryFee = isFreeDelivery ? 0 : (restaurant.deliveryFee || 0);
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+    const taxes = Math.round((discountedSubtotal * 0.05) * 100) / 100;
+    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
     const totalInPaise = Math.round(totalAmount * 100);
 
     const options = {
@@ -60,7 +91,7 @@ const createRazorpayOrder = async (req, res, next) => {
  */
 const verifyRazorpayPayment = async (req, res, next) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, deliveryAddress } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, deliveryAddress, couponCode } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
@@ -112,9 +143,40 @@ const verifyRazorpayPayment = async (req, res, next) => {
     }
 
     const subtotal = cart.subtotal;
-    const deliveryFee = restaurant.deliveryFee || 0;
-    const taxes = subtotal * 0.05;
-    const totalAmount = subtotal + deliveryFee + taxes;
+    let discountAmount = 0;
+    let isFreeDelivery = false;
+    let appliedCouponCode = null;
+
+    if (couponCode) {
+      const Coupon = require("../models/Coupon");
+      const coupon = await Coupon.findOne({
+        code: String(couponCode).toUpperCase().trim(),
+        isActive: true,
+        validTill: { $gt: new Date() },
+      });
+
+      if (coupon && subtotal >= coupon.minOrderAmount) {
+        appliedCouponCode = coupon.code;
+        if (coupon.discountType === "percentage") {
+          discountAmount = (subtotal * coupon.discountValue) / 100;
+          if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+            discountAmount = coupon.maxDiscountAmount;
+          }
+        } else {
+          discountAmount = coupon.discountValue;
+        }
+        discountAmount = Math.min(discountAmount, subtotal);
+        if (coupon.category === "delivery") {
+          isFreeDelivery = true;
+        }
+      }
+    }
+
+    discountAmount = Math.round(discountAmount * 100) / 100;
+    const deliveryFee = isFreeDelivery ? 0 : (restaurant.deliveryFee || 0);
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+    const taxes = Math.round((discountedSubtotal * 0.05) * 100) / 100;
+    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
 
     const orderItems = cart.items.map((item) => ({
       menuItem: item.menuItem,
@@ -135,6 +197,8 @@ const verifyRazorpayPayment = async (req, res, next) => {
       razorpayPaymentId: razorpay_payment_id,
       razorpaySignature: razorpay_signature,
       subtotal,
+      couponCode: appliedCouponCode,
+      discount: discountAmount,
       deliveryFee,
       taxes,
       totalAmount,
