@@ -48,6 +48,12 @@ export default function ApplyDeliveryPartnerPage() {
   }, [user, router]);
 
   useEffect(() => {
+    if (user?.phone && !phone && (!existingApp || existingApp.approvalStatus !== "rejected")) {
+      setPhone(user.phone);
+    }
+  }, [user, existingApp, phone]);
+
+  useEffect(() => {
     if (existingApp && existingApp.approvalStatus === "rejected") {
       setPhone(existingApp.phone || "");
       setCity(existingApp.city || "");

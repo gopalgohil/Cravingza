@@ -54,6 +54,12 @@ export default function ApplyPartnerPage() {
   const [pincode, setPincode] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
 
+  useEffect(() => {
+    if (user?.phone && !ownerPhone && (!existingApp || existingApp.approvalStatus !== "rejected")) {
+      setOwnerPhone(user.phone);
+    }
+  }, [user, existingApp, ownerPhone]);
+
   // Upload States
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [fssaiLicenseUrl, setFssaiLicenseUrl] = useState("");
