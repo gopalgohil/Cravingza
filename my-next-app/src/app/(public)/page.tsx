@@ -40,11 +40,7 @@ export default function LandingPage() {
   }, []);
 
   const handleOrderNow = () => {
-    if (user) {
-      router.push("/home");
-    } else {
-      router.push("/login?redirect=/home");
-    }
+    router.push("/home");
   };
 
   const handleExplore = () => {
