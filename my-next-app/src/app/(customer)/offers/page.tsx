@@ -19,6 +19,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAppStore } from "@/lib/store";
+import { showAttractiveAuthToast } from "@/lib/authToast";
+
 const CouponSkeleton = () => (
   <div className="bg-white border border-outline-variant/30 rounded-3xl p-6 space-y-4 shadow-sm animate-pulse">
     <div className="flex justify-between items-center">
@@ -38,6 +41,7 @@ const CouponSkeleton = () => (
 
 export default function OffersPage() {
   const router = useRouter();
+  const { user, cart } = useAppStore();
   const { data: response, isLoading, error } = useGetOffersQuery();
   const coupons = response?.data || [];
 
@@ -54,6 +58,28 @@ export default function OffersPage() {
     setTimeout(() => {
       setCopiedCode(null);
     }, 3000);
+  };
+
+  const handleApplyDeal = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+
+    if (!user) {
+      showAttractiveAuthToast(
+        router,
+        `Coupon ${code} Copied!`,
+        "Please sign in to order food and apply your discount!"
+      );
+      return;
+    }
+
+    if (cart && cart.length > 0) {
+      toast.success(`Coupon ${code} ready for checkout!`);
+      router.push("/checkout");
+    } else {
+      toast.info(`Coupon ${code} copied! Add food items to cart to apply discount.`);
+      router.push("/home");
+    }
   };
 
   const filteredCoupons = useMemo(() => {
@@ -192,13 +218,14 @@ export default function OffersPage() {
                   </div>
                 </div>
 
-                <Link
-                  href="/checkout"
+                <button
+                  type="button"
+                  onClick={() => handleApplyDeal(coupon.code)}
                   className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs md:text-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <span>Apply Deal</span>
                   <ArrowRight className="w-4 h-4" />
-                </Link>
+                </button>
               </div>
             </div>
           ))}

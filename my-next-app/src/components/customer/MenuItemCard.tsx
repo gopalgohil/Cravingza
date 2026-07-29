@@ -29,6 +29,8 @@ interface MenuItemCardProps {
   restaurantName: string;
 }
 
+import { showAttractiveAuthToast } from "@/lib/authToast";
+
 export default function MenuItemCard({ item, restaurantId, restaurantName }: MenuItemCardProps) {
   const dispatch = useDispatch();
   const router = useRouter();
@@ -44,15 +46,11 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
   const [removeCartItem, { isLoading: isRemoving }] = useRemoveCartItemMutation();
 
   const showSignInToast = () => {
-    toast("Please sign in to add items to your cart.", {
-      id: "sign-in-required", // Deduplicates — no matter how many times clicked, only 1 toast shown
-      description: "Create an account or log in to start ordering!",
-      action: {
-        label: "Sign In",
-        onClick: () => router.push("/login"),
-      },
-      duration: 4000,
-    });
+    showAttractiveAuthToast(
+      router,
+      "Sign in to Add Items",
+      "Create an account or log in to start ordering your favorite food!"
+    );
   };
 
   const handleAdd = async () => {

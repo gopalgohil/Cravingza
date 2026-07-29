@@ -15,6 +15,8 @@ import PageLoader from "@/components/PageLoader";
 import CustomerFooter from "@/components/customer/Footer";
 import NotificationMenu from "@/components/customer/NotificationMenu";
 
+import { showAttractiveAuthToast } from "@/lib/authToast";
+
 export default function CustomerLayout({
   children,
 }: {
@@ -87,12 +89,11 @@ export default function CustomerLayout({
               onClick={(e) => {
                 if (!user) {
                   e.preventDefault();
-                  toast("Please sign in to view your cart and place an order.", {
-                    action: {
-                      label: "Sign In",
-                      onClick: () => router.push("/login"),
-                    },
-                  });
+                  showAttractiveAuthToast(
+                    router,
+                    "Sign in to View Cart",
+                    "Create an account or log in to view your cart & place an order!"
+                  );
                 }
               }}
               className="relative w-10 h-10 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/95 hover:to-orange-500/95 text-white rounded-xl active:scale-95 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 hidden md:flex items-center justify-center cursor-pointer"
@@ -147,12 +148,11 @@ export default function CustomerLayout({
           onClick={(e) => {
             if (!user) {
               e.preventDefault();
-              toast("Please sign in to view your cart and place an order.", {
-                action: {
-                  label: "Sign In",
-                  onClick: () => router.push("/login"),
-                },
-              });
+              showAttractiveAuthToast(
+                router,
+                "Sign in to View Cart",
+                "Create an account or log in to view your cart & place an order!"
+              );
             }
           }}
           className={`relative flex flex-col items-center gap-0.5 text-xs ${

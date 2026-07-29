@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ProfileMenu from "@/components/ProfileMenu";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { showAttractiveAuthToast } from "@/lib/authToast";
 import { useGetRestaurantsQuery } from "@/lib/redux/apiSlice";
 
 export default function LandingPage() {
@@ -66,12 +67,11 @@ export default function LandingPage() {
               onClick={(e) => {
                 if (!user) {
                   e.preventDefault();
-                  toast("Please sign in to view your cart and place an order.", {
-                    action: {
-                      label: "Sign In",
-                      onClick: () => router.push("/login"),
-                    },
-                  });
+                  showAttractiveAuthToast(
+                    router,
+                    "Sign in to View Cart",
+                    "Create an account or log in to view your cart & place an order!"
+                  );
                 }
               }}
               className="relative bg-primary-container text-on-primary p-2.5 rounded-xl active:scale-95 transition-transform hover:opacity-90 hidden md:flex items-center justify-center cursor-pointer"
