@@ -211,20 +211,24 @@ export default function RegisterPage() {
       </section>
 
       {/* Right Side: Sign Up Form */}
-      <section className="w-full lg:w-1/2 flex items-center justify-center py-4 px-margin-mobile md:p-margin-desktop bg-surface">
-        <div className="w-full max-w-md flex flex-col">
-          {/* Mobile Branding */}
-          <div className="lg:hidden mb-xs flex justify-center">
-            <span className="font-headline-md text-headline-md font-black text-primary">Cravingza</span>
-          </div>
-
-          <div className="mb-sm md:mb-xl">
-            <h2 className="font-display-lg-mobile text-display-lg-mobile md:text-headline-md md:font-headline-md text-on-surface mb-xs">
-              Create your account
-            </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant">
-              Join Cravingza today and start exploring the best eats near you.
-            </p>
+      <section className="w-full lg:w-1/2 flex items-center justify-center py-6 px-4 md:p-12 bg-slate-50/50">
+        <div className="w-full max-w-lg bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-xl shadow-slate-200/50 space-y-6">
+          {/* App Logo & Title */}
+          <div className="text-center space-y-3">
+            <Link href="/" className="inline-flex items-center justify-center gap-2.5 group">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/25 group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-2xl">restaurant</span>
+              </div>
+              <span className="font-headline-md text-2xl font-black tracking-tight text-slate-900">
+                Cravingza
+              </span>
+            </Link>
+            <div>
+              <h2 className="font-extrabold text-xl text-slate-900">Create your account</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Join Cravingza today and start exploring the best eats near you.
+              </p>
+            </div>
           </div>
 
           {/* Form Card */}
