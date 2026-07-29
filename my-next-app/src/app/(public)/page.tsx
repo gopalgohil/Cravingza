@@ -40,7 +40,7 @@ export default function LandingPage() {
   }, []);
 
   const handleOrderNow = () => {
-    router.push("/home");
+    router.push("/offers");
   };
 
   const handleExplore = () => {
