@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import { getUIStageInfo } from "@/lib/utils/orderStatus";
@@ -16,21 +16,36 @@ interface LiveTrackingMapInnerProps {
   customerLng?: number;
 }
 
-// FUTURE ENHANCEMENT NOTE:
-// True live-moving GPS tracking requires delivery partner's mobile device to periodically send
-// real geolocation via browser Geolocation API (POST /api/delivery/active/:deliveryId/location),
-// storing { lat, lng, updatedAt } on the Delivery document, which this tracking page could then poll.
-// Currently, we render an honest static map showing pickup & drop locations and route line.
-
-// Function to auto-center and fit map bounds to markers
+// Function to auto-center and fit map bounds ONLY once on initial render
+// Prevents auto-resetting user's manual zoom during 5-second polling updates
 function MapBoundsFitter({ bounds }: { bounds: L.LatLngBoundsExpression }) {
   const map = useMap();
+  const hasFittedRef = useRef(false);
+
   useEffect(() => {
-    if (bounds) {
+    if (bounds && !hasFittedRef.current) {
       map.fitBounds(bounds, { padding: [50, 50] });
+      hasFittedRef.current = true;
     }
   }, [bounds, map]);
+
   return null;
+}
+
+// Floating control button allowing user to manually re-center map anytime
+function RecenterControl({ bounds }: { bounds: L.LatLngBoundsExpression }) {
+  const map = useMap();
+  return (
+    <button
+      type="button"
+      onClick={() => map.fitBounds(bounds, { padding: [50, 50] })}
+      className="absolute top-3 right-3 bg-white/95 hover:bg-white text-slate-800 font-bold px-3 py-1.5 rounded-xl shadow-md border border-slate-200 text-xs flex items-center gap-1.5 z-[400] transition-all cursor-pointer hover:scale-105 active:scale-95 select-none"
+      title="Recenter Map to Fit Route"
+    >
+      <span className="material-symbols-outlined text-primary text-base">center_focus_strong</span>
+      <span>Recenter</span>
+    </button>
+  );
 }
 
 // Custom Leaflet Icons using SVG DivIcons
@@ -84,7 +99,7 @@ export default function LiveTrackingMapInner({
       <MapContainer
         center={storePos}
         zoom={13}
-        scrollWheelZoom={false}
+        scrollWheelZoom={true}
         className="w-full h-full"
       >
         <TileLayer
@@ -93,6 +108,7 @@ export default function LiveTrackingMapInner({
         />
 
         <MapBoundsFitter bounds={mapBounds} />
+        <RecenterControl bounds={mapBounds} />
 
         {/* Straight Route Line between Store and Customer */}
         <Polyline
