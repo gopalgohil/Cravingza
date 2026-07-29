@@ -11,7 +11,6 @@ import { useGetRestaurantsQuery } from "@/lib/redux/apiSlice";
 export default function LandingPage() {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
-  const [address, setAddress] = useState("");
   const { user, cart } = useAppStore();
   const cartCount = cart ? cart.reduce((acc, item) => acc + item.quantity, 0) : 0;
 
@@ -40,8 +39,15 @@ export default function LandingPage() {
     }
   }, []);
 
-  const handleFindFood = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleOrderNow = () => {
+    if (user) {
+      router.push("/home");
+    } else {
+      router.push("/login?redirect=/home");
+    }
+  };
+
+  const handleExplore = () => {
     router.push("/home");
   };
 
@@ -102,30 +108,29 @@ export default function LandingPage() {
           <h1 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg max-w-2xl text-on-background">
             Order food you'll crave, delivered fast
           </h1>
-          
-          <form
-            onSubmit={handleFindFood}
-            className="w-full max-w-2xl bg-surface-container-lowest p-xs rounded-xl flex flex-col md:flex-row items-stretch gap-xs app-shadow"
-          >
-            <div className="flex-1 flex items-center px-md py-sm gap-sm">
-              <span className="material-symbols-outlined text-primary">location_on</span>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full border-none focus:outline-none focus:ring-0 bg-transparent text-body-md font-body-md placeholder:text-on-surface-variant outline-none"
-                placeholder="Enter delivery address"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-primary-container text-on-primary font-headline-sm text-headline-sm px-xl py-md rounded-xl active:scale-95 transition-all hover:brightness-110 cursor-pointer"
-            >
-              Find Food
-            </button>
-          </form>
 
+          {/* Action Buttons: Order Now & Explore Restaurants */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-md w-full max-w-2xl">
+            <button
+              type="button"
+              onClick={handleOrderNow}
+              className="bg-primary-container text-on-primary font-headline-sm text-headline-sm px-xl py-md rounded-xl active:scale-95 transition-all hover:brightness-110 cursor-pointer shadow-md text-center flex items-center justify-center gap-xs"
+            >
+              <span>Order Now</span>
+              <span className="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExplore}
+              className="border-2 border-outline-variant text-on-surface bg-surface font-headline-sm text-headline-sm px-xl py-md rounded-xl active:scale-95 transition-all hover:bg-surface-container cursor-pointer text-center flex items-center justify-center gap-xs"
+            >
+              <span className="material-symbols-outlined text-lg">restaurant</span>
+              <span>Explore Restaurants</span>
+            </button>
+          </div>
+
+          {/* Trusted by 50,000+ hungry locals */}
           <div className="flex items-center gap-md">
             <div className="flex -space-x-3">
               <img
