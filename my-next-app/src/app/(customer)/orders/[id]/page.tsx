@@ -411,6 +411,10 @@ export default function OrderDetailsPage({ params }: PageProps) {
                 ? `${order.deliveryAddress.addressLine}${order.deliveryAddress.city ? `, ${order.deliveryAddress.city}` : ""}${order.deliveryAddress.pincode ? ` - ${order.deliveryAddress.pincode}` : ""}`
                 : "Customer Address"
             }
+            restaurantLat={order.restaurant?.location?.lat}
+            restaurantLng={order.restaurant?.location?.lng}
+            customerLat={order.deliveryAddress?.lat}
+            customerLng={order.deliveryAddress?.lng}
           />
         </div>
 
