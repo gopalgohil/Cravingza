@@ -10,6 +10,8 @@ import {
 } from "@/lib/redux/apiSlice";
 import { toast } from "sonner";
 
+import { sanitizePincode, isValidPincode, sanitizePhone, isValidPhone } from "@/lib/validators";
+
 export default function ApplyDeliveryPartnerPage() {
   const router = useRouter();
   const { user } = useAppStore();
@@ -23,9 +25,11 @@ export default function ApplyDeliveryPartnerPage() {
   const [reapplyAsDeliveryPartner, { isLoading: isReapplying }] = useReapplyAsDeliveryPartnerMutation();
 
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [dob, setDob] = useState("");
   const [city, setCity] = useState("");
   const [pincode, setPincode] = useState("");
+  const [pincodeTouched, setPincodeTouched] = useState(false);
   const [vehicleType, setVehicleType] = useState<"bicycle" | "motorcycle" | "car" | "electric_scooter">("motorcycle");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [aadhaarCardUrl, setAadhaarCardUrl] = useState("");
@@ -111,9 +115,11 @@ export default function ApplyDeliveryPartnerPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim() || phone.trim().length < 10) return toast.error("Valid contact phone number is required (min 10 digits).");
+    setPhoneTouched(true);
+    setPincodeTouched(true);
+    if (!isValidPhone(phone)) return toast.error("Please enter a valid 10-digit mobile number.");
     if (!city.trim()) return toast.error("City is required.");
-    if (!pincode.trim() || pincode.trim().length < 4) return toast.error("Pincode must be at least 4 digits.");
+    if (!isValidPincode(pincode)) return toast.error("Please enter a valid 6-digit pincode.");
     if (vehicleType !== "bicycle") {
       if (!vehicleNumber.trim()) return toast.error("Vehicle number is required for motorized vehicles.");
       if (!drivingLicenseUrl) return toast.error("Driving License document is required for motorized vehicles.");
@@ -285,14 +291,33 @@ export default function ApplyDeliveryPartnerPage() {
                 {/* Phone */}
                 <div className="xl:col-span-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Phone Number <span className="text-rose-500">*</span></label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-orange-400 text-xl">phone</span>
+                  <div className="relative flex items-center">
+                    <div className="absolute left-3.5 flex items-center gap-1 text-slate-500 font-bold text-sm pointer-events-none select-none z-10">
+                      <span className="material-symbols-outlined text-orange-400 text-lg">phone</span>
+                      <span className="text-slate-700 font-bold border-r border-slate-300 pr-2">+91</span>
+                    </div>
                     <input
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-slate-800 focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium placeholder:text-slate-300"
-                      type="tel" placeholder="+91 98765 43210"
-                      value={phone} onChange={(e) => setPhone(e.target.value)} required
+                      className={`w-full bg-white border rounded-xl pl-20 pr-4 py-3.5 text-slate-800 focus:outline-none transition-all text-sm font-medium placeholder:text-slate-300 ${
+                        phoneTouched && phone.length > 0 && !isValidPhone(phone)
+                          ? "border-rose-500 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10"
+                          : "border-slate-200 focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10"
+                      }`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="9876543210"
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(sanitizePhone(e.target.value));
+                        if (!phoneTouched) setPhoneTouched(true);
+                      }}
+                      onBlur={() => setPhoneTouched(true)}
+                      required
                     />
                   </div>
+                  {phoneTouched && phone.length > 0 && !isValidPhone(phone) && (
+                    <span className="text-rose-500 text-xs font-semibold mt-1 block">Please enter a valid 10-digit mobile number</span>
+                  )}
                 </div>
 
                 {/* Date of Birth */}
@@ -326,11 +351,28 @@ export default function ApplyDeliveryPartnerPage() {
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-orange-400 text-xl">pin_drop</span>
                     <input
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-slate-800 focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium placeholder:text-slate-300"
-                      type="text" placeholder="e.g. 400001"
-                      value={pincode} onChange={(e) => setPincode(e.target.value)} required
+                      className={`w-full bg-white border rounded-xl pl-11 pr-4 py-3.5 text-slate-800 focus:outline-none transition-all text-sm font-medium placeholder:text-slate-300 ${
+                        pincodeTouched && pincode.length > 0 && !isValidPincode(pincode)
+                          ? "border-rose-500 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10"
+                          : "border-slate-200 focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10"
+                      }`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      pattern="[1-9][0-9]{5}"
+                      placeholder="e.g. 390001"
+                      value={pincode}
+                      onChange={(e) => {
+                        setPincode(sanitizePincode(e.target.value));
+                        if (!pincodeTouched) setPincodeTouched(true);
+                      }}
+                      onBlur={() => setPincodeTouched(true)}
+                      required
                     />
                   </div>
+                  {pincodeTouched && pincode.length > 0 && !isValidPincode(pincode) && (
+                    <span className="text-rose-500 text-xs font-semibold mt-1 block">Please enter a valid 6-digit pincode</span>
+                  )}
                 </div>
               </div>
             </div>

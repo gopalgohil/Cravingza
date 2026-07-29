@@ -23,6 +23,8 @@ const PREDEFINED_CUISINES = [
   "Burgers",
 ];
 
+import { sanitizePincode, isValidPincode, sanitizePhone, isValidPhone } from "@/lib/validators";
+
 export default function ApplyPartnerPage() {
   const router = useRouter();
   const { user } = useAppStore();
@@ -52,7 +54,9 @@ export default function ApplyPartnerPage() {
   const [addressLine, setAddressLine] = useState("");
   const [city, setCity] = useState("");
   const [pincode, setPincode] = useState("");
+  const [pincodeTouched, setPincodeTouched] = useState(false);
   const [ownerPhone, setOwnerPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
 
   useEffect(() => {
     if (user?.phone && !ownerPhone && (!existingApp || existingApp.approvalStatus !== "rejected")) {
@@ -174,13 +178,15 @@ export default function ApplyPartnerPage() {
     e.preventDefault();
 
     // Validation
+    setPhoneTouched(true);
+    setPincodeTouched(true);
     if (!name.trim()) return toast.error("Restaurant name is required.");
     if (description.trim().length < 10) return toast.error("Description must be at least 10 characters.");
     if (selectedCuisines.length === 0) return toast.error("Please select or add at least one cuisine tag.");
     if (!addressLine.trim()) return toast.error("Address is required.");
     if (!city.trim()) return toast.error("City is required.");
-    if (!pincode.trim() || pincode.trim().length < 4) return toast.error("Valid pincode is required.");
-    if (!ownerPhone.trim() || ownerPhone.trim().length < 10) return toast.error("Valid phone number is required (min 10 digits).");
+    if (!isValidPincode(pincode)) return toast.error("Please enter a valid 6-digit pincode.");
+    if (!isValidPhone(ownerPhone)) return toast.error("Please enter a valid 10-digit mobile number.");
     if (!coverImageUrl) return toast.error("Cover image is required.");
     if (!fssaiLicenseUrl) return toast.error("FSSAI License document is required.");
     if (!businessRegistrationUrl) return toast.error("Business Registration document is required.");
@@ -340,16 +346,35 @@ export default function ApplyPartnerPage() {
 
               <div className="space-y-1.5">
                 <label className="font-label-md text-label-md text-on-background block font-bold">
-                  Owner Phone Number
+                  Owner Phone Number <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="tel"
-                  value={ownerPhone}
-                  onChange={(e) => setOwnerPhone(e.target.value)}
-                  placeholder="e.g. 9876543210"
-                  className="w-full bg-slate-50 border border-outline-variant/60 rounded-xl px-4 py-3 font-body-md focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all"
-                  required
-                />
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 flex items-center gap-1 text-slate-500 font-bold text-sm pointer-events-none select-none z-10">
+                    <span className="material-symbols-outlined text-primary text-base">call</span>
+                    <span className="text-slate-700 font-bold border-r border-slate-300 pr-2">+91</span>
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={ownerPhone}
+                    onChange={(e) => {
+                      setOwnerPhone(sanitizePhone(e.target.value));
+                      if (!phoneTouched) setPhoneTouched(true);
+                    }}
+                    onBlur={() => setPhoneTouched(true)}
+                    placeholder="9876543210"
+                    className={`w-full bg-slate-50 border rounded-xl pl-20 pr-4 py-3 font-body-md focus:outline-none transition-all ${
+                      phoneTouched && ownerPhone.length > 0 && !isValidPhone(ownerPhone)
+                        ? "border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500/10"
+                        : "border-outline-variant/60 focus:border-primary focus:ring-3 focus:ring-primary/10"
+                    }`}
+                    required
+                  />
+                </div>
+                {phoneTouched && ownerPhone.length > 0 && !isValidPhone(ownerPhone) && (
+                  <span className="text-red-500 text-xs font-semibold mt-1 block">Please enter a valid 10-digit mobile number</span>
+                )}
               </div>
             </div>
           </div>
@@ -392,16 +417,30 @@ export default function ApplyPartnerPage() {
 
               <div className="space-y-1.5">
                 <label className="font-label-md text-label-md text-on-background block font-bold">
-                  Pincode
+                  Pincode <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  pattern="[1-9][0-9]{5}"
                   value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  placeholder="e.g. 400001"
-                  className="w-full bg-slate-50 border border-outline-variant/60 rounded-xl px-4 py-3 font-body-md focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 transition-all"
+                  onChange={(e) => {
+                    setPincode(sanitizePincode(e.target.value));
+                    if (!pincodeTouched) setPincodeTouched(true);
+                  }}
+                  onBlur={() => setPincodeTouched(true)}
+                  placeholder="e.g. 390001"
+                  className={`w-full bg-slate-50 border rounded-xl px-4 py-3 font-body-md focus:outline-none transition-all ${
+                    pincodeTouched && pincode.length > 0 && !isValidPincode(pincode)
+                      ? "border-red-500 focus:border-red-500 focus:ring-3 focus:ring-red-500/10"
+                      : "border-outline-variant/60 focus:border-primary focus:ring-3 focus:ring-primary/10"
+                  }`}
                   required
                 />
+                {pincodeTouched && pincode.length > 0 && !isValidPincode(pincode) && (
+                  <span className="text-red-500 text-xs font-semibold mt-1 block">Please enter a valid 6-digit pincode</span>
+                )}
               </div>
             </div>
           </div>

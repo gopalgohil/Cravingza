@@ -1,6 +1,7 @@
 const { z } = require("zod");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const { pincodeSchema, phoneSchema } = require("../validators/shared");
 
 // Helper to format Zod validation errors
 const formatZodErrors = (zodError) => {
@@ -10,18 +11,23 @@ const formatZodErrors = (zodError) => {
   }));
 };
 
+const addressValidationSchema = z.object({
+  label: z.enum(["Home", "Work", "Other"]).optional().default("Home"),
+  addressLine: z.string().trim().min(3, "Address line is required"),
+  city: z.string().trim().min(2, "City is required"),
+  pincode: pincodeSchema.optional().or(z.literal("")),
+  isDefault: z.boolean().optional().default(false),
+  lat: z.number().optional().default(0),
+  lng: z.number().optional().default(0),
+});
+
 const profileSchema = z.object({
   name: z
     .string()
     .trim()
     .min(2, { message: "Name must be at least 2 characters long" })
     .max(50, { message: "Name cannot exceed 50 characters" }),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[1-9]\d{1,14}$|^[0-9]{10}$/, { message: "Invalid phone number format" })
-    .optional()
-    .or(z.literal("")),
+  phone: phoneSchema.optional().or(z.literal("")),
 });
 
 const passwordStrengthSchema = z
@@ -156,11 +162,14 @@ const addAddress = async (req, res) => {
   try {
     const { label, addressLine, city, pincode, isDefault, lat, lng } = req.body;
 
-    if (!addressLine || !city) {
-      return res.status(400).json({
-        success: false,
-        message: "Address line and city are required",
-      });
+    if (pincode && pincode.trim()) {
+      const pinValidation = pincodeSchema.safeParse(pincode.trim());
+      if (!pinValidation.success) {
+        return res.status(400).json({
+          success: false,
+          message: pinValidation.error.errors[0].message,
+        });
+      }
     }
 
     const user = await User.findById(req.user._id);
@@ -205,6 +214,16 @@ const updateAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
     const { label, addressLine, city, pincode, isDefault, lat, lng } = req.body;
+
+    if (pincode !== undefined && pincode.trim()) {
+      const pinValidation = pincodeSchema.safeParse(pincode.trim());
+      if (!pinValidation.success) {
+        return res.status(400).json({
+          success: false,
+          message: pinValidation.error.errors[0].message,
+        });
+      }
+    }
 
     const user = await User.findById(req.user._id);
     if (!user) {

@@ -9,6 +9,8 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { toast } from "sonner";
 
+import { sanitizePhone, isValidPhone } from "@/lib/validators";
+
 export default function RegisterPage() {
   const router = useRouter();
   const setUser = useAppStore((state) => state.setUser);
@@ -37,6 +39,9 @@ export default function RegisterPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       newErrors.email = "Please enter a valid email address.";
+    }
+    if (phone && !isValidPhone(phone)) {
+      newErrors.phone = "Please enter a valid 10-digit mobile number";
     }
     if (password.length < 8) {
       newErrors.password = "Password must be at least 8 characters.";
@@ -331,17 +336,25 @@ export default function RegisterPage() {
                 <label className="font-label-md text-label-md text-on-surface ml-1" htmlFor="phone">
                   Phone Number
                 </label>
-                <div className="relative group">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">
-                    call
-                  </span>
+                <div className="relative flex items-center group">
+                  <div className="absolute left-3 flex items-center gap-1.5 text-on-surface-variant font-bold text-sm pointer-events-none select-none z-10">
+                    <span className="material-symbols-outlined text-base">call</span>
+                    <span className="text-slate-700 font-bold border-r border-slate-300 pr-2">+91</span>
+                  </div>
                   <input
-                    className="w-full pl-12 pr-4 py-2 md:py-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md text-body-md focus-ring transition-all outline-none"
+                    className={`w-full pl-20 pr-4 py-2 md:py-3 bg-surface-container-lowest border rounded-xl font-body-md text-body-md focus-ring transition-all outline-none ${
+                      errors.phone ? "border-red-500" : "border-outline-variant"
+                    }`}
                     id="phone"
-                    type="tel"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 (555) 000-0000"
+                    onChange={(e) => {
+                      setPhone(sanitizePhone(e.target.value));
+                      if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
+                    }}
+                    placeholder="9876543210"
                     required
                   />
                 </div>

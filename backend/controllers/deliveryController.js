@@ -2,14 +2,15 @@ const DeliveryProfile = require("../models/DeliveryProfile");
 const Delivery = require("../models/Delivery");
 const User = require("../models/User");
 const { z } = require("zod");
+const { pincodeSchema, phoneSchema } = require("../validators/shared");
 
 // ── Zod Validation Schema ─────────────────────────────────────────
 const applyDeliverySchema = z.object({
-  phone: z.string().min(10, "Phone number must be at least 10 digits").trim(),
+  phone: phoneSchema,
   vehicleType: z.enum(["bicycle", "motorcycle", "car", "electric_scooter"]),
   vehicleNumber: z.string().trim().default(""),
   city: z.string().min(2, "City is required").trim(),
-  pincode: z.string().min(4, "Pincode is required").trim(),
+  pincode: pincodeSchema,
   drivingLicenseUrl: z.string().trim().default(""),
   aadhaarCardUrl: z.string().url("Aadhaar Card URL is invalid").trim(),
   accountHolderName: z.string().min(2, "Account holder name is required").trim(),

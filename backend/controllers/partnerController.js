@@ -1,6 +1,7 @@
 const Restaurant = require("../models/Restaurant");
 const User = require("../models/User");
 const { z } = require("zod");
+const { pincodeSchema, phoneSchema } = require("../validators/shared");
 
 // ── Zod Validation Schema ─────────────────────────────────────────
 const applySchema = z.object({
@@ -9,11 +10,11 @@ const applySchema = z.object({
   cuisineTags: z.array(z.string()).min(1, "At least one cuisine tag is required"),
   addressLine: z.string().min(5, "Address is required").trim(),
   city: z.string().min(2, "City is required").trim(),
-  pincode: z.string().min(4, "Pincode is required").trim(),
+  pincode: pincodeSchema,
   coverImageUrl: z.string().url("Cover image URL is invalid"),
   fssaiLicenseUrl: z.string().url("FSSAI License URL is invalid"),
   businessRegistrationUrl: z.string().url("Business Registration URL is invalid"),
-  ownerPhone: z.string().min(10, "Phone number must be at least 10 digits").trim(),
+  ownerPhone: phoneSchema,
 });
 
 // ── POST /api/restaurant/apply ────────────────────────────────────

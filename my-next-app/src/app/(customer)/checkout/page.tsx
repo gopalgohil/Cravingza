@@ -13,6 +13,7 @@ import {
 } from "@/lib/redux/apiSlice";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { sanitizePhone, isValidPhone } from "@/lib/validators";
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -42,6 +43,7 @@ export default function CheckoutPage() {
   // Form & Coupon states
   const [deliveryAddress, setDeliveryAddress] = useState(address);
   const [customerPhone, setCustomerPhone] = useState(user?.phone || "");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "razorpay">("razorpay");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -137,8 +139,9 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!customerPhone.trim() || customerPhone.trim().length < 10) {
-      toast.error("Please enter a valid 10-digit contact phone number.");
+    setPhoneTouched(true);
+    if (!isValidPhone(customerPhone)) {
+      toast.error("Please enter a valid 10-digit mobile number.");
       return;
     }
 
@@ -303,14 +306,33 @@ export default function CheckoutPage() {
               </div>
               <div>
                 <label className="font-label-sm text-label-sm text-on-surface-variant block mb-sm">Phone Number <span className="text-red-500">*</span></label>
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="10-digit mobile number"
-                  required
-                  className="w-full px-md py-2.5 border border-outline-variant rounded-xl focus:border-primary bg-white text-on-surface text-body-md outline-none font-medium"
-                />
+                <div className="relative flex items-center">
+                  <div className="absolute left-3 flex items-center gap-1 text-on-surface-variant font-bold text-xs pointer-events-none select-none z-10">
+                    <span className="material-symbols-outlined text-sm text-primary">call</span>
+                    <span className="text-slate-700 font-bold border-r border-slate-300 pr-1.5">+91</span>
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={customerPhone}
+                    onChange={(e) => {
+                      setCustomerPhone(sanitizePhone(e.target.value));
+                      if (!phoneTouched) setPhoneTouched(true);
+                    }}
+                    onBlur={() => setPhoneTouched(true)}
+                    placeholder="9876543210"
+                    required
+                    className={`w-full pl-16 pr-md py-2.5 border rounded-xl bg-white text-on-surface text-body-md outline-none font-medium transition-all ${
+                      phoneTouched && customerPhone.length > 0 && !isValidPhone(customerPhone)
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-outline-variant focus:border-primary"
+                    }`}
+                  />
+                </div>
+                {phoneTouched && customerPhone.length > 0 && !isValidPhone(customerPhone) && (
+                  <span className="text-red-500 text-xs mt-1 block font-semibold">Please enter a valid 10-digit mobile number</span>
+                )}
               </div>
             </div>
           </div>

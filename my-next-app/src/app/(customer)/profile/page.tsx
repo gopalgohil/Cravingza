@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { sanitizePincode, isValidPincode, sanitizePhone, isValidPhone } from "@/lib/validators";
 import {
   useUpdateProfileMutation,
   useUpdatePasswordMutation,
@@ -51,10 +52,18 @@ function EditProfileModal({
   isLoading: boolean;
 }) {
   const [tempName, setTempName] = useState(name);
-  const [tempPhone, setTempPhone] = useState(phone);
+  const [tempPhone, setTempPhone] = useState(sanitizePhone(phone));
+  const [phoneTouched, setPhoneTouched] = useState(false);
+
+  const isPhoneInvalid = phoneTouched && tempPhone.length > 0 && !isValidPhone(tempPhone);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setPhoneTouched(true);
+    if (tempPhone && !isValidPhone(tempPhone)) {
+      toast.error("Please enter a valid 10-digit mobile number");
+      return;
+    }
     onSave(tempName, tempPhone);
   };
 
@@ -86,12 +95,32 @@ function EditProfileModal({
           </div>
           <div>
             <label className="block text-sm font-semibold text-on-surface-variant mb-1.5">Phone Number</label>
-            <input
-              value={tempPhone}
-              onChange={(e) => setTempPhone(e.target.value)}
-              placeholder="+91 98765 43210"
-              className="w-full border border-outline-variant rounded-xl px-4 py-2.5 text-on-surface bg-surface focus:outline-none focus:border-primary transition-all"
-            />
+            <div className="relative flex items-center">
+              <div className="absolute left-3 flex items-center gap-1 text-on-surface-variant font-bold text-xs pointer-events-none select-none z-10">
+                <span className="material-symbols-outlined text-base">call</span>
+                <span className="text-slate-700 font-bold border-r border-slate-300 pr-1.5">+91</span>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={10}
+                value={tempPhone}
+                onChange={(e) => {
+                  setTempPhone(sanitizePhone(e.target.value));
+                  if (!phoneTouched) setPhoneTouched(true);
+                }}
+                onBlur={() => setPhoneTouched(true)}
+                placeholder="9876543210"
+                className={`w-full pl-16 pr-4 py-2.5 text-on-surface bg-surface border rounded-xl focus:outline-none transition-all ${
+                  isPhoneInvalid
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-outline-variant focus:border-primary"
+                }`}
+              />
+            </div>
+            {isPhoneInvalid && (
+              <span className="text-red-500 text-xs mt-1 block">Please enter a valid 10-digit mobile number</span>
+            )}
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-outline-variant text-on-surface-variant font-semibold hover:bg-surface-container transition-all cursor-pointer">
@@ -214,11 +243,19 @@ function AddressFormModal({
     pincode: initial?.pincode || "",
     isDefault: initial?.isDefault || false,
   });
+  const [pincodeTouched, setPincodeTouched] = useState(false);
+
+  const isPincodeInvalid = pincodeTouched && !!form.pincode && !isValidPincode(form.pincode);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setPincodeTouched(true);
     if (!form.addressLine.trim() || !form.city.trim()) {
       toast.error("Address line and city are required");
+      return;
+    }
+    if (form.pincode && !isValidPincode(form.pincode)) {
+      toast.error("Please enter a valid 6-digit pincode");
       return;
     }
     onSave(form);
@@ -277,11 +314,26 @@ function AddressFormModal({
             <div>
               <label className="block text-sm font-semibold text-on-surface-variant mb-1.5">Pincode</label>
               <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                pattern="[1-9][0-9]{5}"
                 value={form.pincode}
-                onChange={(e) => setForm((f) => ({ ...f, pincode: e.target.value }))}
-                placeholder="Pincode"
-                className="w-full border border-outline-variant rounded-xl px-4 py-2.5 text-on-surface bg-surface focus:outline-none focus:border-primary transition-all"
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, pincode: sanitizePincode(e.target.value) }));
+                  if (!pincodeTouched) setPincodeTouched(true);
+                }}
+                onBlur={() => setPincodeTouched(true)}
+                placeholder="6-digit pincode"
+                className={`w-full border rounded-xl px-4 py-2.5 text-on-surface bg-surface focus:outline-none transition-all ${
+                  isPincodeInvalid
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-outline-variant focus:border-primary"
+                }`}
               />
+              {isPincodeInvalid && (
+                <span className="text-red-500 text-xs mt-1 block">Please enter a valid 6-digit pincode</span>
+              )}
             </div>
           </div>
           <label className="flex items-center gap-2.5 cursor-pointer">

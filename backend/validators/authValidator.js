@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { phoneSchema } = require("./shared");
 
 const registerSchema = z
   .object({
@@ -10,7 +11,7 @@ const registerSchema = z
       .string()
       .trim()
       .email({ message: "Please provide a valid email address" }),
-    phone: z.string().trim().optional(),
+    phone: phoneSchema.optional().or(z.literal("")),
     password: z
       .string()
       .min(8, { message: "Password must be at least 8 characters long" })
