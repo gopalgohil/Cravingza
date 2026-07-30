@@ -450,9 +450,30 @@ export default function RestaurantOwnerLayout({
         )}
 
         {/* Main page content area */}
-        <main className="flex-1 overflow-y-auto p-md md:p-xl bg-background">
+        <main className="flex-1 overflow-y-auto p-md md:p-xl bg-background pb-24 md:pb-8">
           {isContentLoading ? <RestaurantDashboardSkeleton /> : children}
         </main>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 py-1.5 px-2 shadow-lg flex justify-around items-center">
+          {links.map((link) => {
+            const isActive = pathname.endsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={`/restaurant-owner${link.href}`}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all ${
+                  isActive ? "text-primary font-bold scale-105" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <span className={`material-symbols-outlined text-xl ${isActive ? "text-primary font-bold" : "text-slate-400"}`}>
+                  {link.icon}
+                </span>
+                <span className="text-[10px] tracking-tight">{link.label.split(" ")[0]}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );

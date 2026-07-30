@@ -48,6 +48,9 @@ function UserManagementContent() {
     return () => clearTimeout(handler);
   }, [searchInput, searchParams, router, searchParam]);
 
+  // Page changing animation state
+  const [isPageChanging, setIsPageChanging] = useState(false);
+
   // RTK Query fetches
   const {
     data: usersData,
@@ -59,7 +62,7 @@ function UserManagementContent() {
     search: debouncedSearch,
     status: statusParam,
     page: pageParam,
-    limit: 20,
+    limit: 8,
   });
 
   const {
@@ -78,7 +81,7 @@ function UserManagementContent() {
   const users = usersData?.data?.users || [];
   const totalCount = usersData?.data?.totalCount || 0;
   const counts = usersData?.data?.counts || { customer: 0, owner: 0, delivery: 0 };
-  const totalPages = Math.ceil(totalCount / 20) || 1;
+  const totalPages = Math.ceil(totalCount / 8) || 1;
 
   const selectedUser = detailData?.data?.user || null;
   const selectedUserStats = detailData?.data?.stats || null;
@@ -98,25 +101,31 @@ function UserManagementContent() {
 
   // Tab & Filters Change Helpers
   const handleTabChange = (role: string) => {
+    setIsPageChanging(true);
     const params = new URLSearchParams(searchParams.toString());
     params.set("role", role);
     params.set("page", "1"); // Reset pagination
     params.delete("id"); // Close details on tab change
     router.push(`/admin/users?${params.toString()}`);
+    setTimeout(() => setIsPageChanging(false), 400);
   };
 
   const handleStatusChange = (status: string) => {
+    setIsPageChanging(true);
     const params = new URLSearchParams(searchParams.toString());
     params.set("status", status);
     params.set("page", "1");
     router.push(`/admin/users?${params.toString()}`);
+    setTimeout(() => setIsPageChanging(false), 400);
   };
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
+    setIsPageChanging(true);
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", page.toString());
     router.push(`/admin/users?${params.toString()}`);
+    setTimeout(() => setIsPageChanging(false), 400);
   };
 
   const handleSelectUser = (id: string) => {
@@ -245,16 +254,26 @@ function UserManagementContent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg items-start">
         {/* Left Side: Users List */}
         <div className={`${selectedIdParam ? "lg:col-span-2" : "lg:col-span-3"} space-y-md`}>
-          {usersLoading || usersFetching ? (
+          {usersLoading || usersFetching || isPageChanging ? (
             <div className="space-y-md">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 bg-white border border-slate-100 rounded-3xl p-md animate-pulse flex items-center gap-md">
-                  <div className="w-12 h-12 bg-slate-200 rounded-full shrink-0"></div>
-                  <div className="space-y-2 flex-1">
-                    <div className="h-4 w-1/4 bg-slate-200 rounded"></div>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-20 bg-white border border-slate-100 rounded-3xl p-md animate-pulse flex items-center justify-between gap-md shadow-xs"
+                >
+                  <div className="flex items-center gap-md min-w-0 flex-1">
+                    <div className="w-10 h-10 bg-slate-200 rounded-full shrink-0"></div>
+                    <div className="space-y-2 flex-1 max-w-xs">
+                      <div className="h-4 w-3/4 bg-slate-200 rounded"></div>
+                      <div className="h-3 w-1/2 bg-slate-200 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="hidden sm:block space-y-2 flex-1 max-w-xs">
+                    <div className="h-3.5 w-2/3 bg-slate-200 rounded"></div>
                     <div className="h-3 w-1/3 bg-slate-200 rounded"></div>
                   </div>
-                  <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
+                  <div className="h-6 w-20 bg-slate-200 rounded-full shrink-0"></div>
+                  <div className="h-9 w-24 bg-slate-200 rounded-xl shrink-0"></div>
                 </div>
               ))}
             </div>
