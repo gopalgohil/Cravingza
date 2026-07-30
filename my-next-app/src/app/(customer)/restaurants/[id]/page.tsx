@@ -41,7 +41,20 @@ export default function RestaurantDetailsPage({ params }: PageProps) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpandingMenu, setIsExpandingMenu] = useState(false);
   const [isMenuLoading, setIsMenuLoading] = useState(false);
+
+  const handleToggleExpand = () => {
+    if (isExpanded) {
+      setIsExpanded(false);
+    } else {
+      setIsExpandingMenu(true);
+      setTimeout(() => {
+        setIsExpanded(true);
+        setIsExpandingMenu(false);
+      }, 500);
+    }
+  };
 
   const handleCategorySelect = (cat: string) => {
     if (selectedCategory === cat) return;
@@ -55,6 +68,7 @@ export default function RestaurantDetailsPage({ params }: PageProps) {
   // Collapse menu when category or search changes
   useEffect(() => {
     setIsExpanded(false);
+    setIsExpandingMenu(false);
   }, [selectedCategory, debouncedSearch]);
 
   useEffect(() => {
@@ -298,19 +312,54 @@ export default function RestaurantDetailsPage({ params }: PageProps) {
                   />
                 ))}
 
+                {/* Skeleton Loader during full menu expansion */}
+                {isExpandingMenu && (
+                  <div className="space-y-md animate-pulse">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={`expand-skeleton-${i}`}
+                        className="bg-surface rounded-2xl p-lg border border-outline-variant/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md shadow-xs"
+                      >
+                        <div className="flex gap-md items-start sm:items-center w-full sm:w-auto flex-1">
+                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-outline-variant/30 flex-shrink-0"></div>
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded bg-outline-variant/30"></div>
+                              <div className="h-5 w-44 bg-outline-variant/30 rounded"></div>
+                            </div>
+                            <div className="h-4 w-full max-w-sm bg-outline-variant/20 rounded"></div>
+                            <div className="h-5 w-20 bg-outline-variant/30 rounded"></div>
+                          </div>
+                        </div>
+                        <div className="w-24 h-10 bg-outline-variant/30 rounded-xl flex-shrink-0 self-end sm:self-center"></div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {filteredMenuItems.length > 4 && (
                   <div className="flex justify-center pt-4">
                     <button
-                      onClick={() => setIsExpanded(!isExpanded)}
-                      className="flex items-center gap-1 text-primary font-bold font-label-md text-label-md py-2.5 px-6 rounded-xl hover:bg-primary/5 transition-all select-none cursor-pointer border border-outline-variant/60 hover:border-primary/30 bg-surface shadow-sm"
+                      onClick={handleToggleExpand}
+                      disabled={isExpandingMenu}
+                      className="flex items-center gap-2 text-primary font-bold font-label-md text-label-md py-2.5 px-6 rounded-xl hover:bg-primary/5 transition-all select-none cursor-pointer border border-outline-variant/60 hover:border-primary/30 bg-surface shadow-sm disabled:opacity-75"
                     >
-                      <span>{isExpanded ? "Show less" : `View full menu`}</span>
-                      <span 
-                        className="material-symbols-outlined text-lg transition-transform duration-300"
-                        style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
-                      >
-                        keyboard_arrow_down
-                      </span>
+                      {isExpandingMenu ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                          <span>Loading full menu...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{isExpanded ? "Show less" : `View full menu (${filteredMenuItems.length - 4} more)`}</span>
+                          <span 
+                            className="material-symbols-outlined text-lg transition-transform duration-300"
+                            style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                          >
+                            keyboard_arrow_down
+                          </span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
