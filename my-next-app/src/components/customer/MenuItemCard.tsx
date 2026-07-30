@@ -13,6 +13,7 @@ import {
 import QuantityStepper from "./QuantityStepper";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
+import { showAttractiveAuthToast } from "@/lib/authToast";
 
 interface MenuItemCardProps {
   item: {
@@ -28,8 +29,6 @@ interface MenuItemCardProps {
   restaurantId: string;
   restaurantName: string;
 }
-
-import { showAttractiveAuthToast } from "@/lib/authToast";
 
 export default function MenuItemCard({ item, restaurantId, restaurantName }: MenuItemCardProps) {
   const dispatch = useDispatch();
@@ -109,33 +108,39 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
   const isLoading = isAdding || isUpdating || isRemoving;
 
   return (
-    <div className="flex gap-md bg-surface p-lg rounded-xl border border-outline-variant hover:app-shadow transition-all group">
+    <div className="flex gap-3 md:gap-md bg-surface p-3.5 sm:p-4 md:p-lg rounded-2xl border border-outline-variant/60 hover:app-shadow transition-all group items-center">
       {/* Text Info */}
-      <div className="flex-1 flex flex-col justify-between min-w-0">
-        <div className="flex flex-col gap-xs">
-          <div className="flex items-center gap-sm flex-wrap">
-            <h4 className="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
-              {item.name}
-            </h4>
+      <div className="flex-1 flex flex-col justify-between min-w-0 pr-1">
+        <div className="flex flex-col gap-1">
+          {/* Veg/Non-Veg & Bestseller */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`w-3.5 h-3.5 rounded-xs flex items-center justify-center border ${item.isVeg ? "border-green-600 bg-green-50" : "border-red-600 bg-red-50"}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"}`}></span>
+            </span>
             {item.isBestSeller && (
-              <span className="bg-primary-container text-on-primary text-[10px] font-bold px-sm py-0.5 rounded-full uppercase tracking-wider">
+              <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
                 Bestseller
               </span>
             )}
-            <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase ${item.isVeg ? "bg-green-50 text-green-600 border border-green-200" : "bg-red-50 text-red-600 border border-red-200"}`}>
-              {item.isVeg ? "Veg" : "Non-Veg"}
-            </span>
           </div>
-          <span className="font-headline-sm text-headline-sm text-primary font-bold">
+
+          <h4 className="font-bold text-sm md:text-headline-sm text-on-surface truncate">
+            {item.name}
+          </h4>
+
+          <span className="font-bold text-sm md:text-headline-sm text-slate-900">
             ₹{item.price.toFixed(2)}
           </span>
-          <p className="font-body-md text-body-md text-on-surface-variant line-clamp-2 md:line-clamp-3">
-            {item.description}
-          </p>
+
+          {item.description && (
+            <p className="text-xs md:text-body-md text-on-surface-variant line-clamp-2 md:line-clamp-3 mt-0.5">
+              {item.description}
+            </p>
+          )}
         </div>
 
-        {/* Action Button / Stepper */}
-        <div className="mt-md w-fit">
+        {/* Action Button for Desktop Only */}
+        <div className="mt-md w-fit hidden md:block">
           {cartItem ? (
             <QuantityStepper
               quantity={cartItem.quantity}
@@ -157,16 +162,45 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
         </div>
       </div>
 
-      {/* Image */}
-      <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden bg-surface-container relative flex-shrink-0">
-        <img
-          src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"}
-          alt={item.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            e.currentTarget.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400";
-          }}
-        />
+      {/* Image with Swiggy/Zomato Floating ADD Badge on Mobile */}
+      <div className="relative flex flex-col items-center shrink-0 my-auto pb-2 md:pb-0">
+        <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-slate-100 relative shadow-sm border border-slate-100">
+          <img
+            src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"}
+            alt={item.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              e.currentTarget.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400";
+            }}
+          />
+        </div>
+
+        {/* Mobile-Only Floating ADD Badge (Exact Screenshot UI) */}
+        <div className="md:hidden absolute -bottom-2.5 left-1/2 -translate-x-1/2 z-10 shadow-md rounded-xl">
+          {cartItem ? (
+            <div className="bg-white border border-emerald-500/40 rounded-xl shadow-md overflow-hidden flex items-center">
+              <QuantityStepper
+                quantity={cartItem.quantity}
+                onIncrease={handleIncrease}
+                onDecrease={handleDecrease}
+                size="sm"
+                disabled={isLoading}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={handleAdd}
+              disabled={isLoading}
+              className="bg-white text-emerald-600 font-extrabold text-xs px-5 py-1.5 rounded-xl border border-slate-200/90 shadow-md hover:bg-slate-50 uppercase tracking-wider cursor-pointer active:scale-95 transition-all flex items-center justify-center min-w-[72px]"
+            >
+              {isLoading ? (
+                <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+              ) : (
+                "ADD"
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

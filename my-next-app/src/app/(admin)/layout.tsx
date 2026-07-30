@@ -110,8 +110,8 @@ export default function AdminLayout({
                   href={link.href}
                   title={link.label}
                   className={`flex items-center gap-md px-md py-3.5 rounded-2xl font-body-md text-body-md transition-all duration-200 group relative ${isActive
-                      ? "bg-primary-container/10 text-primary font-bold shadow-sm"
-                      : "text-on-surface-variant hover:text-primary hover:bg-slate-50"
+                    ? "bg-primary-container/10 text-primary font-bold shadow-sm"
+                    : "text-on-surface-variant hover:text-primary hover:bg-slate-50"
                     }`}
                 >
                   <span className={`material-symbols-outlined text-2xl shrink-0 ${isActive ? "text-primary" : "text-on-surface-variant/70 group-hover:text-primary"}`}>
@@ -299,8 +299,8 @@ export default function AdminLayout({
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-md px-md py-3 rounded-xl font-body-md text-body-md transition-colors ${isActive
-                          ? "bg-primary-container/10 text-primary font-bold"
-                          : "text-on-surface-variant hover:text-primary hover:bg-slate-50"
+                        ? "bg-primary-container/10 text-primary font-bold"
+                        : "text-on-surface-variant hover:text-primary hover:bg-slate-50"
                         }`}
                     >
                       <span className="material-symbols-outlined text-2xl">{link.icon}</span>
