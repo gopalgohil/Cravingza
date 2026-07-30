@@ -14,6 +14,9 @@ interface LiveTrackingMapInnerProps {
   restaurantLng?: number;
   customerLat?: number;
   customerLng?: number;
+  riderLat?: number;
+  riderLng?: number;
+  riderName?: string;
 }
 
 // Function to auto-center and fit map bounds ONLY once on initial render
