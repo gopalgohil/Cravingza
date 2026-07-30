@@ -1,0 +1,10 @@
+{
+  "name": "cravingza",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix my-next-app run dev",
+    "build": "npm --prefix my-next-app run build",
+    "start": "npm --prefix my-next-app run start"
+  }
+}
