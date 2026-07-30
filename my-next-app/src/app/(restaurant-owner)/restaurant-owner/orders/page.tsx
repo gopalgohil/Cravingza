@@ -192,22 +192,22 @@ export default function RestaurantOrdersPage() {
         </div>
       </div>
 
-      {/* Tabs list */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-outline-variant/20">
+      {/* Tabs list - Horizontally scrollable compact chips on mobile */}
+      <div className="flex items-center gap-2 pb-2 border-b border-outline-variant/20 overflow-x-auto no-scrollbar scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
         {statusTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab.id)}
-            className={`px-4 py-2 rounded-xl text-body-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-2 border ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-1.5 shrink-0 border ${
               activeTab === tab.id
-                ? "bg-primary text-white border-primary shadow-md shadow-primary/15"
-                : "bg-surface-container text-on-surface-variant border-outline-variant/20 hover:bg-surface-container-high"
+                ? "bg-primary text-white border-primary shadow-sm shadow-primary/20"
+                : "bg-white text-slate-600 border-slate-200/80 hover:bg-slate-50"
             }`}
           >
             <span>{tab.label}</span>
             <span
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                activeTab === tab.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
+              className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === tab.id ? "bg-white/25 text-white" : "bg-slate-100 text-slate-600"
               }`}
             >
               {tab.count}

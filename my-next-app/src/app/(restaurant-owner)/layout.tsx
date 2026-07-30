@@ -286,8 +286,8 @@ export default function RestaurantOwnerLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header bar - with Notification Menu and Profile Dropdown */}
-        <header className="flex justify-between items-center bg-white border-b border-outline-variant px-6 py-4 shadow-sm shrink-0 z-20">
-          <div className="flex items-center gap-sm">
+        <header className="flex justify-between items-center bg-white border-b border-outline-variant px-3 sm:px-6 py-3 shadow-sm shrink-0 z-20">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="md:hidden p-1.5 rounded-lg text-on-surface hover:bg-slate-100 transition-colors focus:outline-none"
@@ -297,12 +297,12 @@ export default function RestaurantOwnerLayout({
             <span className="font-headline-sm text-headline-sm font-extrabold text-slate-800 tracking-tight hidden md:block">
               Partner Portal
             </span>
-            <span className="font-headline-sm text-headline-sm font-bold text-primary tracking-tight md:hidden">
-              Cravingza Partner
+            <span className="text-base font-black text-primary tracking-tight md:hidden">
+              Cravingza
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-4">
             {/* Notification Menu */}
             <NotificationMenu />
 
@@ -310,7 +310,7 @@ export default function RestaurantOwnerLayout({
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                className="flex items-center gap-md hover:bg-slate-50 p-1.5 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-200 focus:outline-none"
+                className="flex items-center gap-2 hover:bg-slate-50 p-1 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-200 focus:outline-none"
               >
                 <div className="text-right hidden sm:block">
                   {!mounted || !authChecked ? (
@@ -326,12 +326,9 @@ export default function RestaurantOwnerLayout({
                     </>
                   )}
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-orange-500 text-white flex items-center justify-center font-bold shadow-md shadow-primary/20 shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-primary to-orange-500 text-white flex items-center justify-center font-bold text-sm sm:text-base shadow-md shadow-primary/20 shrink-0">
                   {mounted ? displayInitials : ""}
                 </div>
-                <span className="material-symbols-outlined text-slate-400 text-sm hidden sm:block">
-                  {isProfileMenuOpen ? "expand_less" : "expand_more"}
-                </span>
               </button>
 
               {/* Profile Dropdown Menu */}
