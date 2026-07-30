@@ -109,17 +109,16 @@ export default function AdminLayout({
                   key={link.href}
                   href={link.href}
                   title={link.label}
-                  className={`flex items-center gap-md px-md py-3.5 rounded-2xl font-body-md text-body-md transition-all duration-200 group relative ${
-                    isActive
+                  className={`flex items-center gap-md px-md py-3.5 rounded-2xl font-body-md text-body-md transition-all duration-200 group relative ${isActive
                       ? "bg-primary-container/10 text-primary font-bold shadow-sm"
                       : "text-on-surface-variant hover:text-primary hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <span className={`material-symbols-outlined text-2xl shrink-0 ${isActive ? "text-primary" : "text-on-surface-variant/70 group-hover:text-primary"}`}>
                     {link.icon}
                   </span>
                   <span className="hidden lg:block whitespace-nowrap truncate">{link.label}</span>
-                  
+
                   {/* Tooltip for collapsed mode */}
                   <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {link.label}
@@ -171,7 +170,7 @@ export default function AdminLayout({
               Admin Portal
             </span>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {/* Notification Menu */}
             <NotificationMenu />
@@ -264,7 +263,7 @@ export default function AdminLayout({
               className="fixed inset-0 bg-black/45 backdrop-blur-sm transition-opacity duration-300"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            
+
             {/* Drawer content panel */}
             <div className="relative flex-1 flex flex-col max-w-[280px] w-full bg-white shadow-2xl p-lg z-50 animate-slide-in-left">
               <div className="flex items-center justify-between mb-xl pb-md border-b border-slate-100">
@@ -299,11 +298,10 @@ export default function AdminLayout({
                       key={link.href}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center gap-md px-md py-3 rounded-xl font-body-md text-body-md transition-colors ${
-                        isActive
+                      className={`flex items-center gap-md px-md py-3 rounded-xl font-body-md text-body-md transition-colors ${isActive
                           ? "bg-primary-container/10 text-primary font-bold"
                           : "text-on-surface-variant hover:text-primary hover:bg-slate-50"
-                      }`}
+                        }`}
                     >
                       <span className="material-symbols-outlined text-2xl">{link.icon}</span>
                       <span>{link.label}</span>
@@ -323,8 +321,6 @@ export default function AdminLayout({
                   </Link>
                 </div>
               </nav>
-
-
             </div>
           </div>
         )}
@@ -357,9 +353,8 @@ export default function AdminLayout({
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all ${
-                  isActive ? "text-primary font-bold scale-105" : "text-slate-500 hover:text-slate-900"
-                }`}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all ${isActive ? "text-primary font-bold scale-105" : "text-slate-500 hover:text-slate-900"
+                  }`}
               >
                 <span className={`material-symbols-outlined text-xl ${isActive ? "text-primary font-bold" : "text-slate-400"}`}>
                   {link.icon}

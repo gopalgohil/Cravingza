@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { signInWithPopup } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { auth, googleProvider } from "@/lib/firebase";
 
@@ -18,6 +19,7 @@ function LoginContent() {
   const [identity, setIdentity] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -189,16 +191,41 @@ function LoginContent() {
 
   return (
     <main className="flex min-h-screen text-slate-900 bg-slate-50/50">
-      {/* Left Side: Login Form */}
-      <section className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative z-10">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 p-8 md:p-10 shadow-xl shadow-slate-200/50 space-y-6">
+      {/* Left Side: High-Quality Food Photography */}
+      <section className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-primary">
+        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950/60 via-slate-950/20 to-transparent z-10"></div>
+        <div
+          className="w-full h-full bg-cover bg-center transition-transform duration-300 ease-out"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&auto=format&fit=crop&q=80')",
+            transform: `scale(1.05) translate(${mousePos.x}px, ${mousePos.y}px)`,
+          }}
+        />
+        {/* Overlay Testimonial */}
+        <div className="absolute bottom-12 left-12 right-12 z-20 text-white">
+          <div className="backdrop-blur-md bg-white/10 p-6 rounded-3xl border border-white/20 shadow-2xl space-y-3">
+            <div className="flex gap-1 text-amber-400 text-sm">
+              {"★".repeat(5)}
+            </div>
+            <p className="text-sm md:text-base italic font-medium leading-relaxed">
+              "The fastest delivery service in the city. The food always arrives piping hot and perfectly packaged."
+            </p>
+            <p className="text-xs text-slate-300 font-bold">— Sarah Jenkins, Urban Professional</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Right Side: Login Form */}
+      <section className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-12 relative z-10 my-auto">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xl shadow-slate-200/50 space-y-5">
           {/* App Logo & Title */}
-          <div className="text-center space-y-3">
-            <Link href="/" className="inline-flex items-center justify-center gap-2.5 group">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/25 group-hover:scale-105 transition-transform">
+          <div className="text-center space-y-2">
+            <Link href="/" className="inline-flex items-center justify-center gap-2 group">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform">
                 <span className="material-symbols-outlined text-2xl">restaurant</span>
               </div>
-              <span className="font-headline-md text-2xl font-black tracking-tight text-slate-900">
+              <span className="text-2xl font-black tracking-tight text-slate-900">
                 Cravingza
               </span>
             </Link>
@@ -212,13 +239,13 @@ function LoginContent() {
 
           {/* Messages */}
           {errorMsg && (
-            <div className="p-3.5 bg-red-50 text-red-600 text-xs font-semibold rounded-2xl border border-red-200/80 flex items-center gap-2">
+            <div className="p-3 bg-red-50 text-red-600 text-xs font-semibold rounded-2xl border border-red-200 flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">error</span>
               <span>{errorMsg}</span>
             </div>
           )}
           {successMsg && (
-            <div className="p-3.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-2xl border border-emerald-200/80 flex items-center gap-2">
+            <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-2xl border border-emerald-200 flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">check_circle</span>
               <span>{successMsg}</span>
             </div>
@@ -227,7 +254,7 @@ function LoginContent() {
           {/* Form */}
           <form className="space-y-4" onSubmit={handleLogin}>
             {/* Email/Phone Input */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 block" htmlFor="identity">
                 Email or Phone Number
               </label>
@@ -248,7 +275,7 @@ function LoginContent() {
             </div>
 
             {/* Password Input */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 block" htmlFor="password">
                 Password
               </label>
@@ -266,61 +293,67 @@ function LoginContent() {
                   required
                 />
                 <button
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors focus:outline-none p-1"
-                  onClick={() => setShowPassword(!showPassword)}
                   type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-lg">
-                    {showPassword ? "visibility_off" : "visibility"}
-                  </span>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Forgot Password */}
-            <div className="flex justify-end pt-0.5">
+            {/* Actions */}
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer accent-primary"
+                />
+                <span>Remember me</span>
+              </label>
               <Link
                 href="/forgot-password"
-                className="text-xs text-primary font-bold hover:underline"
+                className="text-primary font-bold hover:underline"
               >
-                Forgot Password?
+                Forgot password?
               </Link>
             </div>
 
-            {/* Primary Log In Button */}
+            {/* Submit Button */}
             <button
-              className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
               type="submit"
               disabled={isLoading}
+              className="w-full py-3.5 bg-primary hover:bg-primary/90 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl transition-all duration-200 flex items-center justify-center cursor-pointer active:scale-98 disabled:opacity-50"
             >
               {isLoading ? (
-                <span className="inline-block animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
               ) : (
-                <>
-                  <span>Log In</span>
-                  <span className="material-symbols-outlined text-base">arrow_forward</span>
-                </>
+                "Log In"
               )}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-4">
+          {/* Social Login */}
+          <div className="relative my-4 text-center">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
-            <div className="relative flex justify-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              <span className="bg-white px-3 text-slate-400">or continue with</span>
+            <div className="relative flex justify-center text-[11px] uppercase">
+              <span className="bg-white px-3 text-slate-400 font-bold tracking-wider">
+                Or continue with
+              </span>
             </div>
           </div>
 
-          {/* Google Login */}
           <button
+            type="button"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-sm rounded-2xl transition-all shadow-2xs active:scale-[0.98] cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2.5 py-3 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-800 font-bold text-xs sm:text-sm rounded-2xl transition-all shadow-2xs active:scale-98 cursor-pointer disabled:opacity-50"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -338,7 +371,7 @@ function LoginContent() {
                 fill="#EA4335"
               ></path>
             </svg>
-            Google
+            <span>Sign in with Google</span>
           </button>
 
           {/* Footer Register Link */}
@@ -349,31 +382,6 @@ function LoginContent() {
                 Register Now
               </Link>
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Right Side: High-Quality Food Photography */}
-      <section className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950/60 via-slate-950/20 to-transparent z-10"></div>
-        <div
-          className="w-full h-full bg-cover bg-center transition-transform duration-300 ease-out"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&auto=format&fit=crop&q=80')",
-            transform: `scale(1.05) translate(${mousePos.x}px, ${mousePos.y}px)`,
-          }}
-        />
-        {/* Overlay Testimonial */}
-        <div className="absolute bottom-12 left-12 right-12 z-20 text-white">
-          <div className="backdrop-blur-md bg-white/10 p-6 rounded-3xl border border-white/20 shadow-2xl space-y-3">
-            <div className="flex gap-1 text-amber-400 text-sm">
-              {"★".repeat(5)}
-            </div>
-            <p className="text-sm md:text-base italic font-medium leading-relaxed">
-              "The fastest delivery service in the city. The food always arrives piping hot and perfectly packaged."
-            </p>
-            <p className="text-xs text-slate-300 font-bold">— Sarah Jenkins, Urban Professional</p>
           </div>
         </div>
       </section>

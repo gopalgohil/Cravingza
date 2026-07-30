@@ -184,21 +184,21 @@ export default function RegisterPage() {
       </section>
 
       {/* Right Side: Registration Form */}
-      <section className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-12 relative z-10 my-auto">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xl shadow-slate-200/50 space-y-5">
+      <section className="w-full lg:w-1/2 flex items-center justify-center p-3 sm:p-6 md:p-12 relative z-10 my-auto">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-6 md:p-8 shadow-xl shadow-slate-200/50 space-y-3 md:space-y-5">
           {/* App Logo & Title */}
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-1 md:space-y-2">
             <Link href="/" className="inline-flex items-center justify-center gap-2 group">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-2xl">restaurant</span>
+              <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-xl md:text-2xl">restaurant</span>
               </div>
-              <span className="text-2xl font-black tracking-tight text-slate-900">
+              <span className="text-xl md:text-2xl font-black tracking-tight text-slate-900">
                 Cravingza
               </span>
             </Link>
             <div>
-              <h2 className="font-extrabold text-xl text-slate-900">Create your account</h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <h2 className="font-extrabold text-lg md:text-xl text-slate-900">Create your account</h2>
+              <p className="text-[11px] md:text-xs text-slate-500 mt-0.5">
                 Join Cravingza today and start exploring top eats near you.
               </p>
             </div>
@@ -210,7 +210,7 @@ export default function RegisterPage() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2.5 py-3 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-slate-100 transition-all text-xs sm:text-sm font-bold text-slate-800 cursor-pointer active:scale-95 duration-200 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-2 md:py-3 bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl hover:bg-slate-100 transition-all text-xs sm:text-sm font-bold text-slate-800 cursor-pointer active:scale-95 duration-200 disabled:opacity-50"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
                 <path
@@ -235,11 +235,11 @@ export default function RegisterPage() {
           </div>
 
           {/* Clean OR Divider */}
-          <div className="relative my-4 text-center">
+          <div className="relative my-2 md:my-4 text-center">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
-            <div className="relative flex justify-center text-[11px] uppercase">
+            <div className="relative flex justify-center text-[10px] md:text-[11px] uppercase">
               <span className="bg-white px-3 text-slate-400 font-bold tracking-wider">
                 or register with email
               </span>
@@ -248,25 +248,25 @@ export default function RegisterPage() {
 
           {/* Error Message */}
           {errorMsg && (
-            <div className="p-3 bg-red-50 text-red-600 text-xs font-semibold rounded-2xl border border-red-200 flex items-center gap-2">
+            <div className="p-2.5 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-200 flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">error</span>
               <span>{errorMsg}</span>
             </div>
           )}
 
           {/* Form */}
-          <form className="space-y-3.5" onSubmit={handleSubmit}>
+          <form className="space-y-2 md:space-y-3.5" onSubmit={handleSubmit}>
             {/* Full Name */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block" htmlFor="name">
+            <div className="space-y-0.5 md:space-y-1">
+              <label className="text-[11px] md:text-xs font-bold text-slate-700 block" htmlFor="name">
                 Full Name
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base md:text-lg">
                   person
                 </span>
                 <input
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-9 md:pl-10 pr-3 py-1.5 md:py-2.5 bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl text-xs md:text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   id="name"
                   type="text"
                   value={name}
@@ -275,20 +275,20 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-              {errors.name && <span className="text-red-500 text-[11px] block mt-0.5">{errors.name}</span>}
+              {errors.name && <span className="text-red-500 text-[10px] block mt-0.5">{errors.name}</span>}
             </div>
 
             {/* Email */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block" htmlFor="email">
+            <div className="space-y-0.5 md:space-y-1">
+              <label className="text-[11px] md:text-xs font-bold text-slate-700 block" htmlFor="email">
                 Email Address
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base md:text-lg">
                   mail
                 </span>
                 <input
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-9 md:pl-10 pr-3 py-1.5 md:py-2.5 bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl text-xs md:text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   id="email"
                   type="email"
                   value={email}
@@ -297,21 +297,21 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-              {errors.email && <span className="text-red-500 text-[11px] block mt-0.5">{errors.email}</span>}
+              {errors.email && <span className="text-red-500 text-[10px] block mt-0.5">{errors.email}</span>}
             </div>
 
             {/* Phone */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block" htmlFor="phone">
+            <div className="space-y-0.5 md:space-y-1">
+              <label className="text-[11px] md:text-xs font-bold text-slate-700 block" htmlFor="phone">
                 Phone Number
               </label>
               <div className="relative flex items-center">
-                <div className="absolute left-3 flex items-center gap-1 text-slate-500 font-bold text-xs pointer-events-none select-none z-10">
-                  <span className="material-symbols-outlined text-sm text-primary">call</span>
-                  <span className="text-slate-700 font-bold border-r border-slate-300 pr-1.5">+91</span>
+                <div className="absolute left-2.5 flex items-center gap-1 text-slate-500 font-bold text-[11px] md:text-xs pointer-events-none select-none z-10">
+                  <span className="material-symbols-outlined text-xs md:text-sm text-primary">call</span>
+                  <span className="text-slate-700 font-bold border-r border-slate-300 pr-1">+91</span>
                 </div>
                 <input
-                  className={`w-full pl-20 pr-4 py-2.5 bg-slate-50 border rounded-2xl text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all ${
+                  className={`w-full pl-16 md:pl-20 pr-3 py-1.5 md:py-2.5 bg-slate-50 border rounded-xl md:rounded-2xl text-xs md:text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all ${
                     errors.phone ? "border-red-500" : "border-slate-200"
                   }`}
                   id="phone"
@@ -327,96 +327,99 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-              {errors.phone && <span className="text-red-500 text-[11px] block mt-0.5">{errors.phone}</span>}
+              {errors.phone && <span className="text-red-500 text-[10px] block mt-0.5">{errors.phone}</span>}
             </div>
 
-            {/* Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block" htmlFor="password">
-                Password
-              </label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-                  lock
-                </span>
-                <input
-                  className="w-full pl-10 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            {/* Passwords Side-By-Side Grid */}
+            <div className="grid grid-cols-2 gap-2 md:gap-3.5">
+              {/* Password */}
+              <div className="space-y-0.5 md:space-y-1">
+                <label className="text-[11px] md:text-xs font-bold text-slate-700 block truncate" htmlFor="password">
+                  Password
+                </label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-2.5 md:left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base md:text-lg">
+                    lock
+                  </span>
+                  <input
+                    className="w-full pl-8 md:pl-10 pr-8 md:pr-12 py-1.5 md:py-2.5 bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl text-xs md:text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 md:right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+                  </button>
+                </div>
+                {errors.password && <span className="text-red-500 text-[10px] block mt-0.5 leading-tight">{errors.password}</span>}
               </div>
-              {errors.password && <span className="text-red-500 text-[11px] block mt-0.5">{errors.password}</span>}
-            </div>
 
-            {/* Confirm Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block" htmlFor="confirm_password">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-                  verified_user
-                </span>
-                <input
-                  className="w-full pl-10 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  id="confirm_password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    toast.warning("For security, copy-pasting is disabled for Confirm Password.");
-                  }}
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+              {/* Confirm Password */}
+              <div className="space-y-0.5 md:space-y-1">
+                <label className="text-[11px] md:text-xs font-bold text-slate-700 block truncate" htmlFor="confirm_password">
+                  Confirm<span className="hidden sm:inline"> Password</span>
+                </label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-2.5 md:left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base md:text-lg">
+                    verified_user
+                  </span>
+                  <input
+                    className="w-full pl-8 md:pl-10 pr-8 md:pr-12 py-1.5 md:py-2.5 bg-slate-50 border border-slate-200 rounded-xl md:rounded-2xl text-xs md:text-sm font-medium text-slate-900 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    id="confirm_password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      toast.warning("For security, copy-pasting is disabled for Confirm Password.");
+                    }}
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2 md:right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <span className="text-red-500 text-[10px] block mt-0.5 leading-tight">{errors.confirmPassword}</span>
+                )}
               </div>
-              {errors.confirmPassword && (
-                <span className="text-red-500 text-[11px] block mt-0.5">{errors.confirmPassword}</span>
-              )}
             </div>
 
             {/* Terms & Conditions */}
-            <div className="pt-1">
-              <div className="flex items-start gap-2">
+            <div className="pt-0.5">
+              <div className="flex items-start gap-1.5">
                 <input
-                  className="w-4 h-4 mt-0.5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer accent-primary"
+                  className="w-3.5 h-3.5 md:w-4 md:h-4 mt-0.5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer accent-primary"
                   id="terms"
                   type="checkbox"
                   checked={agreeTerms}
                   onChange={(e) => setAgreeTerms(e.target.checked)}
                 />
-                <label className="text-xs text-slate-600 leading-tight" htmlFor="terms">
+                <label className="text-[11px] md:text-xs text-slate-600 leading-tight" htmlFor="terms">
                   I agree to the{" "}
                   <a className="text-primary font-bold hover:underline" href="#">
-                    Terms of Service
+                    Terms
                   </a>{" "}
-                  and{" "}
+                  &{" "}
                   <a className="text-primary font-bold hover:underline" href="#">
                     Privacy Policy
                   </a>
                 </label>
               </div>
               {errors.agreeTerms && (
-                <span className="text-red-500 text-[11px] block mt-1">{errors.agreeTerms}</span>
+                <span className="text-red-500 text-[10px] block mt-0.5">{errors.agreeTerms}</span>
               )}
             </div>
 
@@ -424,14 +427,14 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading || success}
-              className={`w-full py-3.5 text-white font-extrabold text-sm rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center cursor-pointer active:scale-98 ${
+              className={`w-full py-2.5 md:py-3.5 text-white font-extrabold text-xs md:text-sm rounded-xl md:rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center cursor-pointer active:scale-98 ${
                 success
                   ? "bg-emerald-600 shadow-emerald-500/25"
                   : "bg-primary hover:bg-primary/90 shadow-primary/25"
               }`}
             >
               {isLoading ? (
-                <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+                <span className="material-symbols-outlined animate-spin text-lg md:text-xl">progress_activity</span>
               ) : success ? (
                 "Account Created! Redirecting..."
               ) : (
@@ -441,8 +444,8 @@ export default function RegisterPage() {
           </form>
 
           {/* Footer Link */}
-          <div className="pt-2 text-center">
-            <p className="text-xs text-slate-500">
+          <div className="pt-1 text-center">
+            <p className="text-[11px] md:text-xs text-slate-500">
               Already have an account?
               <Link href="/login" className="text-primary font-bold hover:underline ml-1">
                 Sign In
