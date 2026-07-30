@@ -147,13 +147,11 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
               onIncrease={handleIncrease}
               onDecrease={handleDecrease}
               size="sm"
-              disabled={isLoading}
             />
           ) : (
             <button
               onClick={handleAdd}
-              disabled={isLoading}
-              className="bg-primary text-white font-label-md text-label-md px-lg py-sm rounded-xl active:scale-95 transition-all hover:bg-primary-container hover:text-on-primary flex items-center gap-xs cursor-pointer border border-transparent disabled:opacity-50"
+              className="bg-primary text-white font-label-md text-label-md px-lg py-sm rounded-xl active:scale-95 transition-all hover:bg-primary-container hover:text-on-primary flex items-center gap-xs cursor-pointer border border-transparent"
             >
               <span className="material-symbols-outlined text-base">add_shopping_cart</span>
               Add to Cart
@@ -184,20 +182,14 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
                 onIncrease={handleIncrease}
                 onDecrease={handleDecrease}
                 size="sm"
-                disabled={isLoading}
               />
             </div>
           ) : (
             <button
               onClick={handleAdd}
-              disabled={isLoading}
               className="bg-white text-emerald-600 font-extrabold text-xs px-5 py-1.5 rounded-xl border border-slate-200/90 shadow-md hover:bg-slate-50 uppercase tracking-wider cursor-pointer active:scale-95 transition-all flex items-center justify-center min-w-[72px]"
             >
-              {isLoading ? (
-                <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-              ) : (
-                "ADD"
-              )}
+              ADD
             </button>
           )}
         </div>
