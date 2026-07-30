@@ -161,8 +161,10 @@ export default function AdminLayout({
               <span className="material-symbols-outlined text-2xl block">menu</span>
             </button>
             <Link href="/admin/dashboard" className="flex items-center gap-1.5 md:hidden" title="Admin Home">
-              <span className="material-symbols-outlined text-primary text-3xl font-extrabold">
-                admin_panel_settings
+              <span className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-primary via-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-primary/30 active:scale-95 transition-all">
+                <span className="material-symbols-outlined text-xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  restaurant
+                </span>
               </span>
             </Link>
             <span className="font-headline-sm text-headline-sm font-extrabold text-slate-800 tracking-tight hidden md:block">
@@ -266,13 +268,20 @@ export default function AdminLayout({
             {/* Drawer content panel */}
             <div className="relative flex-1 flex flex-col max-w-[280px] w-full bg-white shadow-2xl p-lg z-50 animate-slide-in-left">
               <div className="flex items-center justify-between mb-xl pb-md border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-3xl font-extrabold">
-                    admin_panel_settings
+                <div className="flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-primary via-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-primary/30">
+                    <span className="material-symbols-outlined text-xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      restaurant
+                    </span>
                   </span>
-                  <span className="font-headline-sm text-headline-sm font-extrabold text-slate-900">
-                    Admin Menu
-                  </span>
+                  <div>
+                    <h3 className="font-headline-sm text-sm font-extrabold text-slate-900 leading-none">
+                      Cravingza
+                    </h3>
+                    <p className="text-[10px] font-extrabold text-primary tracking-wide uppercase mt-0.5">
+                      Admin Panel
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
