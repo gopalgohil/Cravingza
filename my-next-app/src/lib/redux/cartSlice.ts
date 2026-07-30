@@ -40,6 +40,54 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    optimisticAddToCart: (
+      state,
+      action: PayloadAction<{
+        item: { _id: string; name: string; price: number; image?: string; isVeg?: boolean };
+        restaurantId: string;
+        restaurantName: string;
+      }>
+    ) => {
+      const { item, restaurantId, restaurantName } = action.payload;
+      const existingItem = state.items.find((i) => i.id === item._id);
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        state.items.push({
+          id: item._id,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+          image: item.image || "",
+          restaurantId,
+          restaurantName,
+          isVeg: item.isVeg,
+        });
+      }
+      if (!state.restaurant) {
+        state.restaurant = { _id: restaurantId, name: restaurantName };
+      }
+      state.subtotal = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+    },
+    optimisticUpdateQuantity: (
+      state,
+      action: PayloadAction<{ id: string; quantity: number }>
+    ) => {
+      const { id, quantity } = action.payload;
+      const existingItem = state.items.find((i) => i.id === id);
+      if (existingItem) {
+        if (quantity <= 0) {
+          state.items = state.items.filter((i) => i.id !== id);
+        } else {
+          existingItem.quantity = quantity;
+        }
+      }
+      state.subtotal = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+    },
+    optimisticRemoveFromCart: (state, action: PayloadAction<string>) => {
+      state.items = state.items.filter((i) => i.id !== action.payload);
+      state.subtotal = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+    },
     clearCartLocal: (state) => {
       state.items = [];
       state.restaurant = null;
@@ -138,5 +186,12 @@ const cartSlice = createSlice({
   },
 });
 
-export const { clearCartLocal, setConflictModal, setIsLoading } = cartSlice.actions;
+export const {
+  clearCartLocal,
+  setConflictModal,
+  setIsLoading,
+  optimisticAddToCart,
+  optimisticUpdateQuantity,
+  optimisticRemoveFromCart,
+} = cartSlice.actions;
 export default cartSlice.reducer;

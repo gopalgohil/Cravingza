@@ -4,7 +4,12 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RootState } from "@/lib/redux/store";
-import { setConflictModal } from "@/lib/redux/cartSlice";
+import {
+  setConflictModal,
+  optimisticAddToCart,
+  optimisticUpdateQuantity,
+  optimisticRemoveFromCart,
+} from "@/lib/redux/cartSlice";
 import {
   useAddToCartMutation,
   useUpdateCartItemMutation,
@@ -40,9 +45,9 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
     state.cart.items.find((i) => i.id === item._id)
   );
 
-  const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
-  const [updateCartItem, { isLoading: isUpdating }] = useUpdateCartItemMutation();
-  const [removeCartItem, { isLoading: isRemoving }] = useRemoveCartItemMutation();
+  const [addToCart] = useAddToCartMutation();
+  const [updateCartItem] = useUpdateCartItemMutation();
+  const [removeCartItem] = useRemoveCartItemMutation();
 
   const showSignInToast = () => {
     showAttractiveAuthToast(
@@ -58,9 +63,13 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
       showSignInToast();
       return;
     }
+    
+    // Instant 0ms Optimistic UI update!
+    dispatch(optimisticAddToCart({ item, restaurantId, restaurantName }));
+    toast.success(`${item.name} added to cart!`);
+
     try {
       await addToCart({ menuItemId: item._id, quantity: 1 }).unwrap();
-      toast.success(`${item.name} added to cart!`);
     } catch (err: any) {
       if (err.status === 409 && err.data?.conflict) {
         // Trigger conflict modal
@@ -72,18 +81,21 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
           })
         );
       } else if (err.status === 401) {
-        // Fallback for 401 unauthorized
         showSignInToast();
       } else {
-        toast.error(err.data?.message || "Failed to add item. Please try again.");
+        toast.error(err.data?.message || "Failed to add item to cart.");
       }
     }
   };
 
   const handleIncrease = async () => {
     if (cartItem) {
+      const newQty = cartItem.quantity + 1;
+      // Instant 0ms Optimistic UI update!
+      dispatch(optimisticUpdateQuantity({ id: item._id, quantity: newQty }));
+
       try {
-        await updateCartItem({ menuItemId: item._id, quantity: cartItem.quantity + 1 }).unwrap();
+        await updateCartItem({ menuItemId: item._id, quantity: newQty }).unwrap();
       } catch (err: any) {
         toast.error(err.data?.message || "Failed to update quantity");
       }
@@ -92,20 +104,26 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
 
   const handleDecrease = async () => {
     if (cartItem) {
+      const newQty = cartItem.quantity - 1;
+      // Instant 0ms Optimistic UI update!
+      if (newQty <= 0) {
+        dispatch(optimisticRemoveFromCart(item._id));
+        toast.success(`${item.name} removed from cart`);
+      } else {
+        dispatch(optimisticUpdateQuantity({ id: item._id, quantity: newQty }));
+      }
+
       try {
-        if (cartItem.quantity === 1) {
+        if (newQty <= 0) {
           await removeCartItem(item._id).unwrap();
-          toast.success(`${item.name} removed from cart`);
         } else {
-          await updateCartItem({ menuItemId: item._id, quantity: cartItem.quantity - 1 }).unwrap();
+          await updateCartItem({ menuItemId: item._id, quantity: newQty }).unwrap();
         }
       } catch (err: any) {
         toast.error(err.data?.message || "Failed to update quantity");
       }
     }
   };
-
-  const isLoading = isAdding || isUpdating || isRemoving;
 
   return (
     <div className="flex gap-3 md:gap-md bg-surface p-3.5 sm:p-4 md:p-lg rounded-2xl border border-outline-variant/60 hover:app-shadow transition-all group items-center">
