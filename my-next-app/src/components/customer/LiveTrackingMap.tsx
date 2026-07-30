@@ -24,6 +24,9 @@ interface LiveTrackingMapProps {
   restaurantLng?: number;
   customerLat?: number;
   customerLng?: number;
+  riderLat?: number;
+  riderLng?: number;
+  riderName?: string;
 }
 
 export default function LiveTrackingMap(props: LiveTrackingMapProps) {

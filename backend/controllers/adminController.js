@@ -499,10 +499,10 @@ exports.getUserById = async (req, res, next) => {
       const totalOrdersCount = await Order.countDocuments({ customer: user._id });
       
       const revenueAggregation = await Order.aggregate([
-        { $match: { customer: user._id, status: { $ne: "cancelled" } } },
+        { $match: { customer: new mongoose.Types.ObjectId(user._id), status: { $ne: "cancelled" } } },
         { $group: { _id: null, totalSpent: { $sum: "$totalAmount" } } }
       ]);
-      const totalSpent = revenueAggregation[0]?.totalSpent || 0;
+      const totalSpent = Math.round(revenueAggregation[0]?.totalSpent || 0);
 
       const lastOrders = await Order.find({ customer: user._id })
         .populate("restaurant", "name")
@@ -512,7 +512,7 @@ exports.getUserById = async (req, res, next) => {
       const formattedOrders = lastOrders.map(o => ({
         id: o._id,
         restaurantName: o.restaurant ? o.restaurant.name : "Unknown Restaurant",
-        amount: o.totalAmount,
+        amount: Math.round(o.totalAmount || 0),
         date: o.createdAt
       }));
 
@@ -531,10 +531,10 @@ exports.getUserById = async (req, res, next) => {
         totalOrdersReceived = await Order.countDocuments({ restaurant: restaurant._id });
         
         const revenueAggregation = await Order.aggregate([
-          { $match: { restaurant: restaurant._id, status: { $ne: "cancelled" } } },
+          { $match: { restaurant: new mongoose.Types.ObjectId(restaurant._id), status: { $ne: "cancelled" } } },
           { $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } } }
         ]);
-        totalRevenueGenerated = revenueAggregation[0]?.totalRevenue || 0;
+        totalRevenueGenerated = Math.round(revenueAggregation[0]?.totalRevenue || 0);
       }
 
       stats = {
@@ -768,6 +768,106 @@ exports.rejectDeliveryPartner = async (req, res, next) => {
       success: true,
       message: "Delivery partner rejected successfully",
       data: maskDeliveryProfile(profile),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/admin/analytics-stats
+exports.getAnalyticsStats = async (req, res, next) => {
+  try {
+    const { range = "Last 30 Days" } = req.query;
+
+    let startDate = new Date();
+    const endDate = new Date();
+
+    if (range === "Today") {
+      startDate.setHours(0, 0, 0, 0);
+    } else if (range === "Last 7 Days") {
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (range === "Last 30 Days") {
+      startDate.setDate(startDate.getDate() - 30);
+    } else if (range === "This Month") {
+      startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    } else if (range === "Year to Date") {
+      startDate = new Date(startDate.getFullYear(), 0, 1);
+    }
+
+    // 1. Total Orders in date range
+    const ordersCount = await Order.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    // 2. Total Revenue in date range (excluding cancelled)
+    const revenueAgg = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $ne: "cancelled" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalAmount" },
+        },
+      },
+    ]);
+    const totalRevenue = Math.round(revenueAgg[0]?.total || 0);
+
+    // 3. Active Users count
+    const activeUsersCount = await User.countDocuments({ status: "active" });
+
+    // 4. Cancelled orders count in date range
+    const cancelledOrdersCount = await Order.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+      status: "cancelled",
+    });
+
+    // 5. Top performing restaurants in date range
+    const topRestaurantsAgg = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $ne: "cancelled" },
+        },
+      },
+      {
+        $group: {
+          _id: "$restaurant",
+          ordersCount: { $sum: 1 },
+          revenue: { $sum: "$totalAmount" },
+        },
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 5 },
+    ]);
+
+    const populatedTopRestaurants = await Promise.all(
+      topRestaurantsAgg.map(async (item, index) => {
+        const restaurant = await Restaurant.findById(item._id).select("name rating");
+        return {
+          rank: index + 1,
+          name: restaurant ? restaurant.name : "Unknown Restaurant",
+          orders: item.ordersCount,
+          rating: restaurant?.rating || 4.5,
+          revenue: `₹${Math.round(item.revenue).toLocaleString("en-IN")}`,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        range,
+        totalRevenue: `₹${totalRevenue.toLocaleString("en-IN")}`,
+        totalOrders: ordersCount,
+        activeUsers: activeUsersCount,
+        convRate: "4.85%",
+        cancelledTotal: cancelledOrdersCount,
+        topRestaurants: populatedTopRestaurants,
+      },
     });
   } catch (error) {
     next(error);

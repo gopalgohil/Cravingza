@@ -27,6 +27,7 @@ router.patch("/delivery-partners/:id/reject", adminController.rejectDeliveryPart
 
 // Admin Dashboard Analytics
 router.get("/dashboard", adminController.getDashboardData);
+router.get("/analytics-stats", adminController.getAnalyticsStats);
 
 // User Management
 router.get("/users", adminController.getUsers);

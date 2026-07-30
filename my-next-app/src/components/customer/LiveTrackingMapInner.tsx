@@ -49,7 +49,7 @@ function RecenterControl({ bounds }: { bounds: L.LatLngBoundsExpression }) {
 }
 
 // Custom Leaflet Icons using SVG DivIcons
-const createCustomIcon = (type: "store" | "home") => {
+const createCustomIcon = (type: "store" | "home" | "rider") => {
   if (type === "store") {
     return L.divIcon({
       className: "custom-leaflet-icon",
@@ -60,6 +60,19 @@ const createCustomIcon = (type: "store" | "home") => {
       `,
       iconSize: [40, 40],
       iconAnchor: [20, 20],
+    });
+  }
+
+  if (type === "rider") {
+    return L.divIcon({
+      className: "custom-leaflet-icon",
+      html: `
+        <div style="background: linear-gradient(135deg, #ea580c, #b52603); color: white; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 6px 16px rgba(234, 88, 12, 0.5); text-align: center; position: relative; animation: pulse 2s infinite;">
+          <span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; transform: scaleX(-1);">two_wheeler</span>
+        </div>
+      `,
+      iconSize: [44, 44],
+      iconAnchor: [22, 22],
     });
   }
 
@@ -85,9 +98,36 @@ export default function LiveTrackingMapInner({
   restaurantLng = 73.1812,
   customerLat = 22.3175,
   customerLng = 73.155,
+  riderLat,
+  riderLng,
+  riderName = "Delivery Partner",
 }: LiveTrackingMapInnerProps) {
   const storePos: [number, number] = [restaurantLat || 22.3072, restaurantLng || 73.1812];
   const customerPos: [number, number] = [customerLat || 22.3175, customerLng || 73.155];
+
+  // Rider position calculation (always offset along route so Store 🏪, Rider 🛵, and Customer 🏠 are all 3 visible)
+  let riderPos: [number, number] | null = null;
+  if (riderLat && riderLng) {
+    riderPos = [riderLat, riderLng];
+  } else if (status === "out_for_delivery") {
+    // Rider is en-route (~50% midway between store & customer)
+    riderPos = [
+      storePos[0] + (customerPos[0] - storePos[0]) * 0.5,
+      storePos[1] + (customerPos[1] - storePos[1]) * 0.5,
+    ];
+  } else if (status === "delivered") {
+    // Rider near customer (88% towards customer)
+    riderPos = [
+      storePos[0] + (customerPos[0] - storePos[0]) * 0.88,
+      storePos[1] + (customerPos[1] - storePos[1]) * 0.88,
+    ];
+  } else {
+    // Preparing / Placed: Rider near restaurant waiting for pickup (20% from store)
+    riderPos = [
+      storePos[0] + (customerPos[0] - storePos[0]) * 0.2,
+      storePos[1] + (customerPos[1] - storePos[1]) * 0.2,
+    ];
+  }
 
   const mapBounds: L.LatLngBoundsExpression = [storePos, customerPos];
   const routePolyline: [number, number][] = [storePos, customerPos];
@@ -142,6 +182,27 @@ export default function LiveTrackingMapInner({
             </div>
           </Popup>
         </Marker>
+
+        {/* Delivery Rider Marker (Scooter 🛵) */}
+        {riderPos && (
+          <Marker position={riderPos} icon={createCustomIcon("rider")} zIndexOffset={1000}>
+            <Popup>
+              <div className="p-1 text-center font-sans max-w-[210px]">
+                <strong className="text-slate-900 text-xs font-bold flex items-center justify-center gap-1">
+                  <span className="material-symbols-outlined text-orange-600 text-sm">two_wheeler</span>
+                  {riderName}
+                </strong>
+                <span className="text-[10px] text-slate-600 font-medium block mt-1 leading-tight bg-orange-50 p-1 rounded border border-orange-100">
+                  {status === "out_for_delivery"
+                    ? "🛵 On the way to deliver your order!"
+                    : status === "delivered"
+                    ? "✅ Arrived & Order Delivered"
+                    : "⏳ Waiting at restaurant for pickup"}
+                </span>
+              </div>
+            </Popup>
+          </Marker>
+        )}
       </MapContainer>
 
       {/* Honest Status Overlay Badge */}

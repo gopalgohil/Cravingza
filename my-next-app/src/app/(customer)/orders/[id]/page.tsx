@@ -279,13 +279,12 @@ export default function OrderDetailsPage({ params }: PageProps) {
               <div className="text-right">
                 <span className="font-caption text-caption text-on-surface-variant block">Status</span>
                 <span
-                  className={`font-display-md text-headline-lg font-bold ${
-                    order.status === "delivered"
+                  className={`font-display-md text-headline-lg font-bold ${order.status === "delivered"
                       ? "text-green-600"
                       : order.status === "cancelled"
-                      ? "text-red-600"
-                      : "text-primary animate-pulse"
-                  }`}
+                        ? "text-red-600"
+                        : "text-primary animate-pulse"
+                    }`}
                 >
                   {stageInfo.activeStageLabel}
                 </span>
@@ -332,11 +331,10 @@ export default function OrderDetailsPage({ params }: PageProps) {
                   {/* Step 0: Placed */}
                   <div className="flex flex-col items-center gap-sm max-w-[20%] text-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                        stageInfo.index >= 0
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${stageInfo.index >= 0
                           ? "bg-primary border-primary text-white"
                           : "bg-surface border-outline-variant text-on-surface-variant"
-                      }`}
+                        }`}
                     >
                       <span className="material-symbols-outlined text-lg">receipt_long</span>
                     </div>
@@ -348,11 +346,10 @@ export default function OrderDetailsPage({ params }: PageProps) {
                   {/* Step 1: Preparing */}
                   <div className="flex flex-col items-center gap-sm max-w-[20%] text-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                        stageInfo.index >= 1
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${stageInfo.index >= 1
                           ? "bg-primary border-primary text-white"
                           : "bg-surface border-outline-variant text-on-surface-variant"
-                      }`}
+                        }`}
                     >
                       <span className="material-symbols-outlined text-lg">restaurant</span>
                     </div>
@@ -364,11 +361,10 @@ export default function OrderDetailsPage({ params }: PageProps) {
                   {/* Step 2: On the Way */}
                   <div className="flex flex-col items-center gap-sm max-w-[20%] text-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                        stageInfo.index >= 2
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${stageInfo.index >= 2
                           ? "bg-primary border-primary text-white"
                           : "bg-surface border-outline-variant text-on-surface-variant"
-                      }`}
+                        }`}
                     >
                       <span className="material-symbols-outlined text-lg">local_shipping</span>
                     </div>
@@ -380,11 +376,10 @@ export default function OrderDetailsPage({ params }: PageProps) {
                   {/* Step 3: Arrived */}
                   <div className="flex flex-col items-center gap-sm max-w-[20%] text-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                        stageInfo.index >= 3
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${stageInfo.index >= 3
                           ? "bg-primary border-primary text-white"
                           : "bg-surface border-outline-variant text-on-surface-variant"
-                      }`}
+                        }`}
                     >
                       <span className="material-symbols-outlined text-lg">home</span>
                     </div>
@@ -621,9 +616,8 @@ export default function OrderDetailsPage({ params }: PageProps) {
                       className="cursor-pointer transition-all duration-150 transform hover:scale-110 p-1"
                     >
                       <span
-                        className={`material-symbols-outlined text-[40px] ${
-                          isActive ? "text-yellow-500" : "text-outline"
-                        }`}
+                        className={`material-symbols-outlined text-[40px] ${isActive ? "text-yellow-500" : "text-outline"
+                          }`}
                         style={{
                           fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
                         }}

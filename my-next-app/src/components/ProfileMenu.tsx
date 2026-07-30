@@ -7,7 +7,7 @@ import { useAppStore } from "@/lib/store";
 import { LogOut, User as UserIcon, ChevronDown, Receipt, Store, Shield } from "lucide-react";
 
 export default function ProfileMenu() {
-  const { user, setUser, setAuthChecked, clearCart, setAddress } = useAppStore();
+  const { user, setUser, authChecked, clearCart, setAddress } = useAppStore();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -52,7 +52,17 @@ export default function ProfileMenu() {
     }
   };
 
-  if (!mounted || !user) {
+  // 1. While client is mounting OR initial auth check is resolving -> Show neutral skeleton placeholder (NO flash of Sign In)
+  if (!mounted || !authChecked) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-28 h-9 rounded-xl bg-outline-variant/30 animate-pulse" />
+      </div>
+    );
+  }
+
+  // 2. Auth resolved & user is NOT logged in -> Show Sign In / Sign Up
+  if (!user) {
     return (
       <div className="flex items-center gap-2">
         <Link

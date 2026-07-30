@@ -179,12 +179,18 @@ export default function AdminLayout({
                 className="flex items-center gap-md hover:bg-slate-50 p-1.5 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-200 focus:outline-none"
               >
                 <div className="text-right hidden sm:block">
-                  <p className="font-label-md text-label-md font-extrabold text-slate-900 leading-none">
-                    {user ? user.name : "Loading..."}
-                  </p>
-                  <p className="font-caption text-caption text-slate-400 mt-1">
-                    Super Admin
-                  </p>
+                  {!mounted || !authChecked ? (
+                    <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
+                  ) : (
+                    <>
+                      <p className="font-label-md text-label-md font-extrabold text-slate-900 leading-none">
+                        {user ? user.name : "Admin"}
+                      </p>
+                      <p className="font-caption text-caption text-slate-400 mt-1">
+                        Super Admin
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="w-10 h-10 rounded-full border border-slate-200 overflow-hidden bg-slate-100 shadow-sm flex items-center justify-center shrink-0">
                   <img
@@ -307,7 +313,7 @@ export default function AdminLayout({
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-slate-50/50 p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
           {!mounted || !authChecked ? (
             <div className="h-full min-h-[300px] flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
@@ -326,6 +332,27 @@ export default function AdminLayout({
             children
           )}
         </main>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 py-1.5 px-2 shadow-lg flex justify-around items-center">
+          {links.map((link) => {
+            const isActive = pathname === link.href || (link.href === "/admin/approvals" && (pathname.includes("/restaurant-approval") || pathname.includes("/rider-approval")));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all ${
+                  isActive ? "text-primary font-bold scale-105" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <span className={`material-symbols-outlined text-xl ${isActive ? "text-primary font-bold" : "text-slate-400"}`}>
+                  {link.icon}
+                </span>
+                <span className="text-[10px] tracking-tight">{link.label.split(" ")[0]}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );

@@ -313,12 +313,18 @@ export default function RestaurantOwnerLayout({
                 className="flex items-center gap-md hover:bg-slate-50 p-1.5 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-200 focus:outline-none"
               >
                 <div className="text-right hidden sm:block">
-                  <p className="font-label-md text-label-md font-extrabold text-slate-900 leading-none">
-                    {mounted ? displayName : "Loading..."}
-                  </p>
-                  <p className="font-caption text-caption text-slate-400 mt-1">
-                    Restaurant Partner
-                  </p>
+                  {!mounted || !authChecked ? (
+                    <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
+                  ) : (
+                    <>
+                      <p className="font-label-md text-label-md font-extrabold text-slate-900 leading-none">
+                        {displayName}
+                      </p>
+                      <p className="font-caption text-caption text-slate-400 mt-1">
+                        Restaurant Partner
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-orange-500 text-white flex items-center justify-center font-bold shadow-md shadow-primary/20 shrink-0">
                   {mounted ? displayInitials : ""}
