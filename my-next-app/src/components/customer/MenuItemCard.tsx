@@ -4,12 +4,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RootState } from "@/lib/redux/store";
-import {
-  setConflictModal,
-  optimisticAddToCart,
-  optimisticUpdateQuantity,
-  optimisticRemoveFromCart,
-} from "@/lib/redux/cartSlice";
+import { setConflictModal } from "@/lib/redux/cartSlice";
 import {
   useAddToCartMutation,
   useUpdateCartItemMutation,
@@ -45,9 +40,9 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
     state.cart.items.find((i) => i.id === item._id)
   );
 
-  const [addToCart] = useAddToCartMutation();
-  const [updateCartItem] = useUpdateCartItemMutation();
-  const [removeCartItem] = useRemoveCartItemMutation();
+  const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
+  const [updateCartItem, { isLoading: isUpdating }] = useUpdateCartItemMutation();
+  const [removeCartItem, { isLoading: isRemoving }] = useRemoveCartItemMutation();
 
   const showSignInToast = () => {
     showAttractiveAuthToast(
@@ -63,13 +58,9 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
       showSignInToast();
       return;
     }
-    
-    // Instant 0ms Optimistic UI update!
-    dispatch(optimisticAddToCart({ item, restaurantId, restaurantName }));
-    toast.success(`${item.name} added to cart!`);
-
     try {
       await addToCart({ menuItemId: item._id, quantity: 1 }).unwrap();
+      toast.success(`${item.name} added to cart!`);
     } catch (err: any) {
       if (err.status === 409 && err.data?.conflict) {
         // Trigger conflict modal
@@ -83,19 +74,15 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
       } else if (err.status === 401) {
         showSignInToast();
       } else {
-        toast.error(err.data?.message || "Failed to add item to cart.");
+        toast.error(err.data?.message || "Failed to add item. Please try again.");
       }
     }
   };
 
   const handleIncrease = async () => {
     if (cartItem) {
-      const newQty = cartItem.quantity + 1;
-      // Instant 0ms Optimistic UI update!
-      dispatch(optimisticUpdateQuantity({ id: item._id, quantity: newQty }));
-
       try {
-        await updateCartItem({ menuItemId: item._id, quantity: newQty }).unwrap();
+        await updateCartItem({ menuItemId: item._id, quantity: cartItem.quantity + 1 }).unwrap();
       } catch (err: any) {
         toast.error(err.data?.message || "Failed to update quantity");
       }
@@ -104,26 +91,20 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
 
   const handleDecrease = async () => {
     if (cartItem) {
-      const newQty = cartItem.quantity - 1;
-      // Instant 0ms Optimistic UI update!
-      if (newQty <= 0) {
-        dispatch(optimisticRemoveFromCart(item._id));
-        toast.success(`${item.name} removed from cart`);
-      } else {
-        dispatch(optimisticUpdateQuantity({ id: item._id, quantity: newQty }));
-      }
-
       try {
-        if (newQty <= 0) {
+        if (cartItem.quantity === 1) {
           await removeCartItem(item._id).unwrap();
+          toast.success(`${item.name} removed from cart`);
         } else {
-          await updateCartItem({ menuItemId: item._id, quantity: newQty }).unwrap();
+          await updateCartItem({ menuItemId: item._id, quantity: cartItem.quantity - 1 }).unwrap();
         }
       } catch (err: any) {
         toast.error(err.data?.message || "Failed to update quantity");
       }
     }
   };
+
+  const isLoading = isAdding || isUpdating || isRemoving;
 
   return (
     <div className="flex gap-3 md:gap-md bg-surface p-3.5 sm:p-4 md:p-lg rounded-2xl border border-outline-variant/60 hover:app-shadow transition-all group items-center">
@@ -165,11 +146,13 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
               onIncrease={handleIncrease}
               onDecrease={handleDecrease}
               size="sm"
+              disabled={isLoading}
             />
           ) : (
             <button
               onClick={handleAdd}
-              className="bg-primary text-white font-label-md text-label-md px-lg py-sm rounded-xl active:scale-95 transition-all hover:bg-primary-container hover:text-on-primary flex items-center gap-xs cursor-pointer border border-transparent"
+              disabled={isLoading}
+              className="bg-primary text-white font-label-md text-label-md px-lg py-sm rounded-xl active:scale-95 transition-all hover:bg-primary-container hover:text-on-primary flex items-center gap-xs cursor-pointer border border-transparent disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-base">add_shopping_cart</span>
               Add to Cart
@@ -191,7 +174,7 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
           />
         </div>
 
-        {/* Mobile-Only Floating ADD Badge (Exact Screenshot UI) */}
+        {/* Mobile-Only Floating ADD Badge */}
         <div className="md:hidden absolute -bottom-2.5 left-1/2 -translate-x-1/2 z-10 shadow-md rounded-xl">
           {cartItem ? (
             <div className="bg-white border border-emerald-500/40 rounded-xl shadow-md overflow-hidden flex items-center">
@@ -200,12 +183,14 @@ export default function MenuItemCard({ item, restaurantId, restaurantName }: Men
                 onIncrease={handleIncrease}
                 onDecrease={handleDecrease}
                 size="sm"
+                disabled={isLoading}
               />
             </div>
           ) : (
             <button
               onClick={handleAdd}
-              className="bg-white text-emerald-600 font-extrabold text-xs px-5 py-1.5 rounded-xl border border-slate-200/90 shadow-md hover:bg-slate-50 uppercase tracking-wider cursor-pointer active:scale-95 transition-all flex items-center justify-center min-w-[72px]"
+              disabled={isLoading}
+              className="bg-white text-emerald-600 font-extrabold text-xs px-5 py-1.5 rounded-xl border border-slate-200/90 shadow-md hover:bg-slate-50 uppercase tracking-wider cursor-pointer active:scale-95 transition-all flex items-center justify-center min-w-[72px] disabled:opacity-50"
             >
               ADD
             </button>
