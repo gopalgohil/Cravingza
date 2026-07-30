@@ -160,11 +160,13 @@ export default function AdminLayout({
             >
               <span className="material-symbols-outlined text-2xl block">menu</span>
             </button>
+            <Link href="/admin/dashboard" className="flex items-center gap-1.5 md:hidden" title="Admin Home">
+              <span className="material-symbols-outlined text-primary text-3xl font-extrabold">
+                admin_panel_settings
+              </span>
+            </Link>
             <span className="font-headline-sm text-headline-sm font-extrabold text-slate-800 tracking-tight hidden md:block">
               Admin Portal
-            </span>
-            <span className="font-headline-sm text-headline-sm font-bold text-primary tracking-tight md:hidden">
-              Cravingza Admin
             </span>
           </div>
           
@@ -263,10 +265,15 @@ export default function AdminLayout({
             
             {/* Drawer content panel */}
             <div className="relative flex-1 flex flex-col max-w-[280px] w-full bg-white shadow-2xl p-lg z-50 animate-slide-in-left">
-              <div className="flex items-center justify-between mb-xl">
-                <span className="font-headline-md text-headline-md font-bold text-primary">
-                  Cravingza Admin
-                </span>
+              <div className="flex items-center justify-between mb-xl pb-md border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-3xl font-extrabold">
+                    admin_panel_settings
+                  </span>
+                  <span className="font-headline-sm text-headline-sm font-extrabold text-slate-900">
+                    Admin Menu
+                  </span>
+                </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-1 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none"
