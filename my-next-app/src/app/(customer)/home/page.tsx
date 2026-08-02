@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import CategoryTab from "@/components/customer/CategoryTab";
@@ -12,11 +12,19 @@ function HomeContent() {
   const activeCategory = searchParams.get("category") || "";
   const urlSearch = searchParams.get("search") || "";
   const focusSearch = searchParams.get("focus") === "search";
+  const mobileInputRef = useRef<HTMLInputElement>(null);
 
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<string>("");
   const [selectedSort, setSelectedSort] = useState<string>("rating");
+
+  // Focus mobile search input once on mount if focus=search is in URL
+  useEffect(() => {
+    if (focusSearch && mobileInputRef.current) {
+      mobileInputRef.current.focus();
+    }
+  }, [focusSearch]);
 
   // Keep searchQuery in sync with URL search parameter when URL changes and input is not focused
   useEffect(() => {
@@ -147,7 +155,7 @@ function HomeContent() {
     } else {
       params.set("category", catId);
     }
-    router.push(`/home?${params.toString()}`);
+    router.push(`/home?${params.toString()}`, { scroll: false });
     setTimeout(() => {
       setIsCategoryLoading(false);
     }, 450);
@@ -176,6 +184,7 @@ function HomeContent() {
         >
           <span className="material-symbols-outlined text-on-surface-variant">search</span>
           <input
+            ref={mobileInputRef}
             type="text"
             value={searchQuery}
             onFocus={() => setIsFocused(true)}
@@ -183,7 +192,6 @@ function HomeContent() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search restaurants, cuisines..."
             className="w-full bg-transparent border-none text-body-md font-body-md placeholder:text-on-surface-variant focus:outline-none focus:ring-0"
-            autoFocus={focusSearch}
           />
         </form>
       </div>
@@ -267,7 +275,7 @@ function HomeContent() {
       </section>
 
       {/* Restaurants List */}
-      {isLoading || isFetching || isCategoryLoading || isPageChanging ? (
+      {isLoading && restaurants.length === 0 ? (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-lg">
           {[...Array(9)].map((_, idx) => (
             <div
@@ -292,7 +300,7 @@ function HomeContent() {
           </p>
         </section>
       ) : filteredRestaurants.length > 0 ? (
-        <section className="space-y-8">
+        <section className={`space-y-8 transition-opacity duration-200 ${isFetching || isCategoryLoading || isPageChanging ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
             {paginatedRestaurants.map((restaurant: any) => (
               <Link

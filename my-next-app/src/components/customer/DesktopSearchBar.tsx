@@ -35,7 +35,7 @@ function SearchBarContent() {
       params.delete("search");
       const queryString = params.toString();
       const newUrl = `/home${queryString ? `?${queryString}` : ""}`;
-      router.push(newUrl);
+      router.push(newUrl, { scroll: false });
     } else {
       // Debounce user keystrokes when query length is >= 3
       const handler = setTimeout(() => {
@@ -43,7 +43,7 @@ function SearchBarContent() {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set("search", searchVal);
         const newUrl = `/home?${newParams.toString()}`;
-        router.push(newUrl);
+        router.push(newUrl, { scroll: false });
       }, 350);
       return () => clearTimeout(handler);
     }
@@ -54,11 +54,11 @@ function SearchBarContent() {
     const params = new URLSearchParams(searchParams.toString());
     if (searchVal.length >= 3) {
       params.set("search", searchVal);
-      router.push(`/home?${params.toString()}`);
+      router.push(`/home?${params.toString()}`, { scroll: false });
     } else {
       params.delete("search");
       const queryString = params.toString();
-      router.push(`/home${queryString ? `?${queryString}` : ""}`);
+      router.push(`/home${queryString ? `?${queryString}` : ""}`, { scroll: false });
     }
   };
 
