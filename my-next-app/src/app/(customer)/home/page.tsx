@@ -213,29 +213,39 @@ function HomeContent() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-sm w-full sm:w-auto">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-hide py-1 w-full sm:w-auto flex-nowrap sm:flex-wrap -mx-margin-mobile px-margin-mobile sm:mx-0 sm:px-0">
           {/* Price Filters */}
-          <select
-            value={selectedPrice}
-            onChange={(e) => setSelectedPrice(e.target.value)}
-            className="px-md py-2 border border-outline-variant rounded-xl bg-white text-body-md font-body-md focus:outline-none cursor-pointer"
-          >
-            <option value="">All Prices</option>
-            <option value="$">₹ (Low Min Order)</option>
-            <option value="$$">₹ (Medium Min Order)</option>
-            <option value="$$$">₹ (High Min Order)</option>
-          </select>
+          <div className="relative shrink-0">
+            <select
+              value={selectedPrice}
+              onChange={(e) => setSelectedPrice(e.target.value)}
+              className="appearance-none pl-3.5 pr-8 py-1.5 sm:px-md sm:py-2 border border-outline-variant/80 rounded-full sm:rounded-xl bg-white text-xs sm:text-body-md font-semibold text-on-surface-variant focus:outline-none cursor-pointer shrink-0 transition-all shadow-2xs hover:border-outline"
+            >
+              <option value="">All Prices</option>
+              <option value="$">₹ (Low Min Order)</option>
+              <option value="$$">₹ (Medium Min Order)</option>
+              <option value="$$$">₹ (High Min Order)</option>
+            </select>
+            <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant pointer-events-none">
+              expand_more
+            </span>
+          </div>
 
           {/* Sort options */}
-          <select
-            value={selectedSort}
-            onChange={(e) => setSelectedSort(e.target.value)}
-            className="px-md py-2 border border-outline-variant rounded-xl bg-white text-body-md font-body-md focus:outline-none cursor-pointer"
-          >
-            <option value="rating">Top Rated</option>
-            <option value="deliveryTime">Delivery Speed</option>
-            <option value="deliveryFee">Low Delivery Fee</option>
-          </select>
+          <div className="relative shrink-0">
+            <select
+              value={selectedSort}
+              onChange={(e) => setSelectedSort(e.target.value)}
+              className="appearance-none pl-3.5 pr-8 py-1.5 sm:px-md sm:py-2 border border-outline-variant/80 rounded-full sm:rounded-xl bg-white text-xs sm:text-body-md font-semibold text-on-surface-variant focus:outline-none cursor-pointer shrink-0 transition-all shadow-2xs hover:border-outline"
+            >
+              <option value="rating">Top Rated</option>
+              <option value="deliveryTime">Delivery Speed</option>
+              <option value="deliveryFee">Low Delivery Fee</option>
+            </select>
+            <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant pointer-events-none">
+              expand_more
+            </span>
+          </div>
         </div>
       </section>
 
