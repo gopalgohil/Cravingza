@@ -10,19 +10,20 @@ function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get("category") || "";
-  const initialSearch = searchParams.get("search") || "";
+  const urlSearch = searchParams.get("search") || "";
   const focusSearch = searchParams.get("focus") === "search";
 
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<string>("");
   const [selectedSort, setSelectedSort] = useState<string>("rating");
 
+  // Keep searchQuery in sync with URL search parameter when URL changes and input is not focused
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768 && !isFocused) {
-      setSearchQuery(initialSearch);
+    if (!isFocused) {
+      setSearchQuery(urlSearch);
     }
-  }, [initialSearch, isFocused]);
+  }, [urlSearch, isFocused]);
 
   // Sync mobile input debounced search back to the URL search param
   useEffect(() => {
@@ -32,7 +33,7 @@ function HomeContent() {
     const currentSearch = params.get("search") || "";
     
     // Determine effective target search string based on the 3-character threshold
-    const targetSearch = searchQuery.length >= 3 ? searchQuery : "";
+    const targetSearch = searchQuery.trim().length >= 3 ? searchQuery.trim() : "";
 
     if (targetSearch === currentSearch) return;
 
@@ -42,9 +43,9 @@ function HomeContent() {
       router.replace(`/home${queryString ? `?${queryString}` : ""}`, { scroll: false });
     } else {
       const handler = setTimeout(() => {
-        if (searchQuery.length < 3) return;
+        if (searchQuery.trim().length < 3) return;
         const newParams = new URLSearchParams(searchParams.toString());
-        newParams.set("search", searchQuery);
+        newParams.set("search", searchQuery.trim());
         router.replace(`/home?${newParams.toString()}`, { scroll: false });
       }, 350);
       return () => clearTimeout(handler);
@@ -53,10 +54,13 @@ function HomeContent() {
 
   const [isCategoryLoading, setIsCategoryLoading] = useState(false);
 
+  // Compute effective active search query to send to backend (handles both mobile typing & desktop URL)
+  const activeSearchQuery = (searchQuery.trim().length >= 3 ? searchQuery.trim() : urlSearch.trim());
+
   // Fetch restaurants from MongoDB using RTK Query
   const { data: response, isLoading, isFetching, isError } = useGetRestaurantsQuery({
     cuisine: activeCategory,
-    search: initialSearch.length >= 3 ? initialSearch : "",
+    search: activeSearchQuery.length >= 3 ? activeSearchQuery : "",
     sort: selectedSort,
   });
 
@@ -147,6 +151,17 @@ function HomeContent() {
     setTimeout(() => {
       setIsCategoryLoading(false);
     }, 450);
+  const handleMobileSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams(searchParams.toString());
+    const query = searchQuery.trim();
+    if (query.length >= 3) {
+      params.set("search", query);
+    } else {
+      params.delete("search");
+    }
+    const queryString = params.toString();
+    router.replace(`/home${queryString ? `?${queryString}` : ""}`, { scroll: false });
   };
 
   return (
@@ -154,7 +169,7 @@ function HomeContent() {
       {/* Mobile Search - Visible only on mobile when focused */}
       <div className="md:hidden block mb-md">
         <form
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={handleMobileSearchSubmit}
           className="flex bg-white border border-outline-variant rounded-xl items-center px-md py-3 gap-sm shadow-sm"
         >
           <span className="material-symbols-outlined text-on-surface-variant">search</span>

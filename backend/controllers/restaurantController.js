@@ -21,10 +21,11 @@ const getRestaurants = async (req, res, next) => {
     }
 
     if (search) {
-      const escapedSearch = escapeRegExp(search);
+      const escapedSearch = escapeRegExp(search.trim());
       query.$or = [
         { name: new RegExp(escapedSearch, "i") },
-        { description: new RegExp(escapedSearch, "i") }
+        { description: new RegExp(escapedSearch, "i") },
+        { cuisineTags: { $in: [new RegExp(escapedSearch, "i")] } }
       ];
     }
 
