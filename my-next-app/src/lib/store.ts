@@ -50,6 +50,20 @@ interface AppState {
   setActiveOrder: (order: Order | null) => void;
 }
 
+// Synchronously read user from localStorage on client before first render.
+// This eliminates header flicker — no skeleton flash for logged-in users.
+const _getInitialUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = localStorage.getItem("cravingza_user");
+    return cached ? (JSON.parse(cached) as User) : null;
+  } catch {
+    return null;
+  }
+};
+
+const _initialUser = _getInitialUser();
+
 export const useAppStore = create<AppState>((set) => ({
   cart: [],
   address: "123 Main Street, City Centre",
@@ -79,7 +93,8 @@ export const useAppStore = create<AppState>((set) => ({
       return { cart: state.cart.filter((i) => i.id !== itemId) };
     }),
   clearCart: () => set({ cart: [] }),
-  user: null,
+  // Pre-initialize user from localStorage — available on first render (no flash)
+  user: _initialUser,
   setUser: (user) => {
     if (typeof window !== "undefined") {
       if (user) {
@@ -93,7 +108,8 @@ export const useAppStore = create<AppState>((set) => ({
     }
     set({ user });
   },
-  authChecked: false,
+  // authChecked is true immediately if we already have a cached user
+  authChecked: _initialUser !== null,
   setAuthChecked: (authChecked) => set({ authChecked }),
   activeOrder: null,
   setActiveOrder: (activeOrder) => set({ activeOrder }),

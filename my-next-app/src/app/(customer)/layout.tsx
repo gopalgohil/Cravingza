@@ -31,9 +31,7 @@ export default function CustomerLayout({
 
   useEffect(() => {
     setMounted(true);
-    // Small delay lets React finish hydration so skeleton feels intentional
-    const t = setTimeout(() => setPageReady(true), 600);
-    return () => clearTimeout(t);
+    setPageReady(true);
   }, []);
 
   // Auto-fetch cart from database if user is authenticated
@@ -99,8 +97,9 @@ export default function CustomerLayout({
               className="relative w-10 h-10 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/95 hover:to-orange-500/95 text-white rounded-xl active:scale-95 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 hidden md:flex items-center justify-center cursor-pointer"
             >
               <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>shopping_cart</span>
-              {mounted && cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+              {/* suppressHydrationWarning: cart badge is client-only, avoids mismatch */}
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm" suppressHydrationWarning>
                   {cartCount}
                 </span>
               )}
@@ -161,8 +160,8 @@ export default function CustomerLayout({
         >
           <span className="material-symbols-outlined">shopping_cart</span>
           <span>Cart</span>
-          {mounted && cartCount > 0 && (
-            <span className="absolute top-0 right-1 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+          {cartCount > 0 && (
+            <span className="absolute top-0 right-1 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center" suppressHydrationWarning>
               {cartCount}
             </span>
           )}

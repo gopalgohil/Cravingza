@@ -9,13 +9,8 @@ import { LogOut, User as UserIcon, ChevronDown, Receipt, Store, Shield } from "l
 export default function ProfileMenu() {
   const { user, setUser, authChecked, clearCart, setAddress } = useAppStore();
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -52,11 +47,13 @@ export default function ProfileMenu() {
     }
   };
 
-  // 1. While client is mounting OR initial auth check is resolving -> Show neutral skeleton placeholder (NO flash of Sign In)
-  if (!mounted || !authChecked) {
+  // While initial auth check is still resolving (no cached user found) -> Show neutral skeleton
+  // suppressHydrationWarning: server renders null-user state, client renders cached-user state.
+  // React would warn about mismatch — we suppress it intentionally here.
+  if (!authChecked) {
     return (
-      <div className="flex items-center gap-2">
-        <div className="w-28 h-9 rounded-xl bg-outline-variant/30 animate-pulse" />
+      <div className="flex items-center gap-2" suppressHydrationWarning>
+        <div className="w-28 h-9 rounded-xl bg-outline-variant/30 animate-pulse" suppressHydrationWarning />
       </div>
     );
   }
