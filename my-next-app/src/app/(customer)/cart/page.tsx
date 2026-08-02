@@ -162,46 +162,73 @@ export default function CartPage() {
         <div className="lg:col-span-2 space-y-md">
           <div className="bg-surface rounded-2xl border border-outline-variant divide-y divide-outline-variant/60 shadow-sm overflow-hidden">
             {cartItems.map((item) => (
-              <div key={item.id} className="p-lg flex gap-md items-center">
-                {/* Item Image */}
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-surface-container flex-shrink-0">
-                  <img
-                    src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200"}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400";
-                    }}
-                  />
-                </div>
+              <div
+                key={item.id}
+                className="p-3.5 sm:p-4 md:p-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-md transition-colors"
+              >
+                {/* Top Section / Main Info */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {/* Item Image */}
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-surface-container flex-shrink-0 border border-outline-variant/30">
+                    <img
+                      src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200"}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400";
+                      }}
+                    />
+                  </div>
 
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block truncate">
-                    {item.name}
-                  </span>
-                  <span className="font-body-md text-body-md text-on-surface-variant block mt-0.5">
-                    ₹{item.price.toFixed(2)} each
-                  </span>
-                </div>
+                  {/* Details */}
+                  <div className="flex-1 min-w-0 pr-1">
+                    <span className="font-semibold text-on-surface block text-sm sm:text-base md:text-headline-sm leading-snug line-clamp-2 sm:truncate">
+                      {item.name}
+                    </span>
+                    <span className="text-xs sm:text-sm md:text-body-md text-on-surface-variant block mt-0.5 font-medium">
+                      ₹{item.price.toFixed(2)}{" "}
+                      <span className="text-[11px] sm:text-xs text-on-surface-variant/70 font-normal">
+                        each
+                      </span>
+                    </span>
+                  </div>
 
-                {/* Stepper and Delete */}
-                <div className="flex items-center gap-md">
-                  <QuantityStepper
-                    quantity={item.quantity}
-                    onIncrease={() => handleIncrease(item)}
-                    onDecrease={() => handleDecrease(item)}
-                    size="sm"
-                    disabled={isUpdating || isRemoving}
-                  />
+                  {/* Delete button (Mobile view - top right) */}
                   <button
                     onClick={() => handleRemove(item)}
                     disabled={isRemoving}
-                    className="text-on-surface-variant hover:text-red-500 p-2 rounded-lg hover:bg-surface-container active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    className="sm:hidden text-on-surface-variant/60 hover:text-red-500 p-1.5 rounded-lg active:scale-95 transition-all cursor-pointer disabled:opacity-50 self-start"
                     aria-label="Remove item"
                   >
                     <span className="material-symbols-outlined text-lg">delete</span>
                   </button>
+                </div>
+
+                {/* Bottom Row on Mobile / Right Controls on Tablet & Desktop */}
+                <div className="flex items-center justify-between sm:justify-end gap-md pt-2 sm:pt-0 border-t border-outline-variant/30 sm:border-t-0">
+                  <div className="sm:hidden text-xs font-semibold text-on-surface-variant">
+                    Total: <span className="text-primary font-bold">₹{(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-md ml-auto">
+                    <QuantityStepper
+                      quantity={item.quantity}
+                      onIncrease={() => handleIncrease(item)}
+                      onDecrease={() => handleDecrease(item)}
+                      size="sm"
+                      disabled={isUpdating || isRemoving}
+                    />
+
+                    {/* Delete button (Desktop & Tablet view) */}
+                    <button
+                      onClick={() => handleRemove(item)}
+                      disabled={isRemoving}
+                      className="hidden sm:flex text-on-surface-variant hover:text-red-500 p-2 rounded-lg hover:bg-surface-container active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                      aria-label="Remove item"
+                    >
+                      <span className="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
