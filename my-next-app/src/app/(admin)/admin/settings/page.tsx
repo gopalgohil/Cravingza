@@ -10,7 +10,6 @@ export default function AdminSettingsPage() {
   const [platformName, setPlatformName] = useState("Cravingza");
   const [supportEmail, setSupportEmail] = useState("support@cravingza.com");
   const [supportPhone, setSupportPhone] = useState("+91 98765 43210");
-  const [currencySymbol, setCurrencySymbol] = useState("₹");
   const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   // Commission & Fees State
@@ -118,16 +117,6 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={platformName}
                 onChange={(e) => setPlatformName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Currency Symbol</label>
-              <input
-                type="text"
-                value={currencySymbol}
-                onChange={(e) => setCurrencySymbol(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
               />
             </div>
