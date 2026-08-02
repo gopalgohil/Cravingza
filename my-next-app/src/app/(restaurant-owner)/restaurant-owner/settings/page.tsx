@@ -590,51 +590,58 @@ export default function RestaurantSettingsPage() {
               return (
                 <div
                   key={key}
-                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl border transition-all gap-4 ${
+                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl border transition-all gap-3 sm:gap-4 ${
                     daySched.isOpen
                       ? "bg-slate-50/70 border-slate-200/80"
                       : "bg-slate-100/40 border-slate-200/40 opacity-75"
                   }`}
                 >
-                  <div className="flex items-center gap-3 w-36">
-                    <input
-                      type="checkbox"
-                      id={`check-${key}`}
-                      checked={daySched.isOpen}
-                      onChange={(e) => handleDayChange(key, "isOpen", e.target.checked)}
-                      className="w-4 h-4 accent-primary rounded cursor-pointer"
-                    />
-                    <label htmlFor={`check-${key}`} className="font-bold text-sm text-slate-800 cursor-pointer">
-                      {label}
-                    </label>
+                  <div className="flex items-center justify-between w-full sm:w-36">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id={`check-${key}`}
+                        checked={daySched.isOpen}
+                        onChange={(e) => handleDayChange(key, "isOpen", e.target.checked)}
+                        className="w-4 h-4 accent-primary rounded cursor-pointer"
+                      />
+                      <label htmlFor={`check-${key}`} className="font-bold text-sm text-slate-800 cursor-pointer">
+                        {label}
+                      </label>
+                    </div>
+
+                    {!daySched.isOpen && (
+                      <span className="sm:hidden text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded-full">
+                        Closed
+                      </span>
+                    )}
                   </div>
 
                   {daySched.isOpen ? (
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-500">Open:</span>
+                    <div className="grid grid-cols-2 gap-2.5 sm:flex sm:items-center sm:gap-3 w-full sm:w-auto">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <span className="text-[11px] sm:text-xs font-bold text-slate-500">Open:</span>
                         <input
                           type="time"
                           value={daySched.openTime}
                           onChange={(e) => handleDayChange(key, "openTime", e.target.value)}
                           required
-                          className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs text-slate-900 focus:border-primary outline-none"
+                          className="w-full sm:w-auto px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs text-slate-900 focus:border-primary outline-none"
                         />
                       </div>
-                      <span className="text-slate-400 font-bold">-</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-500">Close:</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <span className="text-[11px] sm:text-xs font-bold text-slate-500">Close:</span>
                         <input
                           type="time"
                           value={daySched.closeTime}
                           onChange={(e) => handleDayChange(key, "closeTime", e.target.value)}
                           required
-                          className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs text-slate-900 focus:border-primary outline-none"
+                          className="w-full sm:w-auto px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs text-slate-900 focus:border-primary outline-none"
                         />
                       </div>
                     </div>
                   ) : (
-                    <span className="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1 rounded-full">
+                    <span className="hidden sm:inline-block text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1 rounded-full">
                       Closed All Day
                     </span>
                   )}
