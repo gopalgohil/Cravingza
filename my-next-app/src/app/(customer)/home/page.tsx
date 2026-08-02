@@ -85,7 +85,7 @@ function HomeContent() {
   // Reset pagination when category, search, price, or sort change
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory, initialSearch, selectedPrice, selectedSort]);
+  }, [activeCategory, activeSearchQuery, selectedPrice, selectedSort]);
 
   const totalPages = Math.ceil(filteredRestaurants.length / RESTAURANTS_PER_PAGE) || 1;
 
@@ -380,10 +380,10 @@ function HomeContent() {
         <section className="text-center py-16 space-y-md">
           <span className="material-symbols-outlined text-6xl text-primary animate-pulse">search_off</span>
           <h3 className="font-headline-sm text-headline-sm text-on-background">
-            {initialSearch ? `No restaurants found for "${initialSearch}"` : "No spots found"}
+            {activeSearchQuery ? `No restaurants found for "${activeSearchQuery}"` : "No spots found"}
           </h3>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-sm mx-auto">
-            {initialSearch ? (
+            {activeSearchQuery ? (
               <>
                 Please check the spelling of your query or try browsing other <span className="text-primary font-semibold hover:underline cursor-pointer" onClick={() => router.push('/home')}>categories</span> instead.
               </>
