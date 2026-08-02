@@ -319,7 +319,8 @@ export default function RestaurantDashboardPage() {
             ) : (
               <div className="space-y-sm">
                 <div className="bg-white border border-outline-variant/20 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-surface-container/40 text-on-surface-variant border-b border-outline-variant/20 text-caption font-bold">
@@ -457,6 +458,147 @@ export default function RestaurantDashboardPage() {
                         )}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Mobile Compact List View (No Horizontal Scroll) */}
+                  <div className="block md:hidden divide-y divide-outline-variant/15">
+                    {isPageLoading ? (
+                      <div className="p-4 space-y-3 animate-pulse">
+                        <div className="h-5 bg-slate-200 rounded w-1/2"></div>
+                        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                      </div>
+                    ) : (
+                      paginatedRecentOrders.map((order) => (
+                        <div key={order._id} className="p-3.5 space-y-2.5 animate-fade-in hover:bg-slate-50/50 transition-colors">
+                          {/* Top Row: Customer Avatar, Name, Order ID & Status */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                                {(order.customer?.name || "G").charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-on-background text-sm truncate">
+                                  {order.customer?.name || "Guest User"}
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                                  <span className="font-mono font-bold text-on-surface-variant">
+                                    #{order._id.slice(-6).toUpperCase()}
+                                  </span>
+                                  {order.customer?.phone && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="truncate">{order.customer?.phone}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold border ${getStatusColor(
+                                  order.status
+                                )}`}
+                              >
+                                {formatStatusText(order.status)}
+                              </span>
+                              {order.paymentMethod === "razorpay" ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                                  <span>PAID</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.25 rounded text-[9px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                                  <span className="w-1 h-1 rounded-full bg-amber-500"></span>
+                                  <span>COD</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Items Summary */}
+                          <div className="bg-surface-container/30 rounded-lg p-2 text-xs space-y-0.5">
+                            {order.items.map((item) => (
+                              <div key={item._id} className="flex justify-between items-center text-on-background">
+                                <span className="truncate pr-2">
+                                  <span className="font-bold text-primary mr-1.5">x{item.quantity}</span>
+                                  {item.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Bottom Row: Total & Action */}
+                          <div className="flex items-center justify-between pt-1 border-t border-outline-variant/15">
+                            <div>
+                              <span className="text-[11px] text-on-surface-variant block">Total Amount</span>
+                              <span className="font-black text-on-background text-base">₹{order.totalAmount.toFixed(0)}</span>
+                            </div>
+
+                            <div>
+                              {order.status === "placed" && (
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => handleStatusUpdate(order._id, "accepted")}
+                                    disabled={isUpdatingStatus}
+                                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusUpdate(order._id, "cancelled")}
+                                    disabled={isUpdatingStatus}
+                                    className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg cursor-pointer"
+                                    title="Reject/Cancel"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+
+                              {order.status === "accepted" && (
+                                <button
+                                  onClick={() => handleStatusUpdate(order._id, "preparing")}
+                                  disabled={isUpdatingStatus}
+                                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs"
+                                >
+                                  Start Preparing
+                                </button>
+                              )}
+
+                              {order.status === "preparing" && (
+                                <button
+                                  onClick={() => handleStatusUpdate(order._id, "ready_for_pickup")}
+                                  disabled={isUpdatingStatus}
+                                  className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs"
+                                >
+                                  Ready for Pickup
+                                </button>
+                              )}
+
+                              {order.status === "ready_for_pickup" && (
+                                <span className="text-[11px] text-amber-700 font-bold bg-amber-50 px-2 py-1 rounded-full border border-amber-200/60">
+                                  Waiting for Rider
+                                </span>
+                              )}
+
+                              {["picked_up", "out_for_delivery"].includes(order.status) && (
+                                <span className="text-[11px] text-purple-700 font-bold bg-purple-50 px-2 py-1 rounded-full border border-purple-200/60">
+                                  In Transit
+                                </span>
+                              )}
+
+                              {["delivered", "cancelled"].includes(order.status) && (
+                                <span className="text-xs text-on-surface-variant/50 font-bold italic">
+                                  No Actions Pending
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
