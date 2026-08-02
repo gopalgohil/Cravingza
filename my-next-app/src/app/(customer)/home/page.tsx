@@ -62,8 +62,13 @@ function HomeContent() {
 
   const [isCategoryLoading, setIsCategoryLoading] = useState(false);
 
-  // Compute effective active search query to send to backend (handles both mobile typing & desktop URL)
-  const activeSearchQuery = (searchQuery.trim().length >= 3 ? searchQuery.trim() : urlSearch.trim());
+  // Compute effective active search query to send to backend
+  // On mobile when input is focused: use live searchQuery (so backspace clears results immediately)
+  // Otherwise: fallback to URL param (handles desktop & unfocused state)
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const activeSearchQuery = isFocused && isMobile
+    ? (searchQuery.trim().length >= 3 ? searchQuery.trim() : "")
+    : (urlSearch.trim().length >= 3 ? urlSearch.trim() : "");
 
   // Fetch restaurants from MongoDB using RTK Query
   const { data: response, isLoading, isFetching, isError } = useGetRestaurantsQuery({
