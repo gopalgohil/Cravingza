@@ -151,6 +151,8 @@ function HomeContent() {
     setTimeout(() => {
       setIsCategoryLoading(false);
     }, 450);
+  };
+
   const handleMobileSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
