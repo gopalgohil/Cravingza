@@ -47,6 +47,16 @@ export default function OffersPage() {
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [isTabSwitching, setIsTabSwitching] = useState<boolean>(false);
+
+  const handleCategoryChange = (catId: string) => {
+    if (catId === activeCategory) return;
+    setActiveCategory(catId);
+    setIsTabSwitching(true);
+    setTimeout(() => {
+      setIsTabSwitching(false);
+    }, 350);
+  };
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -94,6 +104,8 @@ export default function OffersPage() {
     { id: "delivery", label: "Free Delivery", icon: Truck },
   ];
 
+  const showSkeleton = isLoading || isTabSwitching;
+
   return (
     <div className="max-w-max-width mx-auto py-6 space-y-lg px-4 md:px-0">
       {/* Hero Banner Section */}
@@ -121,7 +133,7 @@ export default function OffersPage() {
           return (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => handleCategoryChange(cat.id)}
               className={`px-4 py-2.5 rounded-2xl font-bold text-xs md:text-sm whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-2 border ${
                 isActive
                   ? "bg-primary text-white border-primary shadow-md shadow-primary/20 scale-105"
@@ -136,7 +148,7 @@ export default function OffersPage() {
       </div>
 
       {/* Loading Skeleton */}
-      {isLoading && (
+      {showSkeleton && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2, 3, 4].map((n) => (
             <CouponSkeleton key={n} />
@@ -145,7 +157,7 @@ export default function OffersPage() {
       )}
 
       {/* Error state */}
-      {error && (
+      {!showSkeleton && error && (
         <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-3xl text-center space-y-2">
           <p className="font-bold">Failed to load active offers.</p>
           <p className="text-xs">Please refresh or try again later.</p>
@@ -153,7 +165,7 @@ export default function OffersPage() {
       )}
 
       {/* Empty State */}
-      {!isLoading && !error && filteredCoupons.length === 0 && (
+      {!showSkeleton && !error && filteredCoupons.length === 0 && (
         <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center space-y-4 shadow-sm">
           <div className="w-16 h-16 bg-orange-50 text-primary rounded-full flex items-center justify-center mx-auto">
             <Tag className="w-8 h-8" />
@@ -166,7 +178,7 @@ export default function OffersPage() {
       )}
 
       {/* Coupon Cards Grid */}
-      {!isLoading && !error && filteredCoupons.length > 0 && (
+      {!showSkeleton && !error && filteredCoupons.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredCoupons.map((coupon: any) => (
             <div
