@@ -67,11 +67,34 @@ const createOrder = async (req, res, next) => {
       }
     }
 
+    const SystemSettings = require("../models/SystemSettings");
+    const settings = await SystemSettings.getSettings();
+
     discountAmount = Math.round(discountAmount * 100) / 100;
-    const deliveryFee = isFreeDelivery ? 0 : (restaurant.deliveryFee || 0);
     const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-    const taxes = Math.round((discountedSubtotal * 0.05) * 100) / 100; // 5% tax on discounted subtotal
-    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
+
+    // Option 1 Calculations:
+    // Base Delivery Fee: 100% passed to delivery rider
+    const deliveryFee = isFreeDelivery
+      ? 0
+      : settings.baseDeliveryFee !== undefined
+      ? settings.baseDeliveryFee
+      : (restaurant.deliveryFee || 30);
+
+    // Service Charge / Platform Fee: 100% revenue for Super Admin
+    const serviceFeePercent = settings.serviceFeePercent !== undefined ? settings.serviceFeePercent : 5;
+    const serviceFee = Math.round(((discountedSubtotal * serviceFeePercent) / 100) * 100) / 100;
+
+    // GST Tax Ratio
+    const taxPercent = settings.taxPercent !== undefined ? settings.taxPercent : 5;
+    const taxes = Math.round(((discountedSubtotal * taxPercent) / 100) * 100) / 100;
+
+    // Total Amount paid by Customer
+    const totalAmount = Math.round((discountedSubtotal + serviceFee + deliveryFee + taxes) * 100) / 100;
+
+    // Restaurant Commission deducted by Super Admin from Food Subtotal
+    const commissionRate = settings.restaurantCommissionRate !== undefined ? settings.restaurantCommissionRate : 15;
+    const adminCommission = Math.round(((discountedSubtotal * commissionRate) / 100) * 100) / 100;
 
     const orderItems = cart.items.map((item) => ({
       menuItem: item.menuItem,
@@ -103,7 +126,9 @@ const createOrder = async (req, res, next) => {
       couponCode: appliedCouponCode,
       discount: discountAmount,
       deliveryFee,
+      serviceFee,
       taxes,
+      adminCommission,
       totalAmount,
       status: "placed",
     });

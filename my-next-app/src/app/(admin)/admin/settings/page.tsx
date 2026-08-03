@@ -1,10 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
+import {
+  useGetAdminSettingsQuery,
+  useUpdateAdminSettingsMutation,
+} from "@/lib/redux/apiSlice";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<"general" | "commission" | "notifications" | "security">("general");
+
+  const { data: response, isLoading } = useGetAdminSettingsQuery();
+  const [updateSettings, { isLoading: isSaving }] = useUpdateAdminSettingsMutation();
 
   // General Settings State
   const [platformName, setPlatformName] = useState("Cravingza");
@@ -18,6 +25,21 @@ export default function AdminSettingsPage() {
   const [serviceFeePercent, setServiceFeePercent] = useState("5");
   const [taxPercent, setTaxPercent] = useState("5");
 
+  // Populate state when live settings are loaded from MongoDB
+  useEffect(() => {
+    if (response?.data) {
+      const s = response.data;
+      if (s.platformName) setPlatformName(s.platformName);
+      if (s.supportEmail) setSupportEmail(s.supportEmail);
+      if (s.supportPhone) setSupportPhone(s.supportPhone);
+      if (typeof s.maintenanceMode === "boolean") setMaintenanceMode(s.maintenanceMode);
+      if (s.restaurantCommissionRate !== undefined) setRestaurantCommission(String(s.restaurantCommissionRate));
+      if (s.baseDeliveryFee !== undefined) setBaseDeliveryFee(String(s.baseDeliveryFee));
+      if (s.serviceFeePercent !== undefined) setServiceFeePercent(String(s.serviceFeePercent));
+      if (s.taxPercent !== undefined) setTaxPercent(String(s.taxPercent));
+    }
+  }, [response]);
+
   // Notification Settings State
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [pushAlerts, setPushAlerts] = useState(true);
@@ -28,18 +50,30 @@ export default function AdminSettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [saving, setSaving] = useState(false);
-
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      toast.success("Settings saved successfully!");
-    }, 600);
+    try {
+      await updateSettings({
+        platformName,
+        supportEmail,
+        supportPhone,
+        maintenanceMode,
+        restaurantCommissionRate: Number(restaurantCommission),
+        baseDeliveryFee: Number(baseDeliveryFee),
+        serviceFeePercent: Number(serviceFeePercent),
+        taxPercent: Number(taxPercent),
+      }).unwrap();
+
+      toast.success("System settings updated & saved to Database successfully!");
+    } catch (err: any) {
+      console.error("Failed to save settings:", err);
+      toast.error(err?.data?.message || "Failed to save settings");
+    }
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const [isPassSaving, setIsPassSaving] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword) {
       toast.error("Please enter current password");
@@ -53,9 +87,9 @@ export default function AdminSettingsPage() {
       toast.error("New passwords do not match");
       return;
     }
-    setSaving(true);
+    setIsPassSaving(true);
     setTimeout(() => {
-      setSaving(false);
+      setIsPassSaving(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -167,10 +201,10 @@ export default function AdminSettingsPage() {
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={isSaving}
               className="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-primary/20 flex items-center gap-2 cursor-pointer"
             >
-              {saving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">save</span>}
+              {isSaving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">save</span>}
               Save Changes
             </button>
           </div>
@@ -265,10 +299,10 @@ export default function AdminSettingsPage() {
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={isSaving}
               className="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-primary/20 flex items-center gap-2 cursor-pointer"
             >
-              {saving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">save</span>}
+              {isSaving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">save</span>}
               Save Commission Rates
             </button>
           </div>
@@ -336,10 +370,10 @@ export default function AdminSettingsPage() {
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={isSaving}
               className="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-primary/20 flex items-center gap-2 cursor-pointer"
             >
-              {saving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">save</span>}
+              {isSaving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">save</span>}
               Save Preferences
             </button>
           </div>
@@ -395,10 +429,10 @@ export default function AdminSettingsPage() {
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={isPassSaving}
               className="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-primary/20 flex items-center gap-2 cursor-pointer"
             >
-              {saving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">lock_reset</span>}
+              {isPassSaving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">lock_reset</span>}
               Update Password
             </button>
           </div>

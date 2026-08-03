@@ -874,3 +874,90 @@ exports.getAnalyticsStats = async (req, res, next) => {
   }
 };
 
+// GET /api/admin/settings - Fetch global platform commission and system settings
+exports.getSettings = async (req, res, next) => {
+  try {
+    const SystemSettings = require("../models/SystemSettings");
+    const settings = await SystemSettings.getSettings();
+
+    return res.status(200).json({
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/admin/settings - Update global platform commission and system settings
+exports.updateSettings = async (req, res, next) => {
+  try {
+    const SystemSettings = require("../models/SystemSettings");
+    const {
+      platformName,
+      supportEmail,
+      supportPhone,
+      maintenanceMode,
+      restaurantCommissionRate,
+      baseDeliveryFee,
+      serviceFeePercent,
+      taxPercent,
+    } = req.body;
+
+    const settings = await SystemSettings.getSettings();
+
+    if (platformName !== undefined) settings.platformName = platformName;
+    if (supportEmail !== undefined) settings.supportEmail = supportEmail;
+    if (supportPhone !== undefined) settings.supportPhone = supportPhone;
+    if (typeof maintenanceMode === "boolean") settings.maintenanceMode = maintenanceMode;
+
+    if (restaurantCommissionRate !== undefined) {
+      settings.restaurantCommissionRate = Math.max(0, Math.min(100, Number(restaurantCommissionRate)));
+    }
+    if (baseDeliveryFee !== undefined) {
+      settings.baseDeliveryFee = Math.max(0, Number(baseDeliveryFee));
+    }
+    if (serviceFeePercent !== undefined) {
+      settings.serviceFeePercent = Math.max(0, Math.min(50, Number(serviceFeePercent)));
+    }
+    if (taxPercent !== undefined) {
+      settings.taxPercent = Math.max(0, Math.min(50, Number(taxPercent)));
+    }
+
+    await settings.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "System settings updated successfully",
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/settings - Public settings endpoint for customer checkout calculation
+exports.getPublicSettings = async (req, res, next) => {
+  try {
+    const SystemSettings = require("../models/SystemSettings");
+    const settings = await SystemSettings.getSettings();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        platformName: settings.platformName,
+        supportEmail: settings.supportEmail,
+        supportPhone: settings.supportPhone,
+        maintenanceMode: settings.maintenanceMode,
+        restaurantCommissionRate: settings.restaurantCommissionRate,
+        baseDeliveryFee: settings.baseDeliveryFee,
+        serviceFeePercent: settings.serviceFeePercent,
+        taxPercent: settings.taxPercent,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+

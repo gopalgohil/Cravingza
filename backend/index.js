@@ -47,6 +47,7 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
+app.get("/api/settings", require("./controllers/adminController").getPublicSettings);
 
 // Serve uploaded documents statically
 const path = require("path");

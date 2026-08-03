@@ -35,4 +35,8 @@ router.get("/users/:id", adminController.getUserById);
 router.patch("/users/:id/status", adminController.updateUserStatus);
 router.delete("/users/:id", adminController.deleteUser);
 
+// System Settings
+router.get("/settings", adminController.getSettings);
+router.patch("/settings", adminController.updateSettings);
+
 module.exports = router;

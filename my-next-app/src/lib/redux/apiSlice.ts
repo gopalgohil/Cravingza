@@ -91,7 +91,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Cart", "Orders", "Restaurants", "Reviews", "User", "Addresses", "Menu", "MerchantOrders", "AdminDashboard", "AdminRestaurants", "AdminUsers", "Delivery", "Notifications", "Offers", "MyApplication"],
+  tagTypes: ["Cart", "Orders", "Restaurants", "Reviews", "User", "Addresses", "Menu", "MerchantOrders", "AdminDashboard", "AdminRestaurants", "AdminUsers", "Delivery", "Notifications", "Offers", "MyApplication", "AdminSettings"],
   endpoints: (builder) => ({
     // Notifications Endpoints
     getNotificationsList: builder.query<any, void>({
@@ -587,6 +587,22 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Offers"],
     }),
+    getAdminSettings: builder.query<any, void>({
+      query: () => "/admin/settings",
+      providesTags: ["AdminSettings"],
+    }),
+    updateAdminSettings: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/admin/settings",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["AdminSettings", "AdminDashboard"],
+    }),
+    getPublicSettings: builder.query<any, void>({
+      query: () => "/settings",
+      providesTags: ["AdminSettings"],
+    }),
   }),
 });
 
@@ -666,4 +682,7 @@ export const {
   useGetMerchantOffersQuery,
   useCreateMerchantOfferMutation,
   useDeleteMerchantOfferMutation,
+  useGetAdminSettingsQuery,
+  useUpdateAdminSettingsMutation,
+  useGetPublicSettingsQuery,
 } = apiSlice;
