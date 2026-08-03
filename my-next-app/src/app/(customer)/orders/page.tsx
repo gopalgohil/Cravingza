@@ -492,85 +492,157 @@ export default function OrdersPage() {
             return (
               <article
                 key={order._id}
-                className="bg-surface-container-lowest rounded-xl p-6 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_8px_30px_rgba(0,0,0,0.08)] border border-outline-variant/30 flex flex-col md:flex-row gap-6 transition-transform hover:-translate-y-1 duration-200"
+                className="bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_8px_30px_rgba(0,0,0,0.08)] border border-outline-variant/30 transition-transform hover:-translate-y-1 duration-200 overflow-hidden"
               >
-                <div className="w-full md:w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low relative">
-                  <img
-                    className="w-full h-full object-cover"
-                    src={order.restaurant?.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=60"}
-                    alt={order.restaurant?.name || "Restaurant Image"}
-                  />
-                </div>
-                <div className="flex-grow flex flex-col justify-between">
-                  <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
-                    <div>
-                      <h3 className="font-headline-md text-headline-md text-on-surface">
-                        {order.restaurant?.name || "Cravingza Restaurant"}
-                      </h3>
-                      <p className="font-body-md text-on-surface-variant">
+                {/* ── MOBILE LAYOUT (< md) ── */}
+                <div className="flex md:hidden flex-col">
+                  {/* Top: thumbnail + info */}
+                  <div className="flex gap-3 p-4">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-low">
+                      <img
+                        className="w-full h-full object-cover"
+                        src={order.restaurant?.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=60"}
+                        alt={order.restaurant?.name || "Restaurant Image"}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="font-bold text-on-surface text-sm leading-tight truncate">
+                          {order.restaurant?.name || "Cravingza Restaurant"}
+                        </h3>
+                        {getStatusBadge(order.status)}
+                      </div>
+                      <p className="text-[11px] text-on-surface-variant mb-1">
                         {dateStr} • {timeStr}
                       </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      {getStatusBadge(order.status)}
-
-                      {/* Display stars if reviewed */}
-                      {order.review && (
-                        <div className="flex items-center gap-0.5 text-yellow-500">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <span
-                              key={star}
-                              className="material-symbols-outlined text-[18px]"
-                              style={{
-                                fontVariationSettings:
-                                  star <= order.review.rating ? "'FILL' 1" : "'FILL' 0",
-                              }}
-                            >
-                              star
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <p className="text-xs text-on-surface line-clamp-1">{itemSummary}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="font-bold text-primary text-base">
+                          ₹{order.totalAmount.toFixed(2)}
+                        </span>
+                        {order.review && (
+                          <div className="flex items-center gap-0.5 text-yellow-500">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className="material-symbols-outlined text-[14px]"
+                                style={{ fontVariationSettings: star <= order.review.rating ? "'FILL' 1" : "'FILL' 0" }}
+                              >
+                                star
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <p className="font-body-md text-on-surface mb-4">{itemSummary}</p>
-
-                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/20">
-                    <span className="font-headline-md text-primary">
-                      ₹{order.totalAmount.toFixed(2)}
-                    </span>
-                    <div className="flex items-center gap-4">
+                  {/* Bottom: full-width buttons */}
+                  <div className="border-t border-outline-variant/20 px-4 pb-4 pt-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-end mb-1">
                       <Link
-                        className="text-primary font-label-md hover:underline"
+                        className="text-primary font-semibold text-xs hover:underline"
                         href={`/orders/${order._id}`}
                       >
-                        View Details
+                        View Details →
                       </Link>
+                    </div>
+                    <button
+                      onClick={() => handleReorder(order)}
+                      className="w-full py-2.5 bg-primary text-white rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>shopping_cart</span>
+                      Reorder
+                    </button>
+
+                    {isOrderCancelable(order.status) && (
                       <button
-                        onClick={() => handleReorder(order)}
-                        className="px-6 py-2 border-2 border-primary text-primary rounded-xl font-label-md hover:bg-primary hover:text-white transition-all active:scale-95 cursor-pointer text-sm"
+                        onClick={() => handleOpenCancelModal(order)}
+                        className="w-full py-2.5 border border-red-300 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl font-bold text-sm active:scale-95 transition-all cursor-pointer"
                       >
-                        Reorder
+                        Cancel Order
                       </button>
+                    )}
 
-                      {isOrderCancelable(order.status) && (
-                        <button
-                          onClick={() => handleOpenCancelModal(order)}
-                          className="px-5 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-label-md transition-all active:scale-95 cursor-pointer text-sm font-bold shadow-sm"
-                        >
-                          Cancel Order
-                        </button>
-                      )}
+                    {order.status === "delivered" && !order.review && (
+                      <button
+                        onClick={() => handleOpenReviewModal(order)}
+                        className="w-full py-2.5 bg-primary-container text-on-primary rounded-xl font-bold text-sm active:scale-95 transition-all cursor-pointer hover:brightness-95"
+                      >
+                        ⭐ Rate Order
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                      {order.status === "delivered" && !order.review && (
+                {/* ── DESKTOP LAYOUT (md+) — unchanged ── */}
+                <div className="hidden md:flex flex-row gap-6 p-6">
+                  <div className="w-32 h-32 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low relative">
+                    <img
+                      className="w-full h-full object-cover"
+                      src={order.restaurant?.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=60"}
+                      alt={order.restaurant?.name || "Restaurant Image"}
+                    />
+                  </div>
+                  <div className="flex-grow flex flex-col justify-between">
+                    <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
+                      <div>
+                        <h3 className="font-headline-md text-headline-md text-on-surface">
+                          {order.restaurant?.name || "Cravingza Restaurant"}
+                        </h3>
+                        <p className="font-body-md text-on-surface-variant">
+                          {dateStr} • {timeStr}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {getStatusBadge(order.status)}
+                        {order.review && (
+                          <div className="flex items-center gap-0.5 text-yellow-500">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className="material-symbols-outlined text-[18px]"
+                                style={{ fontVariationSettings: star <= order.review.rating ? "'FILL' 1" : "'FILL' 0" }}
+                              >
+                                star
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <p className="font-body-md text-on-surface mb-4">{itemSummary}</p>
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/20">
+                      <span className="font-headline-md text-primary">
+                        ₹{order.totalAmount.toFixed(2)}
+                      </span>
+                      <div className="flex items-center gap-4">
+                        <Link className="text-primary font-label-md hover:underline" href={`/orders/${order._id}`}>
+                          View Details
+                        </Link>
                         <button
-                          onClick={() => handleOpenReviewModal(order)}
-                          className="px-6 py-2 bg-primary-container text-on-primary rounded-xl font-label-md hover:brightness-95 transition-all active:scale-95 cursor-pointer text-sm font-bold shadow-sm"
+                          onClick={() => handleReorder(order)}
+                          className="px-6 py-2 border-2 border-primary text-primary rounded-xl font-label-md hover:bg-primary hover:text-white transition-all active:scale-95 cursor-pointer text-sm"
                         >
-                          Rate Order
+                          Reorder
                         </button>
-                      )}
+                        {isOrderCancelable(order.status) && (
+                          <button
+                            onClick={() => handleOpenCancelModal(order)}
+                            className="px-5 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-label-md transition-all active:scale-95 cursor-pointer text-sm font-bold shadow-sm"
+                          >
+                            Cancel Order
+                          </button>
+                        )}
+                        {order.status === "delivered" && !order.review && (
+                          <button
+                            onClick={() => handleOpenReviewModal(order)}
+                            className="px-6 py-2 bg-primary-container text-on-primary rounded-xl font-label-md hover:brightness-95 transition-all active:scale-95 cursor-pointer text-sm font-bold shadow-sm"
+                          >
+                            Rate Order
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
