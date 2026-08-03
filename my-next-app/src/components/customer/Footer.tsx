@@ -58,9 +58,9 @@ export default function CustomerFooter() {
             <a className="text-[11px] sm:text-caption font-caption text-on-surface-variant hover:underline transition-all" href="#">
               Cookies
             </a>
-            <a className="text-[11px] sm:text-caption font-caption text-on-surface-variant hover:underline transition-all" href="#">
-              Refunds
-            </a>
+            <Link className="text-[11px] sm:text-caption font-caption text-on-surface-variant hover:underline transition-all font-medium" href="/cancellation-policy">
+              Cancellation & Refunds
+            </Link>
           </div>
         </div>
       </div>

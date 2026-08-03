@@ -288,11 +288,17 @@ const updateOrderStatus = async (req, res, next) => {
     if (status === "ready_for_pickup") {
       updateFields.readyAt = new Date();
     }
+    if (status === "cancelled") {
+      updateFields.cancelledAt = new Date();
+      if (req.body.reason) {
+        updateFields.cancellationReason = req.body.reason;
+      }
+    }
 
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, restaurant: restaurant._id },
       updateFields,
-      { new: true, runValidators: true }
+      { new: true }
     ).populate("customer", "name email phone");
 
     if (!order) {
@@ -300,6 +306,29 @@ const updateOrderStatus = async (req, res, next) => {
         success: false,
         message: "Order not found or you do not have permission to manage this order.",
       });
+    }
+
+    // Auto-Refund if Merchant cancels/rejects a paid online order
+    if (status === "cancelled" && order.paymentMethod === "razorpay" && order.paymentStatus === "paid" && order.razorpayPaymentId) {
+      try {
+        const razorpayInstance = require("../lib/razorpay");
+        const refundAmountPaise = Math.round(order.totalAmount * 100);
+        const refund = await razorpayInstance.payments.refund(order.razorpayPaymentId, {
+          amount: refundAmountPaise,
+          notes: { reason: "Order Rejected/Cancelled by Restaurant" },
+        });
+
+        order.paymentStatus = "refunded";
+        order.refundId = refund.id;
+        order.refundAmount = order.totalAmount;
+        order.refundedAt = new Date();
+        order.refundReason = "Order rejected/cancelled by restaurant";
+        await order.save();
+
+        console.log(`[Merchant Reject - Auto Refund] Refunded ₹${order.totalAmount} for Order #${order._id}. Refund ID: ${refund.id}`);
+      } catch (refundErr) {
+        console.error(`[Merchant Reject - Refund Error] Failed for Order #${order._id}:`, refundErr);
+      }
     }
 
     // Trigger Web Push Notification & In-App Notification for Customer when status changes
@@ -326,8 +355,11 @@ const updateOrderStatus = async (req, res, next) => {
           title = `Order Delivered! 😋`;
           msg = `Your order #${orderShortId} from ${restaurant.name} has been delivered. Enjoy!`;
         } else if (status === "cancelled") {
-          title = `Order Cancelled by ${restaurant.name} ❌`;
-          msg = `Your order #${orderShortId} was rejected/cancelled by ${restaurant.name}.`;
+          const isRefunded = order.paymentStatus === "refunded";
+          title = `Order Cancelled by Restaurant ❌`;
+          msg = `Your order #${orderShortId} was rejected/cancelled by ${restaurant.name}.${
+            isRefunded ? ` A full refund of ₹${order.totalAmount.toFixed(2)} has been initiated.` : ""
+          }`;
         }
 
         notifyUserDual(order.customer._id, title, msg, `/orders/${order._id}`);
@@ -386,9 +418,17 @@ const cancelOrder = async (req, res, next) => {
     if (!cancelableStatuses.includes(order.status)) {
       return res.status(400).json({
         success: false,
-        message: "This order can no longer be cancelled",
+        message: "This order can no longer be cancelled as it is already being delivered.",
       });
     }
+
+    // Calculate time elapsed in seconds since order creation
+    const now = new Date();
+    const orderTime = new Date(order.createdAt);
+    const secondsElapsed = Math.floor((now.getTime() - orderTime.getTime()) / 1000);
+
+    // Rule: 100% Full Refund if cancelled within 60 seconds (1 minute) AND status is 'placed'
+    const isEligibleForRefund = order.status === "placed" && secondsElapsed <= 60;
 
     order.status = "cancelled";
     order.cancelledAt = new Date();
@@ -396,19 +436,32 @@ const cancelOrder = async (req, res, next) => {
       order.cancellationReason = reason;
     }
 
-    // Process Razorpay refund if paid online
+    let refundStatusMsg = "";
+
     if (order.paymentMethod === "razorpay" && order.paymentStatus === "paid" && order.razorpayPaymentId) {
-      try {
-        const razorpayInstance = require("../lib/razorpay");
-        const refundAmountPaise = Math.round(order.totalAmount * 100);
-        const refund = await razorpayInstance.payments.refund(order.razorpayPaymentId, {
-          amount: refundAmountPaise,
-        });
-        order.paymentStatus = "refunded";
-        console.log(`[Razorpay Refund] Successfully refunded payment ${order.razorpayPaymentId} for Order #${order._id}. Refund ID: ${refund.id}`);
-      } catch (refundErr) {
-        console.error(`[Razorpay Refund Failure] Failed to refund Order #${order._id}:`, refundErr);
-        // TODO: Queue for admin retry if API call fails
+      if (isEligibleForRefund) {
+        try {
+          const razorpayInstance = require("../lib/razorpay");
+          const refundAmountPaise = Math.round(order.totalAmount * 100);
+          const refund = await razorpayInstance.payments.refund(order.razorpayPaymentId, {
+            amount: refundAmountPaise,
+            notes: { reason: reason || "Cancelled within 1 minute grace period" },
+          });
+
+          order.paymentStatus = "refunded";
+          order.refundId = refund.id;
+          order.refundAmount = order.totalAmount;
+          order.refundedAt = new Date();
+          order.refundReason = "Cancelled within 1 minute grace period";
+
+          refundStatusMsg = `Full refund of ₹${order.totalAmount.toFixed(2)} initiated to your original payment source (Refund ID: ${refund.id}).`;
+          console.log(`[Customer Cancel - Full Refund] Refunded ₹${order.totalAmount} for Order #${order._id}. Refund ID: ${refund.id}`);
+        } catch (refundErr) {
+          console.error(`[Customer Cancel - Refund Error] Failed to refund Order #${order._id}:`, refundErr);
+        }
+      } else {
+        order.refundReason = `Cancelled after ${secondsElapsed}s / after restaurant acceptance (100% Cancellation Charge Applied - No Refund)`;
+        refundStatusMsg = "Order cancelled. As cancellation occurred after 1 minute / restaurant acceptance, a 100% cancellation charge applies (No refund issued).";
       }
     }
 
@@ -418,25 +471,24 @@ const cancelOrder = async (req, res, next) => {
     try {
       const { notifyUserDual } = require("../lib/push");
       const orderShortId = order._id.toString().slice(-6);
-      const customerName = order.customer?.name || "Customer";
 
-      // 1. Notify Restaurant Owner
-      if (order.restaurant && order.restaurant.owner) {
+      // Notify customer
+      notifyUserDual(
+        req.user._id,
+        "Order Cancelled 🛒",
+        refundStatusMsg || `Your order #${orderShortId} has been cancelled successfully.`,
+        `/orders/${order._id}`
+      );
+
+      // Notify restaurant owner
+      if (order.restaurant?.owner) {
         notifyUserDual(
           order.restaurant.owner,
-          "Order Cancelled by Customer 🚫",
-          `Order #${orderShortId} at ${order.restaurant.name} was cancelled by ${customerName}.`,
+          "Order Cancelled by Customer ❌",
+          `Order #${orderShortId} was cancelled by customer.`,
           "/restaurant-owner/orders"
         );
       }
-
-      // 2. Notify Customer (Confirmation)
-      notifyUserDual(
-        order.customer._id,
-        "Order Cancelled ℹ️",
-        `Your order #${orderShortId} at ${order.restaurant.name} has been successfully cancelled.`,
-        `/orders/${order._id}`
-      );
     } catch (pushErr) {
       console.error("Error dispatching dual notification for order cancellation:", pushErr);
     }

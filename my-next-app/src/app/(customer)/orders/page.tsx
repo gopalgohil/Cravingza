@@ -169,20 +169,29 @@ export default function OrdersPage() {
   const allOrders = response?.data || [];
 
   // Helper to map status to design system classes
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, paymentStatus?: string) => {
+    if (status === "cancelled") {
+      return (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 font-label-sm text-xs flex items-center gap-1">
+            <span className="material-symbols-outlined text-[16px]">cancel</span>
+            Cancelled
+          </span>
+          {paymentStatus === "refunded" && (
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-label-sm text-xs flex items-center gap-1 font-bold">
+              <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>monetization_on</span>
+              Refunded
+            </span>
+          )}
+        </div>
+      );
+    }
     switch (status) {
       case "delivered":
         return (
           <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 font-label-sm text-xs flex items-center gap-1">
             <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
             Delivered
-          </span>
-        );
-      case "cancelled":
-        return (
-          <span className="px-3 py-1 rounded-full bg-surface-variant text-secondary font-label-sm text-xs flex items-center gap-1">
-            <span className="material-symbols-outlined text-[16px]">cancel</span>
-            Cancelled
           </span>
         );
       default: // placed, accepted, preparing, out_for_delivery
@@ -510,7 +519,7 @@ export default function OrdersPage() {
                         <h3 className="font-bold text-on-surface text-sm leading-tight truncate">
                           {order.restaurant?.name || "Cravingza Restaurant"}
                         </h3>
-                        {getStatusBadge(order.status)}
+                        {getStatusBadge(order.status, order.paymentStatus)}
                       </div>
                       <p className="text-[11px] text-on-surface-variant mb-1">
                         {dateStr} • {timeStr}
@@ -595,7 +604,7 @@ export default function OrdersPage() {
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        {getStatusBadge(order.status)}
+                        {getStatusBadge(order.status, order.paymentStatus)}
                         {order.review && (
                           <div className="flex items-center gap-0.5 text-yellow-500">
                             {[1, 2, 3, 4, 5].map((star) => (
@@ -923,6 +932,31 @@ export default function OrdersPage() {
                 <option value="Other">Other</option>
               </select>
             </div>
+
+            {/* Refund Eligibility Notice Banner */}
+            {selectedOrderForCancel.paymentMethod === "razorpay" && selectedOrderForCancel.paymentStatus === "paid" && (
+              <div
+                className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+                  selectedOrderForCancel.status === "placed" &&
+                  Math.floor((new Date().getTime() - new Date(selectedOrderForCancel.createdAt).getTime()) / 1000) <= 60
+                    ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                    : "bg-amber-50 text-amber-900 border-amber-200"
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg flex-shrink-0">
+                  {selectedOrderForCancel.status === "placed" &&
+                  Math.floor((new Date().getTime() - new Date(selectedOrderForCancel.createdAt).getTime()) / 1000) <= 60
+                    ? "verified"
+                    : "warning"}
+                </span>
+                <span>
+                  {selectedOrderForCancel.status === "placed" &&
+                  Math.floor((new Date().getTime() - new Date(selectedOrderForCancel.createdAt).getTime()) / 1000) <= 60
+                    ? "Eligible for 100% Full Refund via Razorpay (Within 1 minute grace period)."
+                    : "100% Cancellation Charge applies (No refund) as cancellation is after 1 minute / restaurant acceptance."}
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
