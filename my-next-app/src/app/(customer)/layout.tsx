@@ -105,7 +105,7 @@ export default function CustomerLayout({
               )}
             </Link>
 
-            {user && <NotificationMenu />}
+            {mounted && user && <NotificationMenu />}
 
             <ProfileMenu />
           </div>
