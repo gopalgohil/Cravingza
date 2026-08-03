@@ -16,11 +16,15 @@ import {
   Truck,
   Percent,
   TrendingUp,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAppStore } from "@/lib/store";
 import { showAttractiveAuthToast } from "@/lib/authToast";
+
+const ITEMS_PER_PAGE = 4;
 
 const CouponSkeleton = () => (
   <div className="bg-white border border-outline-variant/30 rounded-3xl p-6 space-y-4 shadow-sm animate-pulse">
@@ -48,10 +52,21 @@ export default function OffersPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [isTabSwitching, setIsTabSwitching] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const handleCategoryChange = (catId: string) => {
     if (catId === activeCategory) return;
     setActiveCategory(catId);
+    setCurrentPage(1);
+    setIsTabSwitching(true);
+    setTimeout(() => {
+      setIsTabSwitching(false);
+    }, 350);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage === currentPage) return;
+    setCurrentPage(newPage);
     setIsTabSwitching(true);
     setTimeout(() => {
       setIsTabSwitching(false);
@@ -96,6 +111,13 @@ export default function OffersPage() {
     if (activeCategory === "all") return coupons;
     return coupons.filter((c: any) => c.category === activeCategory);
   }, [coupons, activeCategory]);
+
+  const totalPages = Math.ceil(filteredCoupons.length / ITEMS_PER_PAGE);
+
+  const paginatedCoupons = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredCoupons.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredCoupons, currentPage]);
 
   const categories = [
     { id: "all", label: "All Offers", icon: Sparkles },
@@ -178,71 +200,122 @@ export default function OffersPage() {
       )}
 
       {/* Coupon Cards Grid */}
-      {!showSkeleton && !error && filteredCoupons.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredCoupons.map((coupon: any) => (
-            <div
-              key={coupon._id || coupon.code}
-              className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-6 relative overflow-hidden group"
-            >
-              {/* Top Banner Accent */}
-              <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${coupon.bgGradient || "from-primary to-orange-500"}`}></div>
+      {!showSkeleton && !error && paginatedCoupons.length > 0 && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {paginatedCoupons.map((coupon: any) => (
+              <div
+                key={coupon._id || coupon.code}
+                className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-6 relative overflow-hidden group"
+              >
+                {/* Top Banner Accent */}
+                <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${coupon.bgGradient || "from-primary to-orange-500"}`}></div>
 
-              {/* Coupon Info */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-black text-white bg-gradient-to-r ${coupon.bgGradient || "from-primary to-orange-500"} shadow-2xs`}>
-                    {coupon.badgeText || "SPECIAL OFFER"}
-                  </span>
-                  <div className="flex items-center gap-1 text-slate-400 text-xs font-semibold">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Expires soon</span>
-                  </div>
-                </div>
-
-                <h3 className="font-headline-sm text-xl font-extrabold text-slate-900 leading-snug">
-                  {coupon.title}
-                </h3>
-                <p className="text-slate-600 text-sm leading-relaxed">
-                  {coupon.description}
-                </p>
-              </div>
-
-              {/* Bottom Actions & Code Copy */}
-              <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Promo Code</span>
-                  <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80">
-                    <span className="font-mono font-black text-slate-900 tracking-wider text-sm">
-                      {coupon.code}
+                {/* Coupon Info */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-black text-white bg-gradient-to-r ${coupon.bgGradient || "from-primary to-orange-500"} shadow-2xs`}>
+                      {coupon.badgeText || "SPECIAL OFFER"}
                     </span>
-                    <button
-                      onClick={() => handleCopyCode(coupon.code)}
-                      className="text-primary hover:text-primary/80 transition-colors p-1 cursor-pointer"
-                      title="Copy Code"
-                    >
-                      {copiedCode === coupon.code ? (
-                        <Check className="w-4 h-4 text-emerald-600 animate-in zoom-in" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </button>
+                    <div className="flex items-center gap-1 text-slate-400 text-xs font-semibold">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Expires soon</span>
+                    </div>
                   </div>
+
+                  <h3 className="font-headline-sm text-xl font-extrabold text-slate-900 leading-snug">
+                    {coupon.title}
+                  </h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    {coupon.description}
+                  </p>
                 </div>
+
+                {/* Bottom Actions & Code Copy */}
+                <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Promo Code</span>
+                    <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80">
+                      <span className="font-mono font-black text-slate-900 tracking-wider text-sm">
+                        {coupon.code}
+                      </span>
+                      <button
+                        onClick={() => handleCopyCode(coupon.code)}
+                        className="text-primary hover:text-primary/80 transition-colors p-1 cursor-pointer"
+                        title="Copy Code"
+                      >
+                        {copiedCode === coupon.code ? (
+                          <Check className="w-4 h-4 text-emerald-600 animate-in zoom-in" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyDeal(coupon.code)}
+                    className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs md:text-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <span>Apply Deal</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200/60">
+              <span className="text-xs font-semibold text-slate-500">
+                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredCoupons.length)} of{" "}
+                {filteredCoupons.length} offers
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`w-9 h-9 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center ${
+                      currentPage === pageNum
+                        ? "bg-primary text-white shadow-md shadow-primary/20"
+                        : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
 
                 <button
                   type="button"
-                  onClick={() => handleApplyDeal(coupon.code)}
-                  className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs md:text-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all active:scale-95"
+                  title="Next Page"
                 >
-                  <span>Apply Deal</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
   );
 }
+
