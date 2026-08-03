@@ -370,8 +370,8 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Filter Chips */}
-      <div className="flex flex-wrap gap-3 mb-10">
+      {/* Filter Chips - Single row horizontal scroll on mobile */}
+      <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-none pb-2 mb-8">
         {[
           { key: "all", label: "All" },
           { key: "placed", label: "Placed" },
@@ -381,9 +381,9 @@ export default function OrdersPage() {
           <button
             key={filter.key}
             onClick={() => handleFilterChange(filter.key)}
-            className={`px-6 py-2 rounded-full font-label-md transition-all text-sm cursor-pointer ${
+            className={`px-5 py-2.5 rounded-full font-label-md transition-all text-xs md:text-sm cursor-pointer whitespace-nowrap flex-shrink-0 ${
               selectedFilter === filter.key
-                ? "bg-primary-container text-on-primary shadow-sm"
+                ? "bg-primary-container text-on-primary shadow-sm font-bold"
                 : "bg-secondary-container text-on-secondary-container border border-outline-variant hover:border-primary"
             }`}
           >
@@ -506,7 +506,7 @@ export default function OrdersPage() {
                 {/* ── MOBILE LAYOUT (< md) ── */}
                 <div className="flex md:hidden flex-col">
                   {/* Top: thumbnail + info */}
-                  <div className="flex gap-3 p-4">
+                  <div className="flex gap-3.5 p-4">
                     <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-low">
                       <img
                         className="w-full h-full object-cover"
@@ -515,10 +515,10 @@ export default function OrdersPage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className="font-bold text-on-surface text-sm leading-tight truncate">
-                          {order.restaurant?.name || "Cravingza Restaurant"}
-                        </h3>
+                      <h3 className="font-bold text-on-surface text-base leading-tight">
+                        {order.restaurant?.name || "Cravingza Restaurant"}
+                      </h3>
+                      <div className="mt-1.5 mb-1.5 flex items-center gap-1.5 flex-wrap">
                         {getStatusBadge(order.status, order.paymentStatus)}
                       </div>
                       <p className="text-[11px] text-on-surface-variant mb-1">

@@ -49,6 +49,10 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
 app.get("/api/settings", require("./controllers/adminController").getPublicSettings);
 
+// Swagger API Documentation
+const setupSwagger = require("./config/swagger");
+setupSwagger(app);
+
 // Serve uploaded documents statically
 const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
