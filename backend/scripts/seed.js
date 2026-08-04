@@ -641,6 +641,14 @@ async function seed() {
         restDetails.owner = targetOwner._id;
       }
 
+      // Ensure demo documents are attached if missing
+      if (!restDetails.documents) {
+        restDetails.documents = {
+          fssaiLicense: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80",
+          businessRegistration: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=800&auto=format&fit=crop&q=80",
+        };
+      }
+
       // Save restaurant
       const restaurant = new Restaurant(restDetails);
       await restaurant.save();

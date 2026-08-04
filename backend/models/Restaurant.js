@@ -50,6 +50,14 @@ const restaurantSchema = new mongoose.Schema(
     reviewedAt: { type: Date },
     rejectionReason: { type: String, default: null },
 
+    // ── Application Verification Documents & Contact ─────────────
+    documents: {
+      fssaiLicense: { type: String, default: "" },
+      businessRegistration: { type: String, default: "" },
+    },
+    pincode: { type: String, default: "" },
+    ownerPhone: { type: String, default: "" },
+
     // ── Owner Settings & Business Fields ─────────────────────────
     businessHours: {
       monday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
