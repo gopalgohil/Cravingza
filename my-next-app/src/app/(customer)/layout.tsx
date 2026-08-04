@@ -38,6 +38,12 @@ export default function CustomerLayout({
   const { data: settingsRes } = useGetPublicSettingsQuery();
   const isMaintenanceMode = Boolean(settingsRes?.data?.maintenanceMode);
 
+  // Auto-fetch cart from database if user is authenticated
+  useGetCartQuery(undefined, { skip: !user });
+
+  const reduxCart = useSelector((state: RootState) => state.cart.items);
+  const cartCount = reduxCart.reduce((acc, item) => acc + item.quantity, 0);
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-surface">
       {/* Maintenance Mode Alert Banner */}
