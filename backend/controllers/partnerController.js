@@ -65,10 +65,7 @@ const applyAsPartner = async (req, res, next) => {
       submittedAt: new Date(),
     });
 
-    // Upgrade role to "owner" if not already
-    if (req.user.role !== "owner") {
-      await User.findByIdAndUpdate(req.user._id, { role: "owner" });
-    }
+    // Note: Role remains 'customer' while application is pending. Role will upgrade to 'owner' when Super Admin approves in /admin/approvals.
 
     return res.status(201).json({
       success: true,

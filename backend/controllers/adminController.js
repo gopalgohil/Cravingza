@@ -121,6 +121,11 @@ exports.rejectRestaurant = async (req, res, next) => {
     restaurant.reviewedAt = new Date();
     restaurant.reviewedBy = req.user._id;
 
+    // Ensure user role stays or reverts to 'customer' on rejection
+    if (restaurant.owner) {
+      await User.findByIdAndUpdate(restaurant.owner, { role: "customer" });
+    }
+
     await restaurant.save();
 
     return res.status(200).json({
