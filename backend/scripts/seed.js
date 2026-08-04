@@ -615,9 +615,11 @@ async function seed() {
     const User = require("../models/User");
     const Order = require("../models/Order");
 
-    console.log("Clearing existing orders...");
-    await Order.deleteMany({});
-    console.log("Existing orders cleared.");
+    // SAFEGUARD: Do NOT delete existing real orders placed by users
+    const existingOrderCount = await Order.countDocuments();
+    if (existingOrderCount > 0) {
+      console.log(`Preserving ${existingOrderCount} existing orders in database.`);
+    }
 
     const targetOwner = await User.findOne({ email: "gopalgohel249@gmail.com" });
     if (targetOwner) {
