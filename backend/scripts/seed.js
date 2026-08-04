@@ -613,11 +613,22 @@ async function seed() {
     console.log("Existing data cleared.");
 
     const User = require("../models/User");
+    const Order = require("../models/Order");
+
+    console.log("Clearing existing orders...");
+    await Order.deleteMany({});
+    console.log("Existing orders cleared.");
+
     const targetOwner = await User.findOne({ email: "gopalgohel249@gmail.com" });
     if (targetOwner) {
       targetOwner.role = "owner";
       await targetOwner.save();
       console.log(`Updated user ${targetOwner.email} role to 'owner'.`);
+    }
+
+    let sampleCustomer = await User.findOne({ role: "customer" });
+    if (!sampleCustomer) {
+      sampleCustomer = targetOwner || (await User.findOne({}));
     }
 
     for (const rData of restaurantsData) {
@@ -634,14 +645,94 @@ async function seed() {
       console.log(`Seeded Restaurant: ${restaurant.name}${restDetails.owner ? " (Owner Linked)" : ""}`);
 
       // Save menu items
+      const createdMenuItems = [];
       for (const mItem of menu) {
         const menuItem = new MenuItem({
           ...mItem,
           restaurant: restaurant._id,
         });
         await menuItem.save();
+        createdMenuItems.push(menuItem);
       }
       console.log(`  Seeded ${menu.length} menu items.`);
+
+      // Seed sample orders for this restaurant
+      if (sampleCustomer && createdMenuItems.length > 0) {
+        const m1 = createdMenuItems[0];
+        const m2 = createdMenuItems[1] || createdMenuItems[0];
+
+        const sampleOrdersData = [
+          {
+            customer: sampleCustomer._id,
+            restaurant: restaurant._id,
+            items: [
+              { menuItem: m1._id, name: m1.name, price: m1.price, quantity: 2 },
+              { menuItem: m2._id, name: m2.name, price: m2.price, quantity: 1 },
+            ],
+            deliveryAddress: {
+              label: "Home",
+              addressLine: "45 MG Road, Suite 302",
+              city: "Metro City",
+              phone: "9876543210",
+            },
+            paymentMethod: "cod",
+            paymentStatus: "pending",
+            subtotal: Math.round((m1.price * 2 + m2.price) * 100) / 100,
+            deliveryFee: 30,
+            taxes: 15,
+            totalAmount: Math.round((m1.price * 2 + m2.price + 45) * 100) / 100,
+            status: "placed",
+            createdAt: new Date(),
+          },
+          {
+            customer: sampleCustomer._id,
+            restaurant: restaurant._id,
+            items: [
+              { menuItem: m1._id, name: m1.name, price: m1.price, quantity: 1 },
+            ],
+            deliveryAddress: {
+              label: "Work",
+              addressLine: "Tech Park, Building B",
+              city: "Metro City",
+              phone: "9876543210",
+            },
+            paymentMethod: "razorpay",
+            paymentStatus: "paid",
+            subtotal: Math.round(m1.price * 100) / 100,
+            deliveryFee: 30,
+            taxes: 10,
+            totalAmount: Math.round((m1.price + 40) * 100) / 100,
+            status: "accepted",
+            createdAt: new Date(Date.now() - 3600000),
+          },
+          {
+            customer: sampleCustomer._id,
+            restaurant: restaurant._id,
+            items: [
+              { menuItem: m2._id, name: m2.name, price: m2.price, quantity: 2 },
+            ],
+            deliveryAddress: {
+              label: "Home",
+              addressLine: "12 Park Avenue",
+              city: "Metro City",
+              phone: "9876543210",
+            },
+            paymentMethod: "razorpay",
+            paymentStatus: "paid",
+            subtotal: Math.round((m2.price * 2) * 100) / 100,
+            deliveryFee: 0,
+            taxes: 20,
+            totalAmount: Math.round((m2.price * 2 + 20) * 100) / 100,
+            status: "delivered",
+            createdAt: new Date(Date.now() - 86400000),
+          },
+        ];
+
+        for (const oData of sampleOrdersData) {
+          await Order.create(oData);
+        }
+        console.log(`  Seeded 3 sample orders for ${restaurant.name}.`);
+      }
     }
 
     console.log("Database seeded successfully!");
