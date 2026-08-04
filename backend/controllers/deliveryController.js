@@ -364,7 +364,7 @@ module.exports = {
       })
         .populate("restaurant", "name location phone image description")
         .populate("customer", "name phone")
-        .sort({ readyAt: 1, createdAt: 1 });
+        .sort({ readyAt: -1, updatedAt: -1, createdAt: -1 });
 
       const formattedOrders = orders.map((o) => ({
         _id: o._id,
