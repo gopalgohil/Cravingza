@@ -112,10 +112,13 @@ export default function ApprovalsPage() {
 
   const showSkeleton = listLoading || isPageChanging;
 
-  // Auto-select first item if none selected on desktop
+  // Auto-select first item if none selected or if selectedId is invalid for current status/type list
   useEffect(() => {
-    if (!selectedId && items.length > 0 && typeof window !== "undefined" && window.innerWidth >= 1024) {
-      router.replace(`/admin/approvals?type=${activeType}&status=${activeStatus}&id=${items[0]._id}`);
+    if (items.length > 0 && typeof window !== "undefined" && window.innerWidth >= 1024) {
+      const isSelectedInList = items.some((item: any) => item._id === selectedId);
+      if (!selectedId || !isSelectedInList) {
+        router.replace(`/admin/approvals?type=${activeType}&status=${activeStatus}&id=${items[0]._id}`);
+      }
     }
   }, [items, selectedId, activeType, activeStatus, router]);
 
