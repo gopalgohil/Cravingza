@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useGetMyDeliveryApplicationQuery } from "@/lib/redux/apiSlice";
 import { toast } from "sonner";
+import NotificationMenu from "@/components/customer/NotificationMenu";
 
 export default function DeliveryPartnerLayout({
   children,
@@ -251,6 +252,7 @@ export default function DeliveryPartnerLayout({
             </nav>
           </div>
           <div className="flex items-center gap-md">
+            <NotificationMenu />
             <span className="font-bold text-xs bg-green-50 border border-green-200 text-green-700 px-3 py-1 rounded-full flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
               Active Rider Mode
