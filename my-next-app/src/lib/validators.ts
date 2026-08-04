@@ -25,29 +25,31 @@ export const isValidPincode = (val: string): boolean => {
 
 /**
  * Shared Indian Phone Number Zod Schema
- * Rule: Exactly 10 digits, first digit 6-9 (never 0-5).
- * Strips +91 / 91 prefix, normalizes to 10-digit clean string.
+ * Rule: Exactly 10 digits, first digit 6-9.
+ * Strips +91 / 91 prefix only if user pastes full 12-digit number with country code.
  */
 export const phoneSchema = z
   .string()
-  .transform((val) => {
-    let clean = (val || "").trim().replace(/\D/g, "");
-    if (clean.length === 12 && clean.startsWith("91")) {
-      clean = clean.slice(2);
-    }
-    return clean;
-  })
+  .transform((val) => sanitizePhone(val))
   .refine((val) => /^[6-9][0-9]{9}$/.test(val), {
     message: "Please enter a valid 10-digit mobile number",
   });
 
 /**
  * Strips non-digit characters and caps length at 10.
- * Also removes leading +91 / 91 if user pastes full number with country code.
+ * Removes leading +91 / 91 ONLY if full 12-digit number with country code is pasted.
+ * Allows typing numbers starting with 91... (e.g. 910xxxxxxx).
  */
 export const sanitizePhone = (val: string): string => {
-  let clean = (val || "").replace(/^\+?91/, "").replace(/\D/g, "");
-  return clean.slice(0, 10);
+  if (!val) return "";
+  let digits = val.replace(/\D/g, "");
+
+  // If user pasted a 12-digit number starting with 91, remove the country code prefix
+  if (digits.length === 12 && digits.startsWith("91")) {
+    digits = digits.slice(2);
+  }
+
+  return digits.slice(0, 10);
 };
 
 /**
