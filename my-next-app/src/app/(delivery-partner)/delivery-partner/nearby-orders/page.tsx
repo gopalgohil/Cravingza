@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -8,28 +8,31 @@ import {
   useAcceptOrderMutation,
   useUpdateDeliveryStatusMutation,
 } from "@/lib/redux/apiSlice";
+import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 
 export default function NearbyOrdersPage() {
   const router = useRouter();
+  const { user } = useAppStore();
+  const storageKey = `cravingza_declined_orders_${user?._id || "guest"}`;
+
   const {
     data: response,
     isLoading,
     isFetching,
-    isError,
     refetch,
   } = useGetNearbyOrdersQuery(undefined, {
-    pollingInterval: 8000, // 8-second polling interval
+    pollingInterval: 8000, // 8-second real-time polling
   });
 
   const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
   const [updateStatus, { isLoading: isTogglingOnline }] = useUpdateDeliveryStatusMutation();
 
-  // Local state to store declined order IDs (persisted in localStorage so they don't reappear on reload)
+  // Local state to store declined order IDs (persisted per user in localStorage)
   const [declinedOrderIds, setDeclinedOrderIds] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("cravingza_declined_orders");
+        const saved = localStorage.getItem(storageKey);
         return saved ? JSON.parse(saved) : [];
       } catch (e) {
         return [];
@@ -37,26 +40,66 @@ export default function NearbyOrdersPage() {
     }
     return [];
   });
+
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 4; // 4 orders per page for clean pagination
 
   const isOnline = response?.isOnline ?? true;
   const hasActiveDelivery = response?.hasActiveDelivery ?? false;
   const rawOrders = response?.data || [];
 
-  // Filter out declined orders
-  const orders = rawOrders.filter((o: any) => !declinedOrderIds.includes(o._id));
+  // Filter out declined orders (permanently hidden)
+  const availableOrders = useMemo(() => {
+    return rawOrders.filter((o: any) => !declinedOrderIds.includes(o._id));
+  }, [rawOrders, declinedOrderIds]);
+
+  // Filter by search query
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return availableOrders;
+    const q = searchQuery.toLowerCase().trim();
+    return availableOrders.filter((o: any) =>
+      (o.restaurantName || "").toLowerCase().includes(q) ||
+      (o.deliveryAddress || "").toLowerCase().includes(q) ||
+      (o.restaurantAddress || "").toLowerCase().includes(q)
+    );
+  }, [availableOrders, searchQuery]);
+
+  // Reset to page 1 if search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1;
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredOrders.slice(start, start + itemsPerPage);
+  }, [filteredOrders, currentPage, itemsPerPage]);
+
+  const handlePageChange = (pageNum: number) => {
+    if (pageNum < 1 || pageNum > totalPages) return;
+    setCurrentPage(pageNum);
+    const container = document.getElementById("nearby-orders-container");
+    if (container) {
+      container.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   const handleDecline = (orderId: string) => {
     setDeclinedOrderIds((prev) => {
-      const updated = [...prev, orderId];
+      const updated = Array.from(new Set([...prev, orderId]));
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("cravingza_declined_orders", JSON.stringify(updated));
+          localStorage.setItem(storageKey, JSON.stringify(updated));
         } catch (e) {}
       }
       return updated;
     });
-    toast.info("Order hidden from your list.");
+    toast.info("Order declined. It will not appear for you again.", {
+      id: `decline-${orderId}`,
+    });
   };
 
   const handleAccept = async (orderId: string) => {
@@ -64,7 +107,9 @@ export default function NearbyOrdersPage() {
       setAcceptingId(orderId);
       const res = await acceptOrder(orderId).unwrap();
       if (res?.success) {
-        toast.success("Order accepted! Navigating to Active Delivery...");
+        toast.success("Order accepted! Navigating to Active Delivery...", {
+          id: "accept-success",
+        });
         router.push("/delivery-partner/active");
       }
     } catch (err: any) {
@@ -82,7 +127,7 @@ export default function NearbyOrdersPage() {
   const handleGoOnline = async () => {
     try {
       await updateStatus({ isOnline: true }).unwrap();
-      toast.success("You are now ONLINE!");
+      toast.success("You are now ONLINE! Fetching nearby pickup orders...");
       refetch();
     } catch (err: any) {
       toast.error("Failed to update status.");
@@ -92,44 +137,111 @@ export default function NearbyOrdersPage() {
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm font-medium text-slate-500">Searching for nearby orders...</p>
+        <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm font-extrabold text-slate-700">Searching for nearby pickup requests...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-8">
-      {/* Top Title & Polling Indicator Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Nearby Orders</h1>
-            {isFetching && (
-              <span className="text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-                Updating...
-              </span>
-            )}
+    <div id="nearby-orders-container" className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-8">
+      {/* ── TOP TITLE & LIVE POLLING HEADER ── */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-lg relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Nearby Orders</h1>
+              {isFetching ? (
+                <span className="text-[11px] font-extrabold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-2 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  Live Updating...
+                </span>
+              ) : (
+                <span className="text-[11px] font-bold text-slate-300 bg-slate-800 border border-slate-700 px-3 py-1 rounded-full flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  Auto 8s Poll
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-300">
+              Real-time restaurant pickup requests ready in your area
+            </p>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Real-time pickup requests ready near you • Auto-refreshes every 8s
-          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => refetch()}
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-all border border-slate-700 active:scale-95 cursor-pointer"
+              title="Manual Refresh"
+            >
+              <span className="material-symbols-outlined text-lg block">refresh</span>
+            </button>
+            <Link
+              href="/delivery-partner/dashboard"
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs backdrop-blur-md border border-white/10 transition-all flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-base">dashboard</span>
+              <span>Dashboard</span>
+            </Link>
+          </div>
         </div>
 
-        <Link
-          href="/delivery-partner/dashboard"
-          className="text-xs font-bold text-slate-600 hover:text-primary transition-colors flex items-center gap-1 self-start sm:self-auto"
-        >
-          <span className="material-symbols-outlined text-sm">dashboard</span>
-          <span>Back to Dashboard</span>
-        </Link>
+        {/* Quick Stats Bar */}
+        {isOnline && !hasActiveDelivery && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-700/60 relative z-10 text-xs">
+            <div className="bg-slate-800/60 backdrop-blur-sm p-3 rounded-2xl border border-slate-700/50">
+              <span className="text-slate-400 font-medium block text-[10px] uppercase tracking-wider">Available Orders</span>
+              <span className="text-lg font-black text-white">{availableOrders.length} Ready</span>
+            </div>
+            <div className="bg-slate-800/60 backdrop-blur-sm p-3 rounded-2xl border border-slate-700/50">
+              <span className="text-slate-400 font-medium block text-[10px] uppercase tracking-wider">Est. Payout / Order</span>
+              <span className="text-lg font-black text-emerald-400">₹40 Base Fee</span>
+            </div>
+            <div className="bg-slate-800/60 backdrop-blur-sm p-3 rounded-2xl border border-slate-700/50 col-span-2 sm:col-span-1">
+              <span className="text-slate-400 font-medium block text-[10px] uppercase tracking-wider">Declined Orders</span>
+              <span className="text-lg font-black text-amber-400">{declinedOrderIds.length} Hidden</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── OFFLINE STATE VIEW ── */}
+      {/* ── SEARCH & FILTER CONTROL BAR ── */}
+      {isOnline && !hasActiveDelivery && availableOrders.length > 0 && (
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Search restaurant or address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="text-xs font-bold text-slate-500 self-end sm:self-auto">
+            Showing <span className="text-slate-900 font-extrabold">{paginatedOrders.length}</span> of{" "}
+            <span className="text-slate-900 font-extrabold">{filteredOrders.length}</span> orders
+          </div>
+        </div>
+      )}
+
+      {/* ── OFFLINE STATE ── */}
       {!isOnline && (
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-8 text-center space-y-4 border border-slate-700 shadow-xl my-6">
-          <div className="w-16 h-16 bg-slate-800 text-amber-400 rounded-full flex items-center justify-center mx-auto border border-slate-700">
+          <div className="w-16 h-16 bg-slate-800 text-amber-400 rounded-full flex items-center justify-center mx-auto border border-slate-700 shadow-inner">
             <span className="material-symbols-outlined text-3xl">power_off</span>
           </div>
           <h2 className="text-xl font-bold">You are currently offline</h2>
@@ -146,82 +258,109 @@ export default function NearbyOrdersPage() {
         </div>
       )}
 
-      {/* ── HAS ACTIVE DELIVERY STATE ── */}
+      {/* ── ACTIVE DELIVERY IN PROGRESS STATE ── */}
       {isOnline && hasActiveDelivery && (
-        <div className="bg-orange-50 border border-orange-200 rounded-3xl p-6 text-center space-y-3">
-          <span className="material-symbols-outlined text-4xl text-orange-500">two_wheeler</span>
-          <h3 className="text-lg font-bold text-slate-900">Active Delivery in Progress</h3>
+        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-3xl">two_wheeler</span>
+          </div>
+          <h3 className="text-xl font-extrabold text-slate-900">Active Delivery in Progress</h3>
           <p className="text-xs text-slate-600 max-w-md mx-auto">
-            Complete your current active delivery before accepting new orders.
+            Complete your current active delivery before accepting new orders from nearby restaurants.
           </p>
           <Link
             href="/delivery-partner/active"
-            className="inline-block px-6 py-2.5 bg-primary text-white font-bold rounded-xl text-xs hover:bg-primary/95 transition-all shadow-sm"
+            className="inline-block px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-2xl text-xs transition-all shadow-md active:scale-95"
           >
-            Go to Active Delivery →
+            Go to Active Delivery Screen →
           </Link>
         </div>
       )}
 
-      {/* ── EMPTY STATE (ONLINE & NO ORDERS) ── */}
-      {isOnline && !hasActiveDelivery && orders.length === 0 && (
-        <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-sm space-y-4 my-4">
-          <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
+      {/* ── EMPTY STATE (ONLINE & NO ORDERS AVAILABLE) ── */}
+      {isOnline && !hasActiveDelivery && filteredOrders.length === 0 && (
+        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs space-y-4 my-4">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
             <span className="material-symbols-outlined text-3xl animate-bounce">location_searching</span>
           </div>
-          <h3 className="text-lg font-bold text-slate-900">No Orders Ready Near You</h3>
+          <h3 className="text-xl font-extrabold text-slate-900">
+            {searchQuery ? "No Orders Matching Search" : "No Orders Ready Near You"}
+          </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            We are actively checking for new restaurant pickup requests. Stay online and ready!
+            {searchQuery
+              ? "Try searching for a different restaurant name or address."
+              : "We are actively checking for new restaurant pickup requests. Stay online and ready!"}
           </p>
-          <button
-            onClick={() => refetch()}
-            className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
-          >
-            Refresh Now
-          </button>
+          <div className="pt-2 flex justify-center gap-3">
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+              >
+                Clear Search
+              </button>
+            )}
+            <button
+              onClick={() => refetch()}
+              className="px-6 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition-colors border border-emerald-200"
+            >
+              Refresh Now
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ── NEARBY ORDERS LIST ── */}
-      {isOnline && !hasActiveDelivery && orders.length > 0 && (
+      {/* ── NEARBY ORDERS CARDS LIST ── */}
+      {isOnline && !hasActiveDelivery && paginatedOrders.length > 0 && (
         <div className="space-y-4">
-          {orders.map((order: any) => (
+          {paginatedOrders.map((order: any) => (
             <div
               key={order._id}
-              className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4"
+              className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all space-y-4 relative overflow-hidden"
             >
-              {/* Header Info */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold shrink-0">
+              {/* Order Header Info */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold shrink-0 border border-orange-100">
                     <span className="material-symbols-outlined text-2xl">storefront</span>
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-900 text-base">{order.restaurantName}</h3>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                    <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                      <span>{order.restaurantName}</span>
+                      <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                        Ready for Pickup
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                       <span className="material-symbols-outlined text-sm text-slate-400">location_on</span>
                       <span>{order.restaurantAddress}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="text-left sm:text-right bg-emerald-50 border border-emerald-200/60 px-4 py-2 rounded-2xl self-start sm:self-auto">
-                  <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider block">Estimated Payout</span>
-                  <span className="text-xl font-extrabold text-emerald-600">₹{order.estimatedEarnings}</span>
+                <div className="text-left sm:text-right bg-emerald-50 border border-emerald-200/80 px-4 py-2.5 rounded-2xl self-start sm:self-auto shrink-0">
+                  <span className="text-[10px] uppercase font-extrabold text-emerald-800 tracking-wider block">
+                    Estimated Payout
+                  </span>
+                  <span className="text-2xl font-black text-emerald-600">₹{order.estimatedEarnings}</span>
                 </div>
               </div>
 
-              {/* Order Details Body */}
+              {/* Delivery Details Body */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div>
-                  <span className="text-slate-400 font-bold uppercase block text-[10px]">Delivery Destination</span>
-                  <span className="font-semibold text-slate-800 leading-snug block mt-0.5">
+                  <span className="text-slate-400 font-extrabold uppercase block text-[10px] tracking-wide">
+                    Delivery Destination
+                  </span>
+                  <span className="font-semibold text-slate-800 leading-relaxed block mt-1">
                     {order.deliveryAddress || "Customer Address"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold uppercase block text-[10px]">Items & Amount</span>
-                  <span className="font-semibold text-slate-800 block mt-0.5">
+                  <span className="text-slate-400 font-extrabold uppercase block text-[10px] tracking-wide">
+                    Items & Total Bill
+                  </span>
+                  <span className="font-semibold text-slate-800 block mt-1">
                     {order.itemsCount} items • Total ₹{order.totalAmount}
                   </span>
                 </div>
@@ -231,19 +370,20 @@ export default function NearbyOrdersPage() {
               <div className="flex items-center gap-3 pt-1">
                 <button
                   onClick={() => handleDecline(order._id)}
-                  className="flex-1 py-3 px-4 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-2xl text-xs transition-all active:scale-95 cursor-pointer"
+                  className="flex-1 py-3 px-4 border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold rounded-2xl text-xs transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  Decline
+                  <span className="material-symbols-outlined text-base">block</span>
+                  <span>Decline</span>
                 </button>
                 <button
                   onClick={() => handleAccept(order._id)}
                   disabled={isAccepting && acceptingId === order._id}
-                  className="flex-1 py-3 px-4 bg-primary hover:bg-primary/95 text-white font-extrabold rounded-2xl text-xs transition-all shadow-md shadow-primary/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-2xl text-xs transition-all shadow-md shadow-emerald-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {isAccepting && acceptingId === order._id ? (
                     <>
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      Accepting...
+                      <span>Accepting...</span>
                     </>
                   ) : (
                     <>
@@ -255,6 +395,53 @@ export default function NearbyOrdersPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── PAGINATION CONTROLS ── */}
+      {isOnline && !hasActiveDelivery && totalPages > 1 && (
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+          <div className="text-xs font-semibold text-slate-500">
+            Page <span className="font-bold text-slate-900">{currentPage}</span> of{" "}
+            <span className="font-bold text-slate-900">{totalPages}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-sm">chevron_left</span>
+              <span>Previous</span>
+            </button>
+
+            {/* Page number buttons */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                    currentPage === pageNum
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors flex items-center gap-1"
+            >
+              <span>Next</span>
+              <span className="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

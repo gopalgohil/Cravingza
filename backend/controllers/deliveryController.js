@@ -359,7 +359,7 @@ module.exports = {
       // TODO: Real distance-based filtering requires delivery partner live geolocation (Mapbox/Google Maps integration planned)
       const Order = require("../models/Order");
       const orders = await Order.find({
-        status: "ready_for_pickup",
+        status: { $in: ["ready_for_pickup", "accepted", "preparing"] },
         deliveryPartner: null,
       })
         .populate("restaurant", "name location phone image description")
