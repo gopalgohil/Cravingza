@@ -9,6 +9,7 @@ import {
   useUpdateCartItemMutation,
   useRemoveCartItemMutation,
   useClearCartMutation,
+  useGetPublicSettingsQuery,
 } from "@/lib/redux/apiSlice";
 import { useAppStore } from "@/lib/store";
 import QuantityStepper from "@/components/customer/QuantityStepper";
@@ -22,6 +23,9 @@ export default function CartPage() {
   const { user, authChecked } = useAppStore();
   const cart = useSelector((state: RootState) => state.cart);
   
+  const { data: settingsRes } = useGetPublicSettingsQuery();
+  const isMaintenanceMode = Boolean(settingsRes?.data?.maintenanceMode);
+
   const [updateCartItem, { isLoading: isUpdating }] = useUpdateCartItemMutation();
   const [removeCartItem, { isLoading: isRemoving }] = useRemoveCartItemMutation();
   const [clearCart, { isLoading: isClearing }] = useClearCartMutation();
@@ -301,10 +305,17 @@ export default function CartPage() {
             </div>
 
             <button
-              onClick={() => router.push("/checkout")}
-              className="w-full bg-[#FF4D2D] hover:bg-[#E03512] text-white font-bold text-body-md py-3.5 px-4 rounded-xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              onClick={() => {
+                if (isMaintenanceMode) {
+                  toast.error("Ordering is temporarily paused for system maintenance. Please try again later!");
+                  return;
+                }
+                router.push("/checkout");
+              }}
+              disabled={isMaintenanceMode}
+              className="w-full bg-[#FF4D2D] hover:bg-[#E03512] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-body-md py-3.5 px-4 rounded-xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
-              Proceed to Checkout
+              {isMaintenanceMode ? "Maintenance Mode Active (Paused)" : "Proceed to Checkout"}
             </button>
 
             <div className="flex items-center justify-center gap-1.5 text-xs text-on-surface-variant/70 pt-1">

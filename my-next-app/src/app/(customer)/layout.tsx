@@ -8,7 +8,7 @@ import ProfileMenu from "@/components/ProfileMenu";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
-import { useGetCartQuery } from "@/lib/redux/apiSlice";
+import { useGetCartQuery, useGetPublicSettingsQuery } from "@/lib/redux/apiSlice";
 import ConflictModal from "@/components/customer/ConflictModal";
 import DesktopSearchBar from "@/components/customer/DesktopSearchBar";
 import PageLoader from "@/components/PageLoader";
@@ -34,15 +34,20 @@ export default function CustomerLayout({
     setPageReady(true);
   }, []);
 
-  // Auto-fetch cart from database if user is authenticated
-  useGetCartQuery(undefined, { skip: !user });
-
-  const reduxCart = useSelector((state: RootState) => state.cart.items);
-  const cartCount = reduxCart.reduce((acc, item) => acc + item.quantity, 0);
-
+  // Fetch global platform settings to detect Maintenance Mode
+  const { data: settingsRes } = useGetPublicSettingsQuery();
+  const isMaintenanceMode = Boolean(settingsRes?.data?.maintenanceMode);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-surface">
+      {/* Maintenance Mode Alert Banner */}
+      {isMaintenanceMode && (
+        <div className="bg-amber-500 text-white font-bold text-xs sm:text-sm py-2 px-4 text-center flex items-center justify-center gap-2 shadow-md z-50 animate-pulse">
+          <span className="material-symbols-outlined text-base sm:text-lg">warning</span>
+          <span>Platform Maintenance Active: New order placements are temporarily paused for scheduled updates.</span>
+        </div>
+      )}
+
       {/* Sticky Top Navbar for Desktop */}
       <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/40 w-full transition-all duration-300">
         <div className="w-full px-margin-mobile md:px-margin-desktop py-3.5 flex items-center justify-between gap-md">

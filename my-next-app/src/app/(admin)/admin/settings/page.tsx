@@ -52,22 +52,47 @@ export default function AdminSettingsPage() {
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     try {
       await updateSettings({
-        platformName,
-        supportEmail,
-        supportPhone,
+        platformName: platformName.trim() || "Cravingza",
+        supportEmail: supportEmail.trim() || "support@cravingza.com",
+        supportPhone: supportPhone.trim() || "+91 98765 43210",
         maintenanceMode,
-        restaurantCommissionRate: Number(restaurantCommission),
-        baseDeliveryFee: Number(baseDeliveryFee),
-        serviceFeePercent: Number(serviceFeePercent),
-        taxPercent: Number(taxPercent),
+        restaurantCommissionRate: isNaN(Number(restaurantCommission)) ? 15 : Number(restaurantCommission),
+        baseDeliveryFee: isNaN(Number(baseDeliveryFee)) ? 30 : Number(baseDeliveryFee),
+        serviceFeePercent: isNaN(Number(serviceFeePercent)) ? 5 : Number(serviceFeePercent),
+        taxPercent: isNaN(Number(taxPercent)) ? 5 : Number(taxPercent),
       }).unwrap();
 
-      toast.success("System settings updated & saved to Database successfully!");
+      toast.success("System settings updated & saved successfully!", { id: "admin-settings-toast" });
     } catch (err: any) {
       console.error("Failed to save settings:", err);
-      toast.error(err?.data?.message || "Failed to save settings");
+      toast.error(err?.data?.message || "Failed to save settings", { id: "admin-settings-toast" });
+    }
+  };
+
+  const handleToggleMaintenance = async () => {
+    if (isSaving) return;
+    const newMode = !maintenanceMode;
+    setMaintenanceMode(newMode);
+    try {
+      await updateSettings({
+        platformName: platformName.trim() || "Cravingza",
+        supportEmail: supportEmail.trim() || "support@cravingza.com",
+        supportPhone: supportPhone.trim() || "+91 98765 43210",
+        maintenanceMode: newMode,
+        restaurantCommissionRate: isNaN(Number(restaurantCommission)) ? 15 : Number(restaurantCommission),
+        baseDeliveryFee: isNaN(Number(baseDeliveryFee)) ? 30 : Number(baseDeliveryFee),
+        serviceFeePercent: isNaN(Number(serviceFeePercent)) ? 5 : Number(serviceFeePercent),
+        taxPercent: isNaN(Number(taxPercent)) ? 5 : Number(taxPercent),
+      }).unwrap();
+
+      toast.success(newMode ? "Maintenance Mode Enabled!" : "Maintenance Mode Disabled!", { id: "admin-settings-toast" });
+    } catch (err: any) {
+      setMaintenanceMode(!newMode); // Revert state on failure
+      console.error("Failed to update maintenance mode:", err);
+      toast.error(err?.data?.message || "Failed to update maintenance mode", { id: "admin-settings-toast" });
     }
   };
 
@@ -184,8 +209,9 @@ export default function AdminSettingsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setMaintenanceMode(!maintenanceMode)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                disabled={isSaving}
+                onClick={handleToggleMaintenance}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
                   maintenanceMode ? "bg-amber-600" : "bg-slate-300"
                 }`}
               >

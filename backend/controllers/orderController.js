@@ -1,9 +1,18 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Restaurant = require("../models/Restaurant");
+const SystemSettings = require("../models/SystemSettings");
 
 const createOrder = async (req, res, next) => {
   try {
+    const settings = await SystemSettings.getSettings();
+    if (settings && settings.maintenanceMode) {
+      return res.status(503).json({
+        success: false,
+        message: "Cravingza is currently under maintenance. New orders are temporarily paused. Please try again later.",
+      });
+    }
+
     const {
       deliveryAddress,
       paymentMethod: inputPaymentMethod,
@@ -67,9 +76,7 @@ const createOrder = async (req, res, next) => {
       }
     }
 
-    const SystemSettings = require("../models/SystemSettings");
-    const settings = await SystemSettings.getSettings();
-
+    // settings already loaded above
     discountAmount = Math.round(discountAmount * 100) / 100;
     const discountedSubtotal = Math.max(0, subtotal - discountAmount);
 
