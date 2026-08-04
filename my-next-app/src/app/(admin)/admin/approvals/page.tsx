@@ -20,12 +20,27 @@ export default function ApprovalsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Top-level tab: "restaurants" | "delivery_partners"
-  const activeType = searchParams.get("type") || "restaurants";
-  // Status tab: "pending" | "approved" | "rejected"
-  const activeStatus = searchParams.get("status") || "pending";
-  // Selected detail item ID
-  const selectedId = searchParams.get("id") || "";
+  // Controlled Local State for Tabs (guarantees instant tab switching)
+  const [activeType, setActiveType] = useState<string>("restaurants");
+  const [activeStatus, setActiveStatus] = useState<string>("pending");
+  const [selectedId, setSelectedId] = useState<string>("");
+
+  // Sync state with URL searchParams on mount or searchParams change
+  useEffect(() => {
+    const paramType = searchParams.get("type");
+    const paramStatus = searchParams.get("status");
+    const paramId = searchParams.get("id");
+
+    if (paramType && paramType !== activeType) {
+      setActiveType(paramType);
+    }
+    if (paramStatus && paramStatus !== activeStatus) {
+      setActiveStatus(paramStatus);
+    }
+    if (paramId !== null && paramId !== selectedId) {
+      setSelectedId(paramId);
+    }
+  }, [searchParams]);
 
   // ── RESTAURANT QUERIES & MUTATIONS ──
   const {
@@ -117,20 +132,29 @@ export default function ApprovalsPage() {
     if (items.length > 0 && typeof window !== "undefined" && window.innerWidth >= 1024) {
       const isSelectedInList = items.some((item: any) => item._id === selectedId);
       if (!selectedId || !isSelectedInList) {
-        router.replace(`/admin/approvals?type=${activeType}&status=${activeStatus}&id=${items[0]._id}`);
+        const firstId = items[0]._id;
+        setSelectedId(firstId);
+        router.replace(`/admin/approvals?type=${activeType}&status=${activeStatus}&id=${firstId}`);
       }
+    } else if (items.length === 0 && selectedId) {
+      setSelectedId("");
     }
   }, [items, selectedId, activeType, activeStatus, router]);
 
   const handleTypeChange = (type: string) => {
+    setActiveType(type);
+    setSelectedId("");
     router.push(`/admin/approvals?type=${type}&status=${activeStatus}`);
   };
 
   const handleStatusChange = (status: string) => {
+    setActiveStatus(status);
+    setSelectedId("");
     router.push(`/admin/approvals?type=${activeType}&status=${status}`);
   };
 
   const handleSelectItem = (id: string) => {
+    setSelectedId(id);
     router.push(`/admin/approvals?type=${activeType}&status=${activeStatus}&id=${id}`);
   };
 
