@@ -567,6 +567,35 @@ export default function ApprovalsPage() {
                 </button>
               </div>
 
+              {/* Cover Photo Banner Preview */}
+              {selectedItem.image ? (
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm group">
+                  <img
+                    src={selectedItem.image}
+                    alt={selectedItem.name}
+                    className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">image</span>
+                    Cover Photo
+                  </div>
+                  <a
+                    href={selectedItem.image}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-slate-800 font-bold text-xs px-3 py-1.5 rounded-xl shadow-md backdrop-blur-md transition-all flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                    View Full Image
+                  </a>
+                </div>
+              ) : (
+                <div className="p-4 bg-amber-50/60 border border-amber-200/60 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg text-amber-600">image_not_supported</span>
+                  <span>No cover photo uploaded for this restaurant.</span>
+                </div>
+              )}
+
               <div className="space-y-md">
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Cuisine & Tags</h4>
@@ -608,26 +637,47 @@ export default function ApprovalsPage() {
 
               {/* Documents */}
               <div className="space-y-md border-t border-slate-50 pt-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Business Credentials</h4>
-                <div className="grid grid-cols-1 gap-sm">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Business Credentials & Verification Documents</h4>
+                <div className="grid grid-cols-1 gap-md">
                   {selectedItem.documents?.fssaiLicense ? (
-                    <a
-                      href={selectedItem.documents.fssaiLicense}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 hover:border-primary/20 hover:bg-primary/5 rounded-2xl transition-all group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-sm min-w-0">
-                        <span className="material-symbols-outlined text-primary text-xl shrink-0">verified_user</span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-800 truncate">FSSAI Permit License</p>
-                          <p className="text-[10px] text-slate-400">Click to view document permit</p>
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary text-xl">verified_user</span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">FSSAI Permit License</p>
+                            <p className="text-[10px] text-slate-400">Official Food Safety Certificate</p>
+                          </div>
                         </div>
+                        <a
+                          href={selectedItem.documents.fssaiLicense}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                        >
+                          <span>View Original</span>
+                          <span className="material-symbols-outlined text-sm">open_in_new</span>
+                        </a>
                       </div>
-                      <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-base shrink-0">
-                        open_in_new
-                      </span>
-                    </a>
+
+                      {/* Image Preview Thumbnail */}
+                      <a
+                        href={selectedItem.documents.fssaiLicense}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block relative rounded-xl overflow-hidden border border-slate-200 mt-2 hover:opacity-90 transition-opacity bg-white"
+                      >
+                        <img
+                          src={selectedItem.documents.fssaiLicense}
+                          alt="FSSAI License Document"
+                          className="w-full h-36 object-contain p-2 bg-slate-100/50"
+                          onError={(e) => {
+                            // Fallback if not direct image
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      </a>
+                    </div>
                   ) : (
                     <div className="p-3.5 bg-rose-50/50 border border-rose-100 text-rose-600 rounded-2xl flex items-center gap-sm text-xs">
                       <span className="material-symbols-outlined text-lg">warning</span>
@@ -636,23 +686,43 @@ export default function ApprovalsPage() {
                   )}
 
                   {selectedItem.documents?.businessRegistration ? (
-                    <a
-                      href={selectedItem.documents.businessRegistration}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 hover:border-primary/20 hover:bg-primary/5 rounded-2xl transition-all group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-sm min-w-0">
-                        <span className="material-symbols-outlined text-primary text-xl shrink-0">receipt_long</span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-800 truncate">Business Registration</p>
-                          <p className="text-[10px] text-slate-400">Click to view registry copy</p>
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary text-xl">receipt_long</span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">Business Registration</p>
+                            <p className="text-[10px] text-slate-400">Official Business Registry Copy</p>
+                          </div>
                         </div>
+                        <a
+                          href={selectedItem.documents.businessRegistration}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                        >
+                          <span>View Original</span>
+                          <span className="material-symbols-outlined text-sm">open_in_new</span>
+                        </a>
                       </div>
-                      <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-base shrink-0">
-                        open_in_new
-                      </span>
-                    </a>
+
+                      {/* Image Preview Thumbnail */}
+                      <a
+                        href={selectedItem.documents.businessRegistration}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block relative rounded-xl overflow-hidden border border-slate-200 mt-2 hover:opacity-90 transition-opacity bg-white"
+                      >
+                        <img
+                          src={selectedItem.documents.businessRegistration}
+                          alt="Business Registration Document"
+                          className="w-full h-36 object-contain p-2 bg-slate-100/50"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      </a>
+                    </div>
                   ) : (
                     <div className="p-3.5 bg-rose-50/50 border border-rose-100 text-rose-600 rounded-2xl flex items-center gap-sm text-xs">
                       <span className="material-symbols-outlined text-lg">warning</span>
@@ -815,25 +885,44 @@ export default function ApprovalsPage() {
                 {/* Government Documents */}
                 <div className="space-y-md border-t border-slate-50 pt-4">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Verification Documents</h4>
-                  <div className="grid grid-cols-1 gap-sm">
+                  <div className="grid grid-cols-1 gap-md">
                     {selectedItem.documents?.aadhaarCard ? (
-                      <a
-                        href={selectedItem.documents.aadhaarCard}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 hover:border-primary/20 hover:bg-primary/5 rounded-2xl transition-all group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-sm min-w-0">
-                          <span className="material-symbols-outlined text-primary text-xl shrink-0">badge</span>
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-800 truncate">Aadhaar Card / Govt ID</p>
-                            <p className="text-[10px] text-slate-400">Click to view document</p>
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-xl">badge</span>
+                            <div>
+                              <p className="text-xs font-bold text-slate-800">Aadhaar Card / Govt ID</p>
+                              <p className="text-[10px] text-slate-400">Official Government Identification</p>
+                            </div>
                           </div>
+                          <a
+                            href={selectedItem.documents.aadhaarCard}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                          >
+                            <span>View Original</span>
+                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                          </a>
                         </div>
-                        <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-base shrink-0">
-                          open_in_new
-                        </span>
-                      </a>
+
+                        <a
+                          href={selectedItem.documents.aadhaarCard}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block relative rounded-xl overflow-hidden border border-slate-200 mt-2 hover:opacity-90 transition-opacity bg-white"
+                        >
+                          <img
+                            src={selectedItem.documents.aadhaarCard}
+                            alt="Aadhaar Card Document"
+                            className="w-full h-36 object-contain p-2 bg-slate-100/50"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        </a>
+                      </div>
                     ) : (
                       <div className="p-3.5 bg-rose-50/50 border border-rose-100 text-rose-600 rounded-2xl flex items-center gap-sm text-xs">
                         <span className="material-symbols-outlined text-lg">warning</span>
@@ -843,27 +932,46 @@ export default function ApprovalsPage() {
 
                     {selectedItem.vehicleType !== "bicycle" && (
                       selectedItem.documents?.drivingLicense ? (
-                        <a
-                          href={selectedItem.documents.drivingLicense}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 hover:border-primary/20 hover:bg-primary/5 rounded-2xl transition-all group cursor-pointer"
-                        >
-                          <div className="flex items-center gap-sm min-w-0">
-                            <span className="material-symbols-outlined text-primary text-xl shrink-0">id_card</span>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-800 truncate">Driving License</p>
-                              <p className="text-[10px] text-slate-400">Click to view document</p>
+                        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-primary text-xl">id_card</span>
+                              <div>
+                                <p className="text-xs font-bold text-slate-800">Driving License</p>
+                                <p className="text-[10px] text-slate-400">Official Motorized Vehicle Permit</p>
+                              </div>
                             </div>
+                            <a
+                              href={selectedItem.documents.drivingLicense}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                            >
+                              <span>View Original</span>
+                              <span className="material-symbols-outlined text-sm">open_in_new</span>
+                            </a>
                           </div>
-                          <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-base shrink-0">
-                            open_in_new
-                          </span>
-                        </a>
+
+                          <a
+                            href={selectedItem.documents.drivingLicense}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block relative rounded-xl overflow-hidden border border-slate-200 mt-2 hover:opacity-90 transition-opacity bg-white"
+                          >
+                            <img
+                              src={selectedItem.documents.drivingLicense}
+                              alt="Driving License Document"
+                              className="w-full h-36 object-contain p-2 bg-slate-100/50"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          </a>
+                        </div>
                       ) : (
                         <div className="p-3.5 bg-rose-50/50 border border-rose-100 text-rose-600 rounded-2xl flex items-center gap-sm text-xs">
                           <span className="material-symbols-outlined text-lg">warning</span>
-                          <span>Missing Driving License</span>
+                          <span>Missing Driving License Document</span>
                         </div>
                       )
                     )}
