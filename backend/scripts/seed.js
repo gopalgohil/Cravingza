@@ -612,13 +612,26 @@ async function seed() {
     await MenuItem.deleteMany({});
     console.log("Existing data cleared.");
 
+    const User = require("../models/User");
+    const targetOwner = await User.findOne({ email: "gopalgohel249@gmail.com" });
+    if (targetOwner) {
+      targetOwner.role = "owner";
+      await targetOwner.save();
+      console.log(`Updated user ${targetOwner.email} role to 'owner'.`);
+    }
+
     for (const rData of restaurantsData) {
       const { menu, ...restDetails } = rData;
       
+      // Link Burger Boss to gopalgohel249@gmail.com if found
+      if (restDetails.name === "Burger Boss" && targetOwner) {
+        restDetails.owner = targetOwner._id;
+      }
+
       // Save restaurant
       const restaurant = new Restaurant(restDetails);
       await restaurant.save();
-      console.log(`Seeded Restaurant: ${restaurant.name}`);
+      console.log(`Seeded Restaurant: ${restaurant.name}${restDetails.owner ? " (Owner Linked)" : ""}`);
 
       // Save menu items
       for (const mItem of menu) {
