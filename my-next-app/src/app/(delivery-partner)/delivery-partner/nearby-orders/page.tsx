@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export default function NearbyOrdersPage() {
   const router = useRouter();
   const { user } = useAppStore();
-  const storageKey = `cravingza_declined_orders_${user?._id || "guest"}`;
+  const storageKey = `cravingza_declined_orders_${user?.id || (user as any)?._id || "guest"}`;
 
   const {
     data: response,
