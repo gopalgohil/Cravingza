@@ -28,18 +28,27 @@ export default function NearbyOrdersPage() {
   const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
   const [updateStatus, { isLoading: isTogglingOnline }] = useUpdateDeliveryStatusMutation();
 
-  // Local state to store declined order IDs (persisted per user in localStorage)
-  const [declinedOrderIds, setDeclinedOrderIds] = useState<string[]>(() => {
+  // Local state to store declined order IDs
+  const [declinedOrderIds, setDeclinedOrderIds] = useState<string[]>([]);
+
+  // Synchronize declined orders from localStorage when user is loaded or on mount
+  useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem(storageKey);
-        return saved ? JSON.parse(saved) : [];
-      } catch (e) {
-        return [];
-      }
+        const uId = user?.id || (user as any)?._id || user?.email || "guest";
+        const userKey = `cravingza_declined_orders_${uId}`;
+        const userSaved = localStorage.getItem(userKey);
+        const globalSaved = localStorage.getItem("cravingza_declined_orders_global");
+        
+        let userList: string[] = userSaved ? JSON.parse(userSaved) : [];
+        let globalList: string[] = globalSaved ? JSON.parse(globalSaved) : [];
+        const combined = Array.from(new Set([...userList, ...globalList]));
+        if (combined.length > 0) {
+          setDeclinedOrderIds(combined);
+        }
+      } catch (e) {}
     }
-    return [];
-  });
+  }, [user]);
 
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -92,12 +101,15 @@ export default function NearbyOrdersPage() {
       const updated = Array.from(new Set([...prev, orderId]));
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem(storageKey, JSON.stringify(updated));
+          const uId = user?.id || (user as any)?._id || user?.email || "guest";
+          const userKey = `cravingza_declined_orders_${uId}`;
+          localStorage.setItem(userKey, JSON.stringify(updated));
+          localStorage.setItem("cravingza_declined_orders_global", JSON.stringify(updated));
         } catch (e) {}
       }
       return updated;
     });
-    toast.info("Order declined. It will not appear for you again.", {
+    toast.info("Order declined. It is permanently removed from your list.", {
       id: `decline-${orderId}`,
     });
   };
