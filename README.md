@@ -1,4 +1,4 @@
-# 🍕 Cravingza - Modern Food Delivery Platform
+#  Cravingza - Modern Food Delivery Platform
 
 Cravingza is a full-stack, feature-rich food delivery web application built with **Next.js (TypeScript)**, **Node.js/Express**, and **MongoDB**. It provides a seamless experience for Customers, Restaurant Owners, Delivery Partners, and Admins.
 
@@ -6,11 +6,11 @@ Cravingza is a full-stack, feature-rich food delivery web application built with
 
 ## 🌟 Key Features
 
-- **🛒 Customer Portal**: Search restaurants, browse menus, add items to cart, apply coupon codes (e.g. Free Delivery, Flat Discounts), and track live orders.
-- **💳 Payment Integration**: Supports Online Payments via **Razorpay** (UPI, Credit/Debit Cards, Netbanking) and **Cash on Delivery (COD)**.
-- **🍽️ Restaurant Portal**: Manage menu items, view incoming orders, update order status (Preparing, Ready for Pickup).
-- **🛵 Delivery Partner Portal**: Accept delivery jobs, view earnings, and update delivery status.
-- **👑 Admin Dashboard**: Platform management, restaurant approvals, and system configuration.
+- ** Customer Portal**: Search restaurants, browse menus, add items to cart, apply coupon codes (e.g. Free Delivery, Flat Discounts), and track live orders.
+- ** Payment Integration**: Supports Online Payments via **Razorpay** (UPI, Credit/Debit Cards, Netbanking) and **Cash on Delivery (COD)**.
+- ** Restaurant Portal**: Manage menu items, view incoming orders, update order status (Preparing, Ready for Pickup).
+- ** Delivery Partner Portal**: Accept delivery jobs, view earnings, and update delivery status.
+- ** Admin Dashboard**: Platform management, restaurant approvals, and system configuration.
 
 ---
 
