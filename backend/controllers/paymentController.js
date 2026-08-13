@@ -10,25 +10,28 @@ const Order = require("../models/Order");
  */
 const createRazorpayOrder = async (req, res, next) => {
   try {
-    const { couponCode } = req.body || {};
+    const { couponCode, items, restaurant: bodyRestaurant } = req.body || {};
 
-    const cart = await Cart.findOne({ user: req.user._id });
-    if (!cart || cart.items.length === 0) {
+    let cart = await Cart.findOne({ user: req.user._id });
+    let cartItemsToUse = cart && cart.items && cart.items.length > 0 ? cart.items : (items || []);
+    let targetRestaurantId = (cart && cart.restaurant) || bodyRestaurant;
+
+    if (!cartItemsToUse || cartItemsToUse.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Cart is empty.",
       });
     }
 
-    const restaurant = await Restaurant.findById(cart.restaurant);
+    let restaurant = null;
+    if (targetRestaurantId) {
+      restaurant = await Restaurant.findById(targetRestaurantId);
+    }
     if (!restaurant) {
-      return res.status(404).json({
-        success: false,
-        message: "Restaurant not found.",
-      });
+      restaurant = await Restaurant.findOne();
     }
 
-    const subtotal = cart.subtotal;
+    const subtotal = cart && cart.subtotal ? cart.subtotal : cartItemsToUse.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
     let discountAmount = 0;
     let isFreeDelivery = false;
 
@@ -126,23 +129,26 @@ const verifyRazorpayPayment = async (req, res, next) => {
     }
 
     // 2. Fetch User Cart and Restaurant
-    const cart = await Cart.findOne({ user: req.user._id });
-    if (!cart || cart.items.length === 0) {
+    let cart = await Cart.findOne({ user: req.user._id });
+    let cartItemsToUse = cart && cart.items && cart.items.length > 0 ? cart.items : (req.body.items || []);
+    let targetRestaurantId = (cart && cart.restaurant) || req.body.restaurant;
+
+    if (!cartItemsToUse || cartItemsToUse.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Cart is empty. Order could not be created.",
       });
     }
 
-    const restaurant = await Restaurant.findById(cart.restaurant);
+    let restaurant = null;
+    if (targetRestaurantId) {
+      restaurant = await Restaurant.findById(targetRestaurantId);
+    }
     if (!restaurant) {
-      return res.status(404).json({
-        success: false,
-        message: "Restaurant not found.",
-      });
+      restaurant = await Restaurant.findOne();
     }
 
-    const subtotal = cart.subtotal;
+    const subtotal = cart && cart.subtotal ? cart.subtotal : cartItemsToUse.reduce((sum, i) => sum + ((i.price || 0) * (i.quantity || 1)), 0);
     let discountAmount = 0;
     let isFreeDelivery = false;
     let appliedCouponCode = null;

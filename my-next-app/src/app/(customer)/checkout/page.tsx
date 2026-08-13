@@ -10,6 +10,8 @@ import {
   useCreateRazorpayOrderMutation,
   useVerifyRazorpayPaymentMutation,
   useApplyCouponMutation,
+  useGetAddressesQuery,
+  Address,
 } from "@/lib/redux/apiSlice";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -40,8 +42,15 @@ export default function CheckoutPage() {
   const [verifyRazorpayPayment, { isLoading: isVerifying }] = useVerifyRazorpayPaymentMutation();
   const [applyCouponMutation, { isLoading: isApplyingCoupon }] = useApplyCouponMutation();
 
+  const { data: addressesRes, isLoading: isLoadingAddresses } = useGetAddressesQuery(undefined, {
+    skip: !user,
+  });
+  const savedAddresses: Address[] = addressesRes?.data || [];
+
   // Form & Coupon states
   const [deliveryAddress, setDeliveryAddress] = useState(address);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [hasInitializedAddress, setHasInitializedAddress] = useState(false);
   const [customerPhone, setCustomerPhone] = useState(user?.phone || "");
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "razorpay">("razorpay");
@@ -64,9 +73,27 @@ export default function CheckoutPage() {
     }
   }, [authChecked, user, router]);
 
-  // Sync state address with input
+  // Auto-select default saved address from user's profile on checkout load
   useEffect(() => {
-    setDeliveryAddress(address);
+    if (savedAddresses.length > 0 && !hasInitializedAddress) {
+      const defaultAddr = savedAddresses.find((a) => a.isDefault) || savedAddresses[0];
+      const formatted = `${defaultAddr.addressLine}, ${defaultAddr.city}${
+        defaultAddr.pincode ? " - " + defaultAddr.pincode : ""
+      }`;
+      setDeliveryAddress(formatted);
+      setAddress(formatted);
+      if (defaultAddr._id) {
+        setSelectedAddressId(defaultAddr._id);
+      }
+      setHasInitializedAddress(true);
+    }
+  }, [savedAddresses, hasInitializedAddress, setAddress]);
+
+  // Sync state address with input if updated elsewhere
+  useEffect(() => {
+    if (address && !deliveryAddress) {
+      setDeliveryAddress(address);
+    }
   }, [address]);
 
   const cartItems = cart.items;
@@ -339,17 +366,99 @@ export default function CheckoutPage() {
 
           {/* Section 2: Delivery Details */}
           <div className="bg-surface border border-outline-variant p-lg rounded-2xl shadow-sm space-y-md">
-            <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-xs">
-              <span className="material-symbols-outlined text-primary">location_on</span>
-              Delivery Address
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-xs">
+                <span className="material-symbols-outlined text-primary">location_on</span>
+                Delivery Address
+              </h3>
+              <Link
+                href="/profile"
+                className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-sm">edit</span>
+                Manage Addresses
+              </Link>
+            </div>
+
+            {/* Saved Addresses Picker */}
+            {isLoadingAddresses ? (
+              <div className="flex items-center gap-2 text-sm text-on-surface-variant py-2">
+                <span className="inline-block animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                <span>Loading saved addresses...</span>
+              </div>
+            ) : savedAddresses.length > 0 ? (
+              <div className="space-y-3">
+                <label className="font-label-sm text-label-sm text-on-surface-variant block font-semibold">
+                  Select Saved Address
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {savedAddresses.map((addr) => {
+                    const formatted = `${addr.addressLine}, ${addr.city}${
+                      addr.pincode ? " - " + addr.pincode : ""
+                    }`;
+                    const isSelected =
+                      selectedAddressId === addr._id || deliveryAddress === formatted;
+
+                    return (
+                      <div
+                        key={addr._id || addr.addressLine}
+                        onClick={() => {
+                          setSelectedAddressId(addr._id || null);
+                          setDeliveryAddress(formatted);
+                          setAddress(formatted);
+                        }}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
+                            : "border-outline-variant hover:border-primary/40 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5 font-bold text-sm text-on-surface">
+                            <span className="material-symbols-outlined text-primary text-base">
+                              {addr.label === "Home"
+                                ? "home"
+                                : addr.label === "Work"
+                                ? "work"
+                                : "location_on"}
+                            </span>
+                            <span>{addr.label}</span>
+                            {addr.isDefault && (
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-primary/15 text-primary uppercase">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <input
+                            type="radio"
+                            name="savedAddress"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="accent-primary h-4 w-4 cursor-pointer"
+                          />
+                        </div>
+                        <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
+                          {formatted}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
             <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant block mb-sm">Address</label>
+              <label className="font-label-sm text-label-sm text-on-surface-variant block mb-sm">
+                Delivery Address Input
+              </label>
               <div className="relative">
                 <input
                   type="text"
                   value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  onChange={(e) => {
+                    setDeliveryAddress(e.target.value);
+                    setSelectedAddressId(null);
+                  }}
                   placeholder="Enter full address"
                   required
                   className="w-full pl-xl pr-md py-2.5 border border-outline-variant rounded-xl focus:border-primary bg-white text-body-md outline-none"

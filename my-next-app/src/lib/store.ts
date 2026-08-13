@@ -54,7 +54,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   cart: [],
-  address: "123 Main Street, City Centre",
+  address: "",
   setAddress: (address) => set({ address }),
   addToCart: (item) =>
     set((state) => {

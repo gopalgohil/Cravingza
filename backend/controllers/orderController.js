@@ -30,23 +30,26 @@ const createOrder = async (req, res, next) => {
       });
     }
 
-    const cart = await Cart.findOne({ user: req.user._id });
-    if (!cart || cart.items.length === 0) {
+    let cart = await Cart.findOne({ user: req.user._id });
+    let cartItemsToUse = cart && cart.items && cart.items.length > 0 ? cart.items : (req.body.items || []);
+    let targetRestaurantId = (cart && cart.restaurant) || req.body.restaurant;
+
+    if (!cartItemsToUse || cartItemsToUse.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Cart is empty",
       });
     }
 
-    const restaurant = await Restaurant.findById(cart.restaurant);
+    let restaurant = null;
+    if (targetRestaurantId) {
+      restaurant = await Restaurant.findById(targetRestaurantId);
+    }
     if (!restaurant) {
-      return res.status(404).json({
-        success: false,
-        message: "Restaurant not found",
-      });
+      restaurant = await Restaurant.findOne();
     }
 
-    const subtotal = cart.subtotal;
+    const subtotal = cart && cart.subtotal ? cart.subtotal : cartItemsToUse.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
     let discountAmount = 0;
     let isFreeDelivery = false;
     let appliedCouponCode = null;
