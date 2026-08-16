@@ -1,5 +1,6 @@
 const Restaurant = require("../models/Restaurant");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const { z } = require("zod");
 const { pincodeSchema, phoneSchema } = require("../validators/shared");
 
@@ -65,7 +66,23 @@ const applyAsPartner = async (req, res, next) => {
       submittedAt: new Date(),
     });
 
-    // Note: Role remains 'customer' while application is pending. Role will upgrade to 'owner' when Super Admin approves in /admin/approvals.
+    // Notify all admins about new restaurant application
+    try {
+      const admins = await User.find({ role: "admin" }).select("_id");
+      if (admins.length > 0) {
+        const notifDocs = admins.map((admin) => ({
+          recipient: admin._id,
+          title: "New Restaurant Application",
+          message: `"${name}" has submitted a new restaurant registration request. Review and approve or reject.`,
+          type: "application",
+          link: "/admin/approvals?type=restaurants&status=pending",
+          isRead: false,
+        }));
+        await Notification.insertMany(notifDocs);
+      }
+    } catch (notifErr) {
+      console.error("Failed to send admin notification:", notifErr.message);
+    }
 
     return res.status(201).json({
       success: true,
@@ -152,6 +169,24 @@ const reapplyAsPartner = async (req, res, next) => {
       },
       { new: true }
     );
+
+    // Notify all admins about reapplication
+    try {
+      const admins = await User.find({ role: "admin" }).select("_id");
+      if (admins.length > 0) {
+        const notifDocs = admins.map((admin) => ({
+          recipient: admin._id,
+          title: "Restaurant Reapplication",
+          message: `"${name}" has resubmitted their restaurant registration request after a previous rejection. Please review.`,
+          type: "application",
+          link: "/admin/approvals?type=restaurants&status=pending",
+          isRead: false,
+        }));
+        await Notification.insertMany(notifDocs);
+      }
+    } catch (notifErr) {
+      console.error("Failed to send admin reapply notification:", notifErr.message);
+    }
 
     return res.status(200).json({
       success: true,

@@ -2,6 +2,7 @@ const Restaurant = require("../models/Restaurant");
 const Order = require("../models/Order");
 const User = require("../models/User");
 const DeliveryProfile = require("../models/DeliveryProfile");
+const Notification = require("../models/Notification");
 const mongoose = require("mongoose");
 
 // GET /api/admin/restaurants
@@ -85,6 +86,22 @@ exports.approveRestaurant = async (req, res, next) => {
 
     await restaurant.save();
 
+    // Notify the restaurant owner
+    if (restaurant.owner) {
+      try {
+        await Notification.create({
+          recipient: restaurant.owner,
+          title: "🎉 Application Approved!",
+          message: `Congratulations! Your restaurant "${restaurant.name}" has been approved. You can now access your restaurant dashboard.`,
+          type: "application",
+          link: "/restaurant-owner/dashboard",
+          isRead: false,
+        });
+      } catch (notifErr) {
+        console.error("Failed to notify owner on approve:", notifErr.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: "Restaurant approved successfully",
@@ -127,6 +144,22 @@ exports.rejectRestaurant = async (req, res, next) => {
     }
 
     await restaurant.save();
+
+    // Notify the restaurant owner about rejection
+    if (restaurant.owner) {
+      try {
+        await Notification.create({
+          recipient: restaurant.owner,
+          title: "Application Rejected",
+          message: `Your restaurant "${restaurant.name}" application was rejected. Reason: ${reason}. You can update and reapply.`,
+          type: "application",
+          link: "/become-partner",
+          isRead: false,
+        });
+      } catch (notifErr) {
+        console.error("Failed to notify owner on reject:", notifErr.message);
+      }
+    }
 
     return res.status(200).json({
       success: true,

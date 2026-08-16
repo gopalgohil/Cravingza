@@ -161,7 +161,13 @@ export default function NotificationMenu() {
                 >
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      notif.title.includes("Cancelled")
+                      notif.type === "application"
+                        ? notif.title.includes("Approved")
+                          ? "bg-green-100 text-green-700"
+                          : notif.title.includes("Rejected")
+                          ? "bg-red-100 text-red-600"
+                          : "bg-amber-100 text-amber-700"
+                        : notif.title.includes("Cancelled")
                         ? "bg-red-100 text-red-600"
                         : notif.title.includes("Accepted")
                         ? "bg-green-100 text-green-700"
@@ -169,7 +175,13 @@ export default function NotificationMenu() {
                     }`}
                   >
                     <span className="material-symbols-outlined text-lg">
-                      {notif.title.includes("Cancelled")
+                      {notif.type === "application"
+                        ? notif.title.includes("Approved")
+                          ? "check_circle"
+                          : notif.title.includes("Rejected")
+                          ? "cancel"
+                          : "storefront"
+                        : notif.title.includes("Cancelled")
                         ? "cancel"
                         : notif.title.includes("Accepted")
                         ? "check_circle"
