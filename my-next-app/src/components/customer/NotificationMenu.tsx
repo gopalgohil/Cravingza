@@ -24,7 +24,7 @@ export default function NotificationMenu() {
   // Pauses automatically if user is unauthenticated OR tab is not visible
   const { data: response, refetch } = useGetNotificationsListQuery(undefined, {
     skip: !user || !isTabVisible,
-    pollingInterval: 30000,
+    pollingInterval: 10000, // Poll every 10 seconds (no refresh needed)
   });
 
   const [markRead] = useMarkNotificationsReadMutation();
