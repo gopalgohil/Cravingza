@@ -85,9 +85,16 @@ export default function OffersPage() {
     }, 3000);
   };
 
-  const handleApplyDeal = (code: string) => {
+  const handleApplyDeal = (coupon: any) => {
+    const code = typeof coupon === "string" ? coupon : coupon.code;
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
+
+    if (typeof coupon === "object" && coupon?.restaurant?._id) {
+      toast.success(`Coupon ${code} copied! Redirecting to ${coupon.restaurant.name}...`);
+      router.push(`/restaurants/${coupon.restaurant._id}`);
+      return;
+    }
 
     if (!user) {
       showAttractiveAuthToast(
@@ -262,10 +269,10 @@ export default function OffersPage() {
 
                   <button
                     type="button"
-                    onClick={() => handleApplyDeal(coupon.code)}
+                    onClick={() => handleApplyDeal(coupon)}
                     className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs md:text-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-sm"
                   >
-                    <span>Apply Deal</span>
+                    <span>{coupon.restaurant?.name ? `Order from ${coupon.restaurant.name}` : "Apply Deal"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
