@@ -1,11 +1,31 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const cookieParser = require("cookie-parser");
-const connectDB = require("./config/db");
-const authRoutes = require("./routes/authRoutes");
-const { verifyTransporter } = require("./services/emailService");
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import connectDB from "./config/db.js";
+import { verifyTransporter } from "./services/emailService.js";
+import authRoutes from "./routes/authRoutes.js";
+import restaurantRoutes from "./routes/restaurantRoutes.js";
+import restaurantSettingsRoutes from "./routes/restaurantSettingsRoutes.js";
+import deliveryRoutes from "./routes/deliveryRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import offerRoutes from "./routes/offerRoutes.js";
+import { getPublicSettings } from "./controllers/adminController.js";
+import setupSwagger from "./config/swagger.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize database connection
 connectDB();
@@ -35,26 +55,24 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/restaurants", require("./routes/restaurantRoutes"));
-app.use("/api/restaurant", require("./routes/restaurantSettingsRoutes"));
-app.use("/api/delivery", require("./routes/deliveryRoutes"));
-app.use("/api/cart", require("./routes/cartRoutes"));
-app.use("/api/orders", require("./routes/orderRoutes"));
-app.use("/api/reviews", require("./routes/reviewRoutes"));
-app.use("/api/user", require("./routes/userRoutes"));
-app.use("/api/upload", require("./routes/uploadRoutes"));
-app.use("/api/admin", require("./routes/adminRoutes"));
-app.use("/api/notifications", require("./routes/notificationRoutes"));
-app.use("/api/payment", require("./routes/paymentRoutes"));
-app.use("/api/offers", require("./routes/offerRoutes"));
-app.get("/api/settings", require("./controllers/adminController").getPublicSettings);
+app.use("/api/restaurants", restaurantRoutes);
+app.use("/api/restaurant", restaurantSettingsRoutes);
+app.use("/api/delivery", deliveryRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/offers", offerRoutes);
+app.get("/api/settings", getPublicSettings);
 
 // Swagger API Documentation
-const setupSwagger = require("./config/swagger");
 setupSwagger(app);
 
 // Serve uploaded documents statically
-const path = require("path");
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Base route for status check

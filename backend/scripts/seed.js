@@ -1,7 +1,9 @@
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
-const mongoose = require("mongoose");
-const Restaurant = require("../models/Restaurant");
-const MenuItem = require("../models/MenuItem");
+import "dotenv/config";
+import mongoose from "mongoose";
+import Restaurant from "../models/Restaurant.js";
+import MenuItem from "../models/MenuItem.js";
+import User from "../models/User.js";
+import Order from "../models/Order.js";
 
 const restaurantsData = [
   {
@@ -595,7 +597,7 @@ const restaurantsData = [
         image: "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
         isVeg: true,
         isBestSeller: true,
-      },
+      }, u
     ],
   },
 ];
@@ -611,9 +613,6 @@ async function seed() {
     await Restaurant.deleteMany({});
     await MenuItem.deleteMany({});
     console.log("Existing data cleared.");
-
-    const User = require("../models/User");
-    const Order = require("../models/Order");
 
     // SAFEGUARD: Do NOT delete existing real orders placed by users
     const existingOrderCount = await Order.countDocuments();
@@ -635,7 +634,7 @@ async function seed() {
 
     for (const rData of restaurantsData) {
       const { menu, ...restDetails } = rData;
-      
+
       // Link Burger Boss to gopalgohel249@gmail.com if found
       if (restDetails.name === "Burger Boss" && targetOwner) {
         restDetails.owner = targetOwner._id;

@@ -1,7 +1,8 @@
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
-const mongoose = require("mongoose");
-const Restaurant = require("../models/Restaurant");
-const User = require("../models/User");
+
+import "dotenv/config";
+import mongoose from "mongoose";
+import Restaurant from "../models/Restaurant.js";
+import User from "../models/User.js";
 
 async function run() {
   const args = process.argv.slice(2);
@@ -78,7 +79,7 @@ async function approveSpecific(target) {
   if (mongoose.Types.ObjectId.isValid(target)) {
     app = await Restaurant.findById(target);
   }
-  
+
   if (!app) {
     app = await Restaurant.findOne({ name: new RegExp(target, "i") });
   }
@@ -129,7 +130,7 @@ async function rejectApplication(target, reason) {
   if (mongoose.Types.ObjectId.isValid(target)) {
     app = await Restaurant.findById(target);
   }
-  
+
   if (!app) {
     app = await Restaurant.findOne({ name: new RegExp(target, "i") });
   }

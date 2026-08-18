@@ -1,7 +1,7 @@
-const Cart = require("../models/Cart");
-const MenuItem = require("../models/MenuItem");
-const Restaurant = require("../models/Restaurant");
-const mongoose = require("mongoose");
+import Cart from "../models/Cart.js";
+import MenuItem from "../models/MenuItem.js";
+import Restaurant from "../models/Restaurant.js";
+import mongoose from "mongoose";
 
 const getCart = async (req, res, next) => {
   try {
@@ -269,7 +269,7 @@ const replaceCart = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   getCart,
   addToCart,
   updateCartItem,

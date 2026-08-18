@@ -1,14 +1,14 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { protect } = require("../middlewares/auth");
-const {
+import { protect } from "../middlewares/auth.js";
+import {
   updateRestaurantProfile,
   updateBusinessHours,
   updateRestaurantStatus,
   updatePayoutDetails,
   getPayoutDetails,
   closeRestaurantPermanently,
-} = require("../controllers/restaurantSettingsController");
+} from "../controllers/restaurantSettingsController.js";
 
 // All settings routes require authentication
 router.patch("/profile", protect, updateRestaurantProfile);
@@ -18,4 +18,4 @@ router.patch("/payout-details", protect, updatePayoutDetails);
 router.get("/payout-details", protect, getPayoutDetails);
 router.patch("/close-permanently", protect, closeRestaurantPermanently);
 
-module.exports = router;
+export default router;

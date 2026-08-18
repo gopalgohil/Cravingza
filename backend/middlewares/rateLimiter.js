@@ -55,6 +55,6 @@ const rateLimiter = (options = {}) => {
   };
 };
 
-module.exports = {
+export {
   rateLimiter,
 };

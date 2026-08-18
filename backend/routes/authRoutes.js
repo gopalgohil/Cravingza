@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   register,
   verifyEmailOTP,
   resendOTP,
@@ -10,9 +10,9 @@ const {
   forgotPassword,
   resetPassword,
   googleLogin,
-} = require("../controllers/authController");
-const { protect } = require("../middlewares/auth");
-const { rateLimiter } = require("../middlewares/rateLimiter");
+} from "../controllers/authController.js";
+import { protect } from "../middlewares/auth.js";
+import { rateLimiter } from "../middlewares/rateLimiter.js";
 
 // Rate limiters for authentication actions
 const loginLimiter = rateLimiter({
@@ -264,4 +264,4 @@ router.post("/forgot-password", otpLimiter, forgotPassword);
  */
 router.post("/reset-password", otpLimiter, resetPassword);
 
-module.exports = router;
+export default router;

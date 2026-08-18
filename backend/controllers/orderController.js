@@ -1,7 +1,11 @@
-const Order = require("../models/Order");
-const Cart = require("../models/Cart");
-const Restaurant = require("../models/Restaurant");
-const SystemSettings = require("../models/SystemSettings");
+import Order from "../models/Order.js";
+import Cart from "../models/Cart.js";
+import Restaurant from "../models/Restaurant.js";
+import SystemSettings from "../models/SystemSettings.js";
+import Coupon from "../models/Coupon.js";
+import User from "../models/User.js";
+import { notifyUserDual, notifyOnlineDeliveryPartners } from "../lib/push.js";
+import razorpayInstance from "../lib/razorpay.js";
 
 const createOrder = async (req, res, next) => {
   try {
@@ -49,13 +53,19 @@ const createOrder = async (req, res, next) => {
       restaurant = await Restaurant.findOne();
     }
 
+    if (restaurant && restaurant.isOpen === false) {
+      return res.status(400).json({
+        success: false,
+        message: `${restaurant.name || "This restaurant"} is currently not accepting new orders. Please try again later.`,
+      });
+    }
+
     const subtotal = cart && cart.subtotal ? cart.subtotal : cartItemsToUse.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
     let discountAmount = 0;
     let isFreeDelivery = false;
     let appliedCouponCode = null;
 
     if (couponCode) {
-      const Coupon = require("../models/Coupon");
       const coupon = await Coupon.findOne({
         code: String(couponCode).toUpperCase().trim(),
         isActive: true,
@@ -63,6 +73,12 @@ const createOrder = async (req, res, next) => {
       });
 
       if (coupon && subtotal >= coupon.minOrderAmount) {
+        // Track coupon usage per user
+        if (!coupon.usedByUsers.some((uid) => uid.toString() === req.user._id.toString())) {
+          coupon.usedByUsers.push(req.user._id);
+          await coupon.save();
+        }
+
         appliedCouponCode = coupon.code;
         if (coupon.discountType === "percentage") {
           discountAmount = (subtotal * coupon.discountValue) / 100;
@@ -148,7 +164,6 @@ const createOrder = async (req, res, next) => {
     // Auto-sync entered phone number to Customer profile if provided
     if (deliveryAddress && deliveryAddress.phone) {
       try {
-        const User = require("../models/User");
         await User.findByIdAndUpdate(req.user._id, { phone: deliveryAddress.phone.trim() });
       } catch (userErr) {
         console.error("Failed to sync phone to user profile:", userErr);
@@ -157,7 +172,6 @@ const createOrder = async (req, res, next) => {
 
     // Send dual notifications (In-App + System Push)
     try {
-      const { notifyUserDual } = require("../lib/push");
       // Notify customer
       notifyUserDual(
         req.user._id,
@@ -331,7 +345,6 @@ const updateOrderStatus = async (req, res, next) => {
     // Auto-Refund if Merchant cancels/rejects a paid online order
     if (status === "cancelled" && order.paymentMethod === "razorpay" && order.paymentStatus === "paid" && order.razorpayPaymentId) {
       try {
-        const razorpayInstance = require("../lib/razorpay");
         const refundAmountPaise = Math.round(order.totalAmount * 100);
         const refund = await razorpayInstance.payments.refund(order.razorpayPaymentId, {
           amount: refundAmountPaise,
@@ -354,7 +367,6 @@ const updateOrderStatus = async (req, res, next) => {
     // Trigger Web Push Notification & In-App Notification for Customer when status changes
     if (order.customer?._id) {
       try {
-        const { notifyUserDual } = require("../lib/push");
         const orderShortId = order._id.toString().slice(-6);
         let title = `Order Update from ${restaurant.name}`;
         let msg = `Your order #${orderShortId} status is now: ${status}`;
@@ -391,7 +403,6 @@ const updateOrderStatus = async (req, res, next) => {
     // Trigger Web Push Notification asynchronously if marked ready_for_pickup
     if (status === "ready_for_pickup") {
       try {
-        const { notifyOnlineDeliveryPartners } = require("../lib/push");
         notifyOnlineDeliveryPartners(
           `New Delivery Available near ${restaurant.name}`,
           `New order ready for pickup at ${restaurant.name} — estimated earnings ₹40`,
@@ -461,7 +472,6 @@ const cancelOrder = async (req, res, next) => {
     if (order.paymentMethod === "razorpay" && order.paymentStatus === "paid" && order.razorpayPaymentId) {
       if (isEligibleForRefund) {
         try {
-          const razorpayInstance = require("../lib/razorpay");
           const refundAmountPaise = Math.round(order.totalAmount * 100);
           const refund = await razorpayInstance.payments.refund(order.razorpayPaymentId, {
             amount: refundAmountPaise,
@@ -489,7 +499,6 @@ const cancelOrder = async (req, res, next) => {
 
     // Trigger dual notifications (In-App + Web Push) to Restaurant Owner & Customer
     try {
-      const { notifyUserDual } = require("../lib/push");
       const orderShortId = order._id.toString().slice(-6);
 
       // Notify customer
@@ -523,7 +532,7 @@ const cancelOrder = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   createOrder,
   getOrders,
   getOrderById,

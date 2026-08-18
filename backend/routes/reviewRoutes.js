@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { createReview, getReviewByOrder, getMyRestaurantReviews } = require("../controllers/reviewController");
-const { protect } = require("../middlewares/auth");
+import { createReview, getReviewByOrder, getMyRestaurantReviews } from "../controllers/reviewController.js";
+import { protect } from "../middlewares/auth.js";
 
 // Protect all review routes
 router.use(protect);
@@ -10,4 +10,4 @@ router.get("/merchant", getMyRestaurantReviews);
 router.post("/", createReview);
 router.get("/order/:orderId", getReviewByOrder);
 
-module.exports = router;
+export default router;

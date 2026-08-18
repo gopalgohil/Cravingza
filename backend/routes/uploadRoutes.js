@@ -1,7 +1,7 @@
-const express = require("express");
-const multer = require("multer");
-const { uploadToCloudinary } = require("../utils/cloudinary");
-const { protect } = require("../middlewares/auth");
+import express from "express";
+import multer from "multer";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -35,4 +35,4 @@ router.post("/", protect, upload.single("file"), async (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;

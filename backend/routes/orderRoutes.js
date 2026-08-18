@@ -1,14 +1,14 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   createOrder,
   getOrders,
   getOrderById,
   getMerchantOrders,
   updateOrderStatus,
   cancelOrder,
-} = require("../controllers/orderController");
-const { protect } = require("../middlewares/auth");
+} from "../controllers/orderController.js";
+import { protect } from "../middlewares/auth.js";
 
 // Protect all order routes
 router.use(protect);
@@ -164,4 +164,4 @@ router.get("/:id", getOrderById);
  */
 router.patch("/:id/cancel", cancelOrder);
 
-module.exports = router;
+export default router;

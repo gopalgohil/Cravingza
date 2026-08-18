@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+import "dotenv/config";
+import mongoose from "mongoose";
 
 async function migrateLocalToAtlas() {
   try {

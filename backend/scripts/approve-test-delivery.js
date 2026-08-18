@@ -1,7 +1,7 @@
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
-const mongoose = require("mongoose");
-const DeliveryProfile = require("../models/DeliveryProfile");
-const User = require("../models/User");
+import "dotenv/config";
+import mongoose from "mongoose";
+import DeliveryProfile from "../models/DeliveryProfile.js";
+import User from "../models/User.js";
 
 async function run() {
   const args = process.argv.slice(2);

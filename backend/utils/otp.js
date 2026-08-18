@@ -1,4 +1,4 @@
-const crypto = require("crypto");
+import crypto from "crypto";
 
 const generateOTP = () => {
   // Generate a secure 6-digit number
@@ -15,7 +15,7 @@ const verifyOTP = (otp, hash) => {
   return crypto.timingSafeEqual(Buffer.from(currentHash), Buffer.from(hash));
 };
 
-module.exports = {
+export {
   generateOTP,
   hashOTP,
   verifyOTP,

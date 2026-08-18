@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const deliverySchema = new mongoose.Schema(
   {
@@ -45,4 +45,4 @@ const deliverySchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Delivery", deliverySchema);
+export default mongoose.model("Delivery", deliverySchema);

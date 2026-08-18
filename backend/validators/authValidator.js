@@ -1,5 +1,5 @@
-const { z } = require("zod");
-const { phoneSchema } = require("./shared");
+import { z } from "zod";
+import { phoneSchema } from "./shared.js";
 
 const registerSchema = z
   .object({
@@ -83,7 +83,7 @@ const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-module.exports = {
+export {
   registerSchema,
   loginSchema,
   verifyOTPSchema,

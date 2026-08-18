@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const cartSchema = new mongoose.Schema(
   {
@@ -53,4 +53,4 @@ cartSchema.virtual("subtotal").get(function () {
   return this.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 });
 
-module.exports = mongoose.model("Cart", cartSchema);
+export default mongoose.model("Cart", cartSchema);

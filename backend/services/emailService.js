@@ -15,7 +15,7 @@
  *   4. Set BREVO_API_KEY, BREVO_FROM_EMAIL, BREVO_FROM_NAME in .env
  */
 
-const { BrevoClient } = require("@getbrevo/brevo");
+import { BrevoClient } from "@getbrevo/brevo";
 
 // ---------------------------------------------------------------------------
 // Startup sanity check — log clear warnings if env vars are missing
@@ -28,22 +28,19 @@ const verifyTransporter = () => {
   if (!key || !from) {
     console.error(
       "[Email Service] ❌ Brevo configuration missing!\n" +
-        `  BREVO_API_KEY    : ${key ? "✅ found" : "❌ NOT SET"}\n` +
-        `  BREVO_FROM_EMAIL : ${from ? "✅ found (" + from + ")" : "❌ NOT SET"}\n` +
-        "  → Add these to your Render environment variables and redeploy."
+      `  BREVO_API_KEY    : ${key ? "✅ found" : "❌ NOT SET"}\n` +
+      `  BREVO_FROM_EMAIL : ${from ? "✅ found (" + from + ")" : "❌ NOT SET"}\n` +
+      "  → Add these to your Render environment variables and redeploy."
     );
     return;
   }
-
   console.log(
     `[Email Service] ✅ Brevo ready. Sending from: ${from}`
   );
 };
-
 // ---------------------------------------------------------------------------
 // Core send helper — HTTPS call to Brevo REST API
 // ---------------------------------------------------------------------------
-
 /**
  * @param {string} to       - Recipient email address
  * @param {string} subject  - Email subject line
@@ -72,8 +69,8 @@ const sendMail = async (to, subject, html) => {
     const brevoCode = err?.response?.body?.code || err?.status || "";
     console.error(
       `[Email Service] ❌ Brevo API error sending to ${to}:\n` +
-        `  code: ${brevoCode}\n` +
-        `  message: ${brevoMsg}`
+      `  code: ${brevoCode}\n` +
+      `  message: ${brevoMsg}`
     );
     return { success: false, error: brevoMsg };
   }
@@ -185,7 +182,7 @@ const sendPasswordResetEmail = async (to, name, otp) => {
   return await sendMail(to, "Reset your Cravingza Password", html);
 };
 
-module.exports = {
+export {
   verifyTransporter,
   sendOTPEmail,
   sendPasswordResetEmail,

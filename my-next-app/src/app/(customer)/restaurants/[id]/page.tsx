@@ -210,6 +210,21 @@ export default function RestaurantDetailsPage({ params }: PageProps) {
         </div>
       </div>
 
+      {/* Temporarily Closed Alert Banner */}
+      {restaurant.isOpen === false && (
+        <div className="bg-rose-50 border-2 border-rose-200 text-rose-800 p-4 md:p-5 rounded-2xl flex items-center gap-4 shadow-xs">
+          <div className="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md">
+            <span className="material-symbols-outlined text-2xl">store_down</span>
+          </div>
+          <div>
+            <h3 className="font-extrabold text-base md:text-lg text-rose-900">Currently Not Accepting Orders</h3>
+            <p className="text-xs md:text-sm text-rose-700 mt-0.5 leading-relaxed">
+              This restaurant has temporarily paused incoming orders (rush hours or off-time). You can browse the menu, but checkout is temporarily paused until they re-open.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-xl items-start">
         {/* Menu Column */}

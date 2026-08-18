@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const systemSettingsSchema = new mongoose.Schema(
   {
@@ -52,4 +52,4 @@ systemSettingsSchema.statics.getSettings = async function () {
   return settings;
 };
 
-module.exports = mongoose.model("SystemSettings", systemSettingsSchema);
+export default mongoose.model("SystemSettings", systemSettingsSchema);

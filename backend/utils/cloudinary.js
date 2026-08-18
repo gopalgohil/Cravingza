@@ -1,6 +1,10 @@
-const cloudinary = require("cloudinary").v2;
-const fs = require("fs");
-const path = require("path");
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -66,4 +70,4 @@ const uploadToCloudinary = (buffer, folder = "cravingza/restaurant-docs", resour
   });
 };
 
-module.exports = { uploadToCloudinary };
+export { uploadToCloudinary };

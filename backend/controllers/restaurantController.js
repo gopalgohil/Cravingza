@@ -1,5 +1,5 @@
-const Restaurant = require("../models/Restaurant");
-const MenuItem = require("../models/MenuItem");
+import Restaurant from "../models/Restaurant.js";
+import MenuItem from "../models/MenuItem.js";
 
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -10,7 +10,6 @@ const getRestaurants = async (req, res, next) => {
     const { cuisine, search, sort } = req.query;
     let query = {
       approvalStatus: "approved",
-      isOpen: true,
       adminDeactivated: { $ne: true },
       ownerClosedPermanently: { $ne: true },
     };
@@ -31,13 +30,13 @@ const getRestaurants = async (req, res, next) => {
 
     let sortOption = {};
     if (sort === "rating") {
-      sortOption = { rating: -1 };
+      sortOption = { isOpen: -1, rating: -1 };
     } else if (sort === "deliveryTime") {
-      sortOption = { deliveryTime: 1 };
+      sortOption = { isOpen: -1, deliveryTime: 1 };
     } else if (sort === "deliveryFee") {
-      sortOption = { deliveryFee: 1 };
+      sortOption = { isOpen: -1, deliveryFee: 1 };
     } else {
-      sortOption = { createdAt: -1 };
+      sortOption = { isOpen: -1, createdAt: -1 };
     }
 
     const restaurants = await Restaurant.find(query).sort(sortOption);
@@ -57,7 +56,6 @@ const getRestaurantById = async (req, res, next) => {
     if (
       !restaurant ||
       restaurant.approvalStatus !== "approved" ||
-      !restaurant.isOpen ||
       restaurant.adminDeactivated ||
       restaurant.ownerClosedPermanently
     ) {
@@ -81,7 +79,37 @@ const getRestaurantById = async (req, res, next) => {
   }
 };
 
-module.exports = {
+const updateMyRestaurantOffer = async (req, res, next) => {
+  try {
+    const { offerDiscountPercentage, offerMaxDiscount, offerMinOrderAmount, offerLabel } = req.body;
+    let restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) {
+      return res.status(404).json({ success: false, message: "Restaurant profile not found" });
+    }
+
+    if (offerDiscountPercentage !== undefined) restaurant.offerDiscountPercentage = Number(offerDiscountPercentage);
+    if (offerMaxDiscount !== undefined) restaurant.offerMaxDiscount = Number(offerMaxDiscount);
+    if (offerMinOrderAmount !== undefined) restaurant.offerMinOrderAmount = Number(offerMinOrderAmount);
+    if (offerLabel !== undefined) {
+      restaurant.offerLabel = offerLabel;
+    } else if (offerDiscountPercentage !== undefined) {
+      restaurant.offerLabel = `${offerDiscountPercentage}% OFF UPTO ₹${restaurant.offerMaxDiscount || 150}`;
+    }
+
+    await restaurant.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant offer updated successfully",
+      data: restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
   getRestaurants,
   getRestaurantById,
+  updateMyRestaurantOffer,
 };

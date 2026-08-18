@@ -1,8 +1,10 @@
-const crypto = require("crypto");
-const razorpayInstance = require("../lib/razorpay");
-const Cart = require("../models/Cart");
-const Restaurant = require("../models/Restaurant");
-const Order = require("../models/Order");
+import crypto from "crypto";
+import razorpayInstance from "../lib/razorpay.js";
+import Cart from "../models/Cart.js";
+import Restaurant from "../models/Restaurant.js";
+import Order from "../models/Order.js";
+import Coupon from "../models/Coupon.js";
+import { notifyUserDual } from "../lib/push.js";
 
 /**
  * POST /api/payment/create-razorpay-order
@@ -36,7 +38,6 @@ const createRazorpayOrder = async (req, res, next) => {
     let isFreeDelivery = false;
 
     if (couponCode) {
-      const Coupon = require("../models/Coupon");
       const coupon = await Coupon.findOne({
         code: String(couponCode).toUpperCase().trim(),
         isActive: true,
@@ -154,7 +155,6 @@ const verifyRazorpayPayment = async (req, res, next) => {
     let appliedCouponCode = null;
 
     if (couponCode) {
-      const Coupon = require("../models/Coupon");
       const coupon = await Coupon.findOne({
         code: String(couponCode).toUpperCase().trim(),
         isActive: true,
@@ -215,7 +215,6 @@ const verifyRazorpayPayment = async (req, res, next) => {
 
     // 4. Send Notifications
     try {
-      const { notifyUserDual } = require("../lib/push");
       notifyUserDual(
         req.user._id,
         "Online Payment Successful! 💳",
@@ -283,7 +282,7 @@ const razorpayWebhook = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   createRazorpayOrder,
   verifyRazorpayPayment,
   razorpayWebhook,

@@ -1,6 +1,6 @@
-const MenuItem = require("../models/MenuItem");
-const Restaurant = require("../models/Restaurant");
-const { z } = require("zod");
+import MenuItem from "../models/MenuItem.js";
+import Restaurant from "../models/Restaurant.js";
+import { z } from "zod";
 
 // Zod schema for validating menu item input
 const menuItemInputSchema = z.object({
@@ -167,7 +167,7 @@ const deleteMenuItem = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   getMyMenu,
   addMenuItem,
   updateMenuItem,

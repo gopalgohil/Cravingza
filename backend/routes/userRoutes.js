@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { protect } = require("../middlewares/auth");
-const {
+import { protect } from "../middlewares/auth.js";
+import {
   updateProfile,
   updatePassword,
   getAddresses,
@@ -10,7 +10,7 @@ const {
   deleteAddress,
   updateNotifications,
   deleteAccount,
-} = require("../controllers/userController");
+} from "../controllers/userController.js";
 
 router.patch("/profile", protect, updateProfile);
 router.patch("/password", protect, updatePassword);
@@ -21,4 +21,4 @@ router.delete("/addresses/:addressId", protect, deleteAddress);
 router.patch("/notifications", protect, updateNotifications);
 router.delete("/account", protect, deleteAccount);
 
-module.exports = router;
+export default router;

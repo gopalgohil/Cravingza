@@ -1,9 +1,9 @@
-const mongoose = require("mongoose");
-require("dotenv").config();
-
-const Coupon = require("../models/Coupon");
-const Cart = require("../models/Cart");
-const User = require("../models/User");
+import "dotenv/config";
+import mongoose from "mongoose";
+import Coupon from "../models/Coupon.js";
+import Cart from "../models/Cart.js";
+import User from "../models/User.js";
+import { getOffers } from "../controllers/offerController.js";
 
 async function testOffersFlow() {
   try {
@@ -16,7 +16,6 @@ async function testOffersFlow() {
     let coupons = await Coupon.find();
     if (coupons.length === 0) {
       console.log("Seeding default coupons...");
-      const { getOffers } = require("../controllers/offerController");
       // Call getOffers mock
       const req = {};
       const res = {

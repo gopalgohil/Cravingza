@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const couponSchema = new mongoose.Schema(
   {
@@ -55,8 +55,18 @@ const couponSchema = new mongoose.Schema(
       enum: ["flat", "payment", "delivery", "festive"],
       default: "flat",
     },
+    isOneTimePerUser: {
+      type: Boolean,
+      default: true,
+    },
+    usedByUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Coupon", couponSchema);
+export default mongoose.model("Coupon", couponSchema);

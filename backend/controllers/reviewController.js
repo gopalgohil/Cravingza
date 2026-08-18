@@ -1,6 +1,6 @@
-const Review = require("../models/Review");
-const Order = require("../models/Order");
-const Restaurant = require("../models/Restaurant");
+import Review from "../models/Review.js";
+import Order from "../models/Order.js";
+import Restaurant from "../models/Restaurant.js";
 
 const createReview = async (req, res, next) => {
   try {
@@ -132,7 +132,7 @@ const getMyRestaurantReviews = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   createReview,
   getReviewByOrder,
   getMyRestaurantReviews,

@@ -1,4 +1,4 @@
-const admin = require("firebase-admin");
+import admin from "firebase-admin";
 
 if (!admin.apps.length) {
   const projectId = process.env.FIREBASE_PROJECT_ID ? process.env.FIREBASE_PROJECT_ID.trim() : undefined;
@@ -37,4 +37,4 @@ if (!admin.apps.length) {
   }
 }
 
-module.exports = admin;
+export default admin;

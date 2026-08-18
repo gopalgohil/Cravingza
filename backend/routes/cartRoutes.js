@@ -1,14 +1,14 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   getCart,
   addToCart,
   updateCartItem,
   removeCartItem,
   clearCart,
   replaceCart,
-} = require("../controllers/cartController");
-const { protect } = require("../middlewares/auth");
+} from "../controllers/cartController.js";
+import { protect } from "../middlewares/auth.js";
 
 // Protect all cart routes
 router.use(protect);
@@ -20,4 +20,4 @@ router.delete("/remove/:menuItemId", removeCartItem);
 router.delete("/clear", clearCart);
 router.post("/replace", replaceCart);
 
-module.exports = router;
+export default router;

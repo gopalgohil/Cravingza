@@ -1,7 +1,6 @@
-const mongoose = require("mongoose");
-require("dotenv").config();
-
-const Coupon = require("../models/Coupon");
+import "dotenv/config";
+import mongoose from "mongoose";
+import Coupon from "../models/Coupon.js";
 
 async function testMerchantOffers() {
   try {

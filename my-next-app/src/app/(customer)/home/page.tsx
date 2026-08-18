@@ -307,43 +307,70 @@ function HomeContent() {
       ) : filteredRestaurants.length > 0 ? (
         <section className={`space-y-8 transition-opacity duration-200 ${isFetching || isCategoryLoading || isPageChanging ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-            {paginatedRestaurants.map((restaurant: any) => (
-              <Link
-                href={`/restaurants/${restaurant._id}`}
-                key={restaurant._id}
-                className="bg-surface rounded-xl overflow-hidden app-shadow hover:app-shadow-hover transition-all cursor-pointer group flex flex-col h-full border border-outline-variant/30"
-              >
-                <div className="relative aspect-video overflow-hidden">
-                  <img
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    alt={restaurant.name}
-                    src={restaurant.image}
-                  />
-                  <div className="absolute top-md right-md bg-surface-container-lowest px-sm py-xs rounded-lg flex items-center gap-xs shadow-sm">
-                    <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      star
-                    </span>
-                    <span className="font-label-md text-label-md">{restaurant.rating.toFixed(1)}</span>
+            {paginatedRestaurants.map((restaurant: any) => {
+              const isClosed = restaurant.isOpen === false;
+              return (
+                <Link
+                  href={`/restaurants/${restaurant._id}`}
+                  key={restaurant._id}
+                  className={`bg-surface rounded-xl overflow-hidden app-shadow hover:app-shadow-hover transition-all cursor-pointer group flex flex-col h-full border border-outline-variant/30 ${
+                    isClosed ? "opacity-90" : ""
+                  }`}
+                >
+                  <div className="relative aspect-video overflow-hidden">
+                    <img
+                      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                        isClosed ? "grayscale brightness-90" : ""
+                      }`}
+                      alt={restaurant.name}
+                      src={restaurant.image}
+                    />
+                    {isClosed ? (
+                      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-2 text-center">
+                        <span className="px-3.5 py-1.5 rounded-full bg-rose-600/90 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 border border-white/20">
+                          <span className="material-symbols-outlined text-sm">lock</span>
+                          Currently Closed
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="absolute top-md right-md bg-surface-container-lowest px-sm py-xs rounded-lg flex items-center gap-xs shadow-sm">
+                        <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          star
+                        </span>
+                        <span className="font-label-md text-label-md">{restaurant.rating?.toFixed(1) || "0.0"}</span>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="p-lg flex-1 flex flex-col justify-between gap-sm bg-white">
-                  <div>
-                    <h3 className="font-headline-sm text-headline-sm mb-xs group-hover:text-primary transition-colors">
-                      {restaurant.name}
-                    </h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant line-clamp-1">
-                      {restaurant.cuisineTags?.join(", ")}
-                    </p>
+                  <div className="p-lg flex-1 flex flex-col justify-between gap-sm bg-white">
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-headline-sm text-headline-sm mb-xs group-hover:text-primary transition-colors">
+                          {restaurant.name}
+                        </h3>
+                        {isClosed && (
+                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 shrink-0">
+                            Paused
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-body-md text-body-md text-on-surface-variant line-clamp-1">
+                        {restaurant.cuisineTags?.join(", ")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-sm mt-md">
+                      <span className="material-symbols-outlined text-on-surface-variant text-body-md">
+                        {isClosed ? "store_down" : "schedule"}
+                      </span>
+                      <span className="font-caption text-caption text-on-surface-variant">
+                        {isClosed
+                          ? "Not accepting orders right now"
+                          : `${restaurant.deliveryTime} • ${restaurant.deliveryFee === 0 ? "Free delivery" : `₹${Math.round(restaurant.deliveryFee)} delivery`}`}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-sm mt-md">
-                    <span className="material-symbols-outlined text-on-surface-variant text-body-md">schedule</span>
-                    <span className="font-caption text-caption text-on-surface-variant">
-                      {restaurant.deliveryTime} • {restaurant.deliveryFee === 0 ? "Free delivery" : `₹${Math.round(restaurant.deliveryFee)} delivery`}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Pagination Controls Bar */}

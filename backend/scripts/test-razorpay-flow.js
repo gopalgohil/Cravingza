@@ -1,8 +1,7 @@
-const crypto = require("crypto");
-const mongoose = require("mongoose");
-require("dotenv").config();
-
-const Order = require("../models/Order");
+import "dotenv/config";
+import crypto from "crypto";
+import mongoose from "mongoose";
+import Order from "../models/Order.js";
 
 async function testRazorpayLogic() {
   try {

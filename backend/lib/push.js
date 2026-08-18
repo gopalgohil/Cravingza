@@ -1,5 +1,7 @@
-const webpush = require("web-push");
-const DeliveryProfile = require("../models/DeliveryProfile");
+import webpush from "web-push";
+import DeliveryProfile from "../models/DeliveryProfile.js";
+import User from "../models/User.js";
+import Notification from "../models/Notification.js";
 
 // Configure VAPID details if keys exist
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -68,7 +70,6 @@ const notifyOnlineDeliveryPartners = async (title, body, dataUrl = "/delivery-pa
  */
 const sendUserNotification = async (userId, title, body, dataUrl = "/orders") => {
   try {
-    const User = require("../models/User");
     const user = await User.findById(userId);
     if (!user || !user.pushSubscription) {
       return { success: false, reason: "No push subscription found for user" };
@@ -95,7 +96,6 @@ const sendUserNotification = async (userId, title, body, dataUrl = "/orders") =>
 const notifyUserDual = async (userId, title, message, link = "/orders", type = "order_update") => {
   try {
     // 1. Create In-App Notification in DB
-    const Notification = require("../models/Notification");
     await Notification.create({
       recipient: userId,
       title,
@@ -111,7 +111,7 @@ const notifyUserDual = async (userId, title, message, link = "/orders", type = "
   }
 };
 
-module.exports = {
+export {
   sendPushNotification,
   notifyOnlineDeliveryPartners,
   sendUserNotification,

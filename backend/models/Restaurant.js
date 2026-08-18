@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const restaurantSchema = new mongoose.Schema(
   {
@@ -36,6 +36,13 @@ const restaurantSchema = new mongoose.Schema(
     deliveryTime: { type: String, default: "25-35 min" },
     deliveryFee: { type: Number, default: 0 },
     minOrderAmount: { type: Number, default: 0 },
+
+    // ── Dynamic Restaurant Offer & Promo Settings ────────────────
+    offerDiscountPercentage: { type: Number, default: 30 },
+    offerMaxDiscount: { type: Number, default: 150 },
+    offerMinOrderAmount: { type: Number, default: 199 },
+    offerLabel: { type: String, default: "30% OFF UPTO ₹150" },
+
     approvalStatus: {
       type: String,
       enum: ["pending", "approved", "rejected"],
@@ -80,4 +87,4 @@ const restaurantSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Restaurant", restaurantSchema);
+export default mongoose.model("Restaurant", restaurantSchema);

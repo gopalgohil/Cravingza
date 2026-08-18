@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { protect } = require("../middlewares/auth");
-const {
+import { protect } from "../middlewares/auth.js";
+import {
   applyAsDeliveryPartner,
   getMyDeliveryApplication,
   reapplyAsDeliveryPartner,
@@ -13,7 +13,7 @@ const {
   updateActiveDeliveryStatus,
   subscribePush,
   getEarningsData,
-} = require("../controllers/deliveryController");
+} from "../controllers/deliveryController.js";
 
 /**
  * @swagger
@@ -160,4 +160,4 @@ router.get("/my-application", protect, getMyDeliveryApplication);
 router.post("/reapply", protect, reapplyAsDeliveryPartner);
 router.post("/push-subscribe", protect, subscribePush);
 
-module.exports = router;
+export default router;

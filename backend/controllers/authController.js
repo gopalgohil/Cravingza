@@ -1,17 +1,17 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const admin = require("../config/firebase");
-const {
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+import admin from "../config/firebase.js";
+import {
   registerSchema,
   loginSchema,
   verifyOTPSchema,
   resendOTPSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-} = require("../validators/authValidator");
-const { generateOTP, hashOTP, verifyOTP } = require("../utils/otp");
-const { sendOTPEmail, sendPasswordResetEmail } = require("../services/emailService");
+} from "../validators/authValidator.js";
+import { generateOTP, hashOTP, verifyOTP } from "../utils/otp.js";
+import { sendOTPEmail, sendPasswordResetEmail } from "../services/emailService.js";
 
 // Helper to format Zod validation errors
 const formatZodErrors = (zodError) => {
@@ -693,7 +693,7 @@ const googleLogin = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   register,
   verifyEmailOTP,
   resendOTP,

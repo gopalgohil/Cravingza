@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -126,8 +127,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-const bcrypt = require("bcryptjs");
-
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   // Avoid double hashing if already hashed manually
@@ -138,4 +137,4 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-module.exports = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema);

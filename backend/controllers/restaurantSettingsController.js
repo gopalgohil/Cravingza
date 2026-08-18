@@ -1,5 +1,5 @@
-const Restaurant = require("../models/Restaurant");
-const { z } = require("zod");
+import Restaurant from "../models/Restaurant.js";
+import { z } from "zod";
 
 // Helper to mask account number (e.g. "XXXXXX1234")
 function maskAccountNumber(accNum) {
@@ -281,7 +281,7 @@ const closeRestaurantPermanently = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   updateRestaurantProfile,
   updateBusinessHours,
   updateRestaurantStatus,

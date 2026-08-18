@@ -1,5 +1,5 @@
-const Coupon = require("../models/Coupon");
-const Cart = require("../models/Cart");
+import Coupon from "../models/Coupon.js";
+import Cart from "../models/Cart.js";
 
 // Default pre-seeded industry standard coupons
 const DEFAULT_COUPONS = [
@@ -102,6 +102,17 @@ const applyCoupon = async (req, res, next) => {
         success: false,
         message: "Invalid or expired coupon code.",
       });
+    }
+
+    // Check if one-time coupon was already used by this user
+    if (coupon.isOneTimePerUser && coupon.usedByUsers && req.user?._id) {
+      const alreadyUsed = coupon.usedByUsers.some((userId) => userId.toString() === req.user._id.toString());
+      if (alreadyUsed) {
+        return res.status(400).json({
+          success: false,
+          message: `You have already used coupon ${coupon.code} on a previous order.`,
+        });
+      }
     }
 
     // Check user cart
@@ -263,7 +274,7 @@ const deleteMerchantOffer = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   getOffers,
   applyCoupon,
   getMerchantOffers,

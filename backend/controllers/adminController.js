@@ -1,12 +1,13 @@
-const Restaurant = require("../models/Restaurant");
-const Order = require("../models/Order");
-const User = require("../models/User");
-const DeliveryProfile = require("../models/DeliveryProfile");
-const Notification = require("../models/Notification");
-const mongoose = require("mongoose");
+import Restaurant from "../models/Restaurant.js";
+import Order from "../models/Order.js";
+import User from "../models/User.js";
+import DeliveryProfile from "../models/DeliveryProfile.js";
+import Notification from "../models/Notification.js";
+import SystemSettings from "../models/SystemSettings.js";
+import mongoose from "mongoose";
 
 // GET /api/admin/restaurants
-exports.getRestaurants = async (req, res, next) => {
+export const getRestaurants = async (req, res, next) => {
   try {
     const { status = "pending" } = req.query;
 
@@ -40,7 +41,7 @@ exports.getRestaurants = async (req, res, next) => {
 };
 
 // GET /api/admin/restaurants/:id
-exports.getRestaurantById = async (req, res, next) => {
+export const getRestaurantById = async (req, res, next) => {
   try {
     const restaurant = await Restaurant.findById(req.params.id)
       .populate("owner", "name email phone")
@@ -63,7 +64,7 @@ exports.getRestaurantById = async (req, res, next) => {
 };
 
 // PATCH /api/admin/restaurants/:id/approve
-exports.approveRestaurant = async (req, res, next) => {
+export const approveRestaurant = async (req, res, next) => {
   try {
     const restaurant = await Restaurant.findById(req.params.id);
 
@@ -113,7 +114,7 @@ exports.approveRestaurant = async (req, res, next) => {
 };
 
 // PATCH /api/admin/restaurants/:id/reject
-exports.rejectRestaurant = async (req, res, next) => {
+export const rejectRestaurant = async (req, res, next) => {
   try {
     const { reason } = req.body;
 
@@ -172,7 +173,7 @@ exports.rejectRestaurant = async (req, res, next) => {
 };
 
 // PATCH /api/admin/restaurants/:id/deactivate
-exports.deactivateRestaurant = async (req, res, next) => {
+export const deactivateRestaurant = async (req, res, next) => {
   try {
     const { reason, suspendOwner } = req.body;
 
@@ -219,7 +220,7 @@ exports.deactivateRestaurant = async (req, res, next) => {
 };
 
 // PATCH /api/admin/restaurants/:id/reactivate
-exports.reactivateRestaurant = async (req, res, next) => {
+export const reactivateRestaurant = async (req, res, next) => {
   try {
     const restaurant = await Restaurant.findById(req.params.id);
 
@@ -252,7 +253,7 @@ exports.reactivateRestaurant = async (req, res, next) => {
 };
 
 // GET /api/admin/dashboard
-exports.getDashboardData = async (req, res, next) => {
+export const getDashboardData = async (req, res, next) => {
   try {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -450,7 +451,7 @@ exports.getDashboardData = async (req, res, next) => {
 };
 
 // GET /api/admin/users
-exports.getUsers = async (req, res, next) => {
+export const getUsers = async (req, res, next) => {
   try {
     const { role, search, status = "all", page = 1, limit = 20 } = req.query;
 
@@ -521,7 +522,7 @@ exports.getUsers = async (req, res, next) => {
 };
 
 // GET /api/admin/users/:id
-exports.getUserById = async (req, res, next) => {
+export const getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select("-password -otpHash -otpExpires");
     if (!user || user.status === "deleted") {
@@ -603,7 +604,7 @@ exports.getUserById = async (req, res, next) => {
 };
 
 // PATCH /api/admin/users/:id/status
-exports.updateUserStatus = async (req, res, next) => {
+export const updateUserStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
 
@@ -638,7 +639,7 @@ exports.updateUserStatus = async (req, res, next) => {
 };
 
 // DELETE /api/admin/users/:id
-exports.deleteUser = async (req, res, next) => {
+export const deleteUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user || user.status === "deleted") {
@@ -682,7 +683,7 @@ const maskDeliveryProfile = (profile) => {
 };
 
 // GET /api/admin/delivery & GET /api/admin/delivery-partners
-exports.getDeliveryProfiles = async (req, res, next) => {
+export const getDeliveryProfiles = async (req, res, next) => {
   try {
     const { status = "pending" } = req.query;
 
@@ -719,7 +720,7 @@ exports.getDeliveryProfiles = async (req, res, next) => {
 };
 
 // GET /api/admin/delivery/:id & GET /api/admin/delivery-partners/:id
-exports.getDeliveryProfileById = async (req, res, next) => {
+export const getDeliveryProfileById = async (req, res, next) => {
   try {
     const profile = await DeliveryProfile.findById(req.params.id)
       .populate("user", "name email phone")
@@ -742,7 +743,7 @@ exports.getDeliveryProfileById = async (req, res, next) => {
 };
 
 // PATCH /api/admin/delivery/:id/approve & PATCH /api/admin/delivery-partners/:id/approve
-exports.approveDeliveryPartner = async (req, res, next) => {
+export const approveDeliveryPartner = async (req, res, next) => {
   try {
     const profile = await DeliveryProfile.findById(req.params.id);
 
@@ -775,7 +776,7 @@ exports.approveDeliveryPartner = async (req, res, next) => {
 };
 
 // PATCH /api/admin/delivery/:id/reject & PATCH /api/admin/delivery-partners/:id/reject
-exports.rejectDeliveryPartner = async (req, res, next) => {
+export const rejectDeliveryPartner = async (req, res, next) => {
   try {
     const { reason } = req.body;
 
@@ -813,7 +814,7 @@ exports.rejectDeliveryPartner = async (req, res, next) => {
 };
 
 // GET /api/admin/analytics-stats
-exports.getAnalyticsStats = async (req, res, next) => {
+export const getAnalyticsStats = async (req, res, next) => {
   try {
     const { range = "Last 30 Days" } = req.query;
 
@@ -913,9 +914,8 @@ exports.getAnalyticsStats = async (req, res, next) => {
 };
 
 // GET /api/admin/settings - Fetch global platform commission and system settings
-exports.getSettings = async (req, res, next) => {
+export const getSettings = async (req, res, next) => {
   try {
-    const SystemSettings = require("../models/SystemSettings");
     const settings = await SystemSettings.getSettings();
 
     return res.status(200).json({
@@ -928,9 +928,8 @@ exports.getSettings = async (req, res, next) => {
 };
 
 // PATCH /api/admin/settings - Update global platform commission and system settings
-exports.updateSettings = async (req, res, next) => {
+export const updateSettings = async (req, res, next) => {
   try {
-    const SystemSettings = require("../models/SystemSettings");
     const {
       platformName,
       supportEmail,
@@ -975,9 +974,8 @@ exports.updateSettings = async (req, res, next) => {
 };
 
 // GET /api/settings - Public settings endpoint for customer checkout calculation
-exports.getPublicSettings = async (req, res, next) => {
+export const getPublicSettings = async (req, res, next) => {
   try {
-    const SystemSettings = require("../models/SystemSettings");
     const settings = await SystemSettings.getSettings();
 
     return res.status(200).json({

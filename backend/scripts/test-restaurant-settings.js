@@ -1,8 +1,7 @@
-const mongoose = require("mongoose");
-require("dotenv").config();
-
-const Restaurant = require("../models/Restaurant");
-const User = require("../models/User");
+import "dotenv/config";
+import mongoose from "mongoose";
+import Restaurant from "../models/Restaurant.js";
+import User from "../models/User.js";
 
 async function testSettingsFlow() {
   try {

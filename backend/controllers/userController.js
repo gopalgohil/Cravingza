@@ -1,7 +1,7 @@
-const { z } = require("zod");
-const bcrypt = require("bcryptjs");
-const User = require("../models/User");
-const { pincodeSchema, phoneSchema } = require("../validators/shared");
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+import User from "../models/User.js";
+import { pincodeSchema, phoneSchema } from "../validators/shared.js";
 
 // Helper to format Zod validation errors
 const formatZodErrors = (zodError) => {
@@ -389,7 +389,7 @@ const deleteAccount = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   updateProfile,
   updatePassword,
   getAddresses,

@@ -1,8 +1,8 @@
-const Restaurant = require("../models/Restaurant");
-const User = require("../models/User");
-const Notification = require("../models/Notification");
-const { z } = require("zod");
-const { pincodeSchema, phoneSchema } = require("../validators/shared");
+import Restaurant from "../models/Restaurant.js";
+import User from "../models/User.js";
+import Notification from "../models/Notification.js";
+import { z } from "zod";
+import { pincodeSchema, phoneSchema } from "../validators/shared.js";
 
 // ── Zod Validation Schema ─────────────────────────────────────────
 const applySchema = z.object({
@@ -198,4 +198,4 @@ const reapplyAsPartner = async (req, res, next) => {
   }
 };
 
-module.exports = { applyAsPartner, getMyApplication, reapplyAsPartner };
+export { applyAsPartner, getMyApplication, reapplyAsPartner };

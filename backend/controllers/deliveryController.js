@@ -1,8 +1,9 @@
-const DeliveryProfile = require("../models/DeliveryProfile");
-const Delivery = require("../models/Delivery");
-const User = require("../models/User");
-const { z } = require("zod");
-const { pincodeSchema, phoneSchema } = require("../validators/shared");
+import DeliveryProfile from "../models/DeliveryProfile.js";
+import Delivery from "../models/Delivery.js";
+import User from "../models/User.js";
+import Order from "../models/Order.js";
+import { z } from "zod";
+import { pincodeSchema, phoneSchema } from "../validators/shared.js";
 
 // ── Zod Validation Schema ─────────────────────────────────────────
 const applyDeliverySchema = z.object({
@@ -316,13 +317,7 @@ const getDashboardData = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  applyAsDeliveryPartner,
-  getMyDeliveryApplication,
-  reapplyAsDeliveryPartner,
-  updateOnlineStatus,
-  getDashboardData,
-  getNearbyOrders: async (req, res, next) => {
+const getNearbyOrders = async (req, res, next) => {
     try {
       const profile = await DeliveryProfile.findOne({ user: req.user._id });
       if (!profile || profile.approvalStatus !== "approved") {
@@ -357,7 +352,6 @@ module.exports = {
       }
 
       // TODO: Real distance-based filtering requires delivery partner live geolocation (Mapbox/Google Maps integration planned)
-      const Order = require("../models/Order");
       const orders = await Order.find({
         status: { $in: ["ready_for_pickup", "accepted", "preparing"] },
         deliveryPartner: null,
@@ -387,9 +381,10 @@ module.exports = {
       });
     } catch (error) {
       next(error);
-    }
-  },
-  acceptOrder: async (req, res, next) => {
+  };
+};
+
+const acceptOrder = async (req, res, next) => {
     try {
       const profile = await DeliveryProfile.findOne({ user: req.user._id });
       if (!profile || profile.approvalStatus !== "approved" || !profile.isOnline) {
@@ -409,8 +404,6 @@ module.exports = {
           message: "You already have an active delivery in progress.",
         });
       }
-
-      const Order = require("../models/Order");
       const { orderId } = req.params;
 
       const order = await Order.findById(orderId);
@@ -454,9 +447,10 @@ module.exports = {
       });
     } catch (error) {
       next(error);
-    }
-  },
-  getActiveDelivery: async (req, res, next) => {
+  };
+};
+
+const getActiveDelivery = async (req, res, next) => {
     try {
       const delivery = await Delivery.findOne({
         deliveryPartner: req.user._id,
@@ -475,76 +469,77 @@ module.exports = {
       });
     } catch (error) {
       next(error);
-    }
-  },
-  updateActiveDeliveryStatus: async (req, res, next) => {
-    try {
-      const { deliveryId } = req.params;
-      const { status } = req.body;
+  };
+};
 
-      const allowedTransitions = {
-        assigned: ["picked_up"],
-        picked_up: ["out_for_delivery"],
-        out_for_delivery: ["delivered"],
-      };
+const updateActiveDeliveryStatus = async (req, res, next) => {
+  try {
+    const { deliveryId } = req.params;
+    const { status } = req.body;
 
-      const delivery = await Delivery.findById(deliveryId);
-      if (!delivery) {
-        return res.status(404).json({
-          success: false,
-          message: "Active delivery not found.",
-        });
-      }
+    const allowedTransitions = {
+      assigned: ["picked_up"],
+      picked_up: ["out_for_delivery"],
+      out_for_delivery: ["delivered"],
+    };
 
-      if (delivery.deliveryPartner.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          message: "Forbidden. This delivery belongs to another partner.",
-        });
-      }
-
-      const validNext = allowedTransitions[delivery.status];
-      if (!validNext || !validNext.includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: `Invalid status transition from ${delivery.status} to ${status}.`,
-        });
-      }
-
-      const Order = require("../models/Order");
-      delivery.status = status;
-
-      if (status === "picked_up") {
-        delivery.pickedUpAt = new Date();
-        await Order.findByIdAndUpdate(delivery.order, { status: "picked_up" });
-      } else if (status === "out_for_delivery") {
-        await Order.findByIdAndUpdate(delivery.order, { status: "out_for_delivery" });
-      } else if (status === "delivered") {
-        delivery.deliveredAt = new Date();
-        delivery.earnings = 40;
-        await Order.findByIdAndUpdate(delivery.order, { status: "delivered" });
-      }
-
-      await delivery.save();
-
-      const updated = await Delivery.findById(delivery._id).populate({
-        path: "order",
-        populate: [
-          { path: "restaurant", select: "name location phone image" },
-          { path: "customer", select: "name phone" },
-        ],
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) {
+      return res.status(404).json({
+        success: false,
+        message: "Active delivery not found.",
       });
-
-      return res.status(200).json({
-        success: true,
-        message: `Delivery status updated to ${status}`,
-        data: updated,
-      });
-    } catch (error) {
-      next(error);
     }
-  },
-  subscribePush: async (req, res, next) => {
+
+    if (delivery.deliveryPartner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden. This delivery belongs to another partner.",
+      });
+    }
+
+    const validNext = allowedTransitions[delivery.status];
+    if (!validNext || !validNext.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status transition from ${delivery.status} to ${status}.`,
+      });
+    }
+
+    delivery.status = status;
+
+    if (status === "picked_up") {
+      delivery.pickedUpAt = new Date();
+      await Order.findByIdAndUpdate(delivery.order, { status: "picked_up" });
+    } else if (status === "out_for_delivery") {
+      await Order.findByIdAndUpdate(delivery.order, { status: "out_for_delivery" });
+    } else if (status === "delivered") {
+      delivery.deliveredAt = new Date();
+      delivery.earnings = 40;
+      await Order.findByIdAndUpdate(delivery.order, { status: "delivered" });
+    }
+
+    await delivery.save();
+
+    const updated = await Delivery.findById(delivery._id).populate({
+      path: "order",
+      populate: [
+        { path: "restaurant", select: "name location phone image" },
+        { path: "customer", select: "name phone" },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Delivery status updated to ${status}`,
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const subscribePush = async (req, res, next) => {
     try {
       const subscription = req.body;
       if (!subscription || !subscription.endpoint) {
@@ -567,8 +562,9 @@ module.exports = {
     } catch (error) {
       next(error);
     }
-  },
-  getEarningsData: async (req, res, next) => {
+  };
+
+const getEarningsData = async (req, res, next) => {
     try {
       const profile = await DeliveryProfile.findOne({ user: req.user._id });
       if (!profile || profile.approvalStatus !== "approved") {
@@ -598,25 +594,23 @@ module.exports = {
 
       const history = deliveries.map((d) => {
         const amount = d.earnings || 40;
-        const deliveredDate = d.deliveredAt || d.updatedAt || d.createdAt;
+        const deliveredDate = new Date(d.deliveredAt || d.updatedAt || d.createdAt);
         totalEarnings += amount;
 
-        if (new Date(deliveredDate) >= startOfToday) {
+        if (deliveredDate >= startOfToday) {
           todayEarnings += amount;
         }
-        if (new Date(deliveredDate) >= startOfWeek) {
+        if (deliveredDate >= startOfWeek) {
           weeklyEarnings += amount;
         }
 
         return {
-          _id: d._id,
-          orderId: d.order?._id || d._id,
-          restaurantName: d.order?.restaurant?.name || "Restaurant",
-          restaurantImage: d.order?.restaurant?.image || "",
-          restaurantAddress: d.order?.restaurant?.location?.address || "",
-          amount,
+          id: d._id,
+          orderId: d.order?._id || "N/A",
+          restaurantName: d.order?.restaurant?.name || "Cravingza Order",
+          earnings: amount,
+          distanceKm: d.distanceKm || 2.5,
           deliveredAt: deliveredDate,
-          paymentStatus: "Completed",
         };
       });
 
@@ -639,5 +633,32 @@ module.exports = {
     } catch (error) {
       next(error);
     }
-  },
+};
+
+export {
+  applyAsDeliveryPartner,
+  getMyDeliveryApplication,
+  reapplyAsDeliveryPartner,
+  updateOnlineStatus,
+  getDashboardData,
+  getNearbyOrders,
+  acceptOrder,
+  getActiveDelivery,
+  updateActiveDeliveryStatus,
+  subscribePush,
+  getEarningsData,
+};
+
+export default {
+  applyAsDeliveryPartner,
+  getMyDeliveryApplication,
+  reapplyAsDeliveryPartner,
+  updateOnlineStatus,
+  getDashboardData,
+  getNearbyOrders,
+  acceptOrder,
+  getActiveDelivery,
+  updateActiveDeliveryStatus,
+  subscribePush,
+  getEarningsData,
 };

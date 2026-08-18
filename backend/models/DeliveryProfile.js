@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const deliveryProfileSchema = new mongoose.Schema(
   {
@@ -92,4 +92,4 @@ const deliveryProfileSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("DeliveryProfile", deliveryProfileSchema);
+export default mongoose.model("DeliveryProfile", deliveryProfileSchema);

@@ -1,13 +1,13 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { protect } = require("../middlewares/auth");
-const {
+import { protect } from "../middlewares/auth.js";
+import {
   getOffers,
   applyCoupon,
   getMerchantOffers,
   createMerchantOffer,
   deleteMerchantOffer,
-} = require("../controllers/offerController");
+} from "../controllers/offerController.js";
 
 /**
  * @swagger
@@ -63,4 +63,4 @@ router.get("/merchant", protect, getMerchantOffers);
 router.post("/merchant", protect, createMerchantOffer);
 router.delete("/merchant/:id", protect, deleteMerchantOffer);
 
-module.exports = router;
+export default router;

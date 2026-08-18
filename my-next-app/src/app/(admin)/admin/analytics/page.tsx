@@ -304,9 +304,8 @@ export default function AdminAnalyticsPage() {
                     setTimeRange(range);
                     setIsRangeOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-xl transition-all font-semibold cursor-pointer ${
-                    timeRange === range ? "bg-primary/10 text-primary font-bold" : "text-slate-700 hover:bg-slate-50"
-                  }`}
+                  className={`w-full text-left px-3 py-2 rounded-xl transition-all font-semibold cursor-pointer ${timeRange === range ? "bg-primary/10 text-primary font-bold" : "text-slate-700 hover:bg-slate-50"
+                    }`}
                 >
                   {range}
                 </button>
@@ -589,13 +588,12 @@ export default function AdminAnalyticsPage() {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center font-extrabold text-[11px] shrink-0 ${
-                    r.rank === 1
+                  className={`w-6 h-6 rounded-full flex items-center justify-center font-extrabold text-[11px] shrink-0 ${r.rank === 1
                       ? "bg-amber-100 text-amber-700 border border-amber-300"
                       : r.rank === 2
-                      ? "bg-slate-200 text-slate-700"
-                      : "bg-orange-100 text-orange-700"
-                  }`}
+                        ? "bg-slate-200 text-slate-700"
+                        : "bg-orange-100 text-orange-700"
+                    }`}
                 >
                   #{r.rank}
                 </span>

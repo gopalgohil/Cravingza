@@ -1,4 +1,4 @@
-const { z } = require("zod");
+import { z } from "zod";
 
 /**
  * Shared Indian Pincode Validator
@@ -27,7 +27,7 @@ const phoneSchema = z
     message: "Please enter a valid 10-digit mobile number",
   });
 
-module.exports = {
+export {
   pincodeSchema,
   phoneSchema,
 };

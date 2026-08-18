@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const adminController = require("../controllers/adminController");
-const { protect, adminOnly } = require("../middlewares/auth");
+import * as adminController from "../controllers/adminController.js";
+import { protect, adminOnly } from "../middlewares/auth.js";
 
 // All admin routes require token authentication and admin role
 router.use(protect, adminOnly);
@@ -141,4 +141,4 @@ router.get("/users/:id", adminController.getUserById);
 router.patch("/users/:id/status", adminController.updateUserStatus);
 router.delete("/users/:id", adminController.deleteUser);
 
-module.exports = router;
+export default router;
