@@ -212,24 +212,31 @@ export default function OffersPage() {
                 <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${coupon.bgGradient || "from-primary to-orange-500"}`}></div>
 
                 {/* Coupon Info */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-black text-white bg-gradient-to-r ${coupon.bgGradient || "from-primary to-orange-500"} shadow-2xs`}>
-                      {coupon.badgeText || "SPECIAL OFFER"}
-                    </span>
-                    <div className="flex items-center gap-1 text-slate-400 text-xs font-semibold">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Expires soon</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-black text-white bg-gradient-to-r ${coupon.bgGradient || "from-primary to-orange-500"} shadow-2xs`}>
+                          {coupon.badgeText || "SPECIAL OFFER"}
+                        </span>
+                        {coupon.restaurant?.name && (
+                          <span className="px-2.5 py-0.5 rounded-md bg-orange-50 text-orange-700 font-extrabold text-[11px] border border-orange-200 truncate max-w-[140px]">
+                            {coupon.restaurant.name} Only
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-slate-400 text-xs font-semibold shrink-0">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Expires soon</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <h3 className="font-headline-sm text-xl font-extrabold text-slate-900 leading-snug">
-                    {coupon.title}
-                  </h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">
-                    {coupon.description}
-                  </p>
-                </div>
+                    <h3 className="font-headline-sm text-xl font-extrabold text-slate-900 leading-snug">
+                      {coupon.title}
+                    </h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      {coupon.description}
+                    </p>
+                  </div>
 
                 {/* Bottom Actions & Code Copy */}
                 <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">

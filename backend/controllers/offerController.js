@@ -1,5 +1,6 @@
 import Coupon from "../models/Coupon.js";
 import Cart from "../models/Cart.js";
+import Restaurant from "../models/Restaurant.js";
 
 // Default pre-seeded industry standard coupons
 const DEFAULT_COUPONS = [
@@ -59,12 +60,16 @@ const DEFAULT_COUPONS = [
  */
 const getOffers = async (req, res, next) => {
   try {
-    let coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } }).sort({ createdAt: -1 });
+    let coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } })
+      .populate("restaurant", "name image location")
+      .sort({ createdAt: -1 });
 
     if (coupons.length === 0) {
       console.log("[Offers] Seeding default coupons...");
       await Coupon.insertMany(DEFAULT_COUPONS);
-      coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } }).sort({ createdAt: -1 });
+      coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } })
+        .populate("restaurant", "name image location")
+        .sort({ createdAt: -1 });
     }
 
     return res.status(200).json({
@@ -95,7 +100,7 @@ const applyCoupon = async (req, res, next) => {
       code: code.toUpperCase().trim(),
       isActive: true,
       validTill: { $gt: new Date() },
-    });
+    }).populate("restaurant", "name");
 
     if (!coupon) {
       return res.status(404).json({
@@ -122,6 +127,20 @@ const applyCoupon = async (req, res, next) => {
         success: false,
         message: "Your cart is empty. Add items before applying coupons.",
       });
+    }
+
+    // Check if coupon is restaurant-specific and matches cart restaurant
+    if (coupon.restaurant) {
+      const couponRestId = coupon.restaurant._id ? coupon.restaurant._id.toString() : coupon.restaurant.toString();
+      const cartRestId = cart.restaurant ? cart.restaurant.toString() : null;
+
+      if (!cartRestId || cartRestId !== couponRestId) {
+        const restName = coupon.restaurant?.name || "its issuing restaurant";
+        return res.status(400).json({
+          success: false,
+          message: `Coupon code "${coupon.code}" is valid only for orders from ${restName}.`,
+        });
+      }
     }
 
     const subtotal = cart.subtotal || 0;
@@ -223,6 +242,7 @@ const createMerchantOffer = async (req, res, next) => {
     }
 
     const validTill = new Date(Date.now() + (validDays || 30) * 24 * 60 * 60 * 1000);
+    const ownerRestaurant = await Restaurant.findOne({ owner: req.user._id });
 
     const coupon = new Coupon({
       code: cleanCode,
@@ -235,6 +255,7 @@ const createMerchantOffer = async (req, res, next) => {
       badgeText: badgeText || "PARTNER DEAL",
       bgGradient: bgGradient || "from-orange-500 to-amber-500",
       category: category || "flat",
+      restaurant: ownerRestaurant ? ownerRestaurant._id : null,
       validTill,
       isActive: true,
     });
