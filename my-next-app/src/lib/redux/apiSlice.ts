@@ -397,6 +397,14 @@ export const apiSlice = createApi({
       transformResponse: (response: { success: boolean; data: Order[] }) => response.data,
       providesTags: ["MerchantOrders"],
     }),
+    getRestaurantAnalytics: builder.query<any, { range?: string } | void>({
+      query: (args) => {
+        const range = args && typeof args === "object" ? args.range || "7days" : "7days";
+        return `/restaurant/analytics?range=${range}`;
+      },
+      transformResponse: (response: { success: boolean; data: any }) => response.data,
+      providesTags: ["MerchantOrders"],
+    }),
     updateOrderStatus: builder.mutation<Order, { id: string; status: string }>({
       query: ({ id, status }) => ({
         url: `/orders/merchant/${id}/status`,
@@ -653,6 +661,7 @@ export const {
   useUpdateMenuItemMutation,
   useDeleteMenuItemMutation,
   useGetMerchantOrdersQuery,
+  useGetRestaurantAnalyticsQuery,
   useUpdateOrderStatusMutation,
   useCancelOrderMutation,
   useGetAdminDashboardQuery,

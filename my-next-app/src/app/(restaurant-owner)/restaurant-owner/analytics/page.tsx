@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  useGetMerchantOrdersQuery,
-  useGetMyMenuQuery,
+  useGetRestaurantAnalyticsQuery,
 } from "@/lib/redux/apiSlice";
 import {
   TrendingUp,
@@ -15,115 +14,66 @@ import {
   AlertCircle,
   Truck,
   Pizza,
+  RefreshCw,
 } from "lucide-react";
 
 export default function RestaurantAnalyticsPage() {
-  const { data: orders = [], isLoading: isOrdersLoading, error: ordersError } = useGetMerchantOrdersQuery();
-  const { data: menuItems = [], isLoading: isMenuLoading } = useGetMyMenuQuery();
+  const [timeRange, setTimeRange] = useState<"7days" | "30days" | "today">("7days");
+  const { data: response, isLoading, error: analyticsError, refetch } = useGetRestaurantAnalyticsQuery({ range: timeRange });
 
-  const isLoading = isOrdersLoading || isMenuLoading;
-
-  // Calculate business intelligence metrics
   const analyticsData = useMemo(() => {
-    const deliveredOrders = orders.filter((o) => o.status === "delivered");
-    
-    // Revenue calculations
-    const grossRevenue = deliveredOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-    const subtotalRevenue = deliveredOrders.reduce((sum, o) => sum + o.subtotal, 0);
-    const deliveryFees = deliveredOrders.reduce((sum, o) => sum + o.deliveryFee, 0);
-    const taxes = deliveredOrders.reduce((sum, o) => sum + o.taxes, 0);
-    const avgOrderValue = deliveredOrders.length > 0 ? grossRevenue / deliveredOrders.length : 0;
-
-    // Calculate top selling dishes
-    const dishSales: Record<string, { count: number; revenue: number; isVeg?: boolean }> = {};
-    deliveredOrders.forEach((order) => {
-      order.items.forEach((item) => {
-        if (!dishSales[item.name]) {
-          // Find if it's veg in the menu items list
-          const menuItem = menuItems.find((m) => m.name === item.name);
-          dishSales[item.name] = {
-            count: 0,
-            revenue: 0,
-            isVeg: menuItem ? menuItem.isVeg : true,
-          };
-        }
-        dishSales[item.name].count += item.quantity;
-        dishSales[item.name].revenue += item.price * item.quantity;
-      });
-    });
-
-    const topDishes = Object.entries(dishSales)
-      .map(([name, data]) => ({ name, ...data }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 4);
-
-    // Sales by Category
-    const categorySales: Record<string, number> = {};
-    deliveredOrders.forEach((order) => {
-      order.items.forEach((item) => {
-        const menuItem = menuItems.find((m) => m.name === item.name);
-        const cat = menuItem?.category || "Main Course";
-        categorySales[cat] = (categorySales[cat] || 0) + item.price * item.quantity;
-      });
-    });
-
-    // Veg vs Non Veg Sales
-    let vegSales = 0;
-    let nonVegSales = 0;
-    Object.values(dishSales).forEach((dish) => {
-      if (dish.isVeg) {
-        vegSales += dish.revenue;
-      } else {
-        nonVegSales += dish.revenue;
-      }
-    });
-
-    // Group sales by day of week for graph (last 7 days)
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const weeklyRevenue = [0, 0, 0, 0, 0, 0, 0];
-    
-    deliveredOrders.forEach((order) => {
-      const dayIndex = new Date(order.createdAt).getDay();
-      weeklyRevenue[dayIndex] += order.totalAmount;
-    });
-
-    // Re-align weekly data starting from 6 days ago to today
-    const graphData: { day: string; amount: number }[] = [];
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const dayIdx = d.getDay();
-      graphData.push({
-        day: dayNames[dayIdx],
-        amount: Math.round(weeklyRevenue[dayIdx]),
-      });
+    if (!response) {
+      return {
+        grossRevenue: 0,
+        netEarnings: 0,
+        avgOrderValue: 0,
+        completedOrdersCount: 0,
+        totalOrdersCount: 0,
+        deliveredOrdersCount: 0,
+        inProgressOrdersCount: 0,
+        cancelledOrdersCount: 0,
+        vegRevenue: 0,
+        nonVegRevenue: 0,
+        topDishes: [],
+        categorySales: {},
+        graphData: [
+          { day: "Mon", amount: 0 },
+          { day: "Tue", amount: 0 },
+          { day: "Wed", amount: 0 },
+          { day: "Thu", amount: 0 },
+          { day: "Fri", amount: 0 },
+          { day: "Sat", amount: 0 },
+          { day: "Sun", amount: 0 },
+        ],
+      };
     }
 
     return {
-      grossRevenue,
-      subtotalRevenue,
-      deliveryFees,
-      taxes,
-      avgOrderValue,
-      topDishes,
-      categorySales,
-      vegSales,
-      nonVegSales,
-      graphData,
-      completedOrdersCount: deliveredOrders.length,
+      grossRevenue: response.grossRevenue || 0,
+      netEarnings: response.netEarnings || 0,
+      avgOrderValue: response.avgOrderValue || 0,
+      completedOrdersCount: response.deliveredOrdersCount || 0,
+      totalOrdersCount: response.totalOrdersCount || 0,
+      deliveredOrdersCount: response.deliveredOrdersCount || 0,
+      inProgressOrdersCount: response.inProgressOrdersCount || 0,
+      cancelledOrdersCount: response.cancelledOrdersCount || 0,
+      vegRevenue: response.vegRevenue || 0,
+      nonVegRevenue: response.nonVegRevenue || 0,
+      topDishes: response.topDishes || [],
+      categorySales: response.categorySales || {},
+      graphData: response.graphData || [],
     };
-  }, [orders, menuItems]);
+  }, [response]);
 
   // Determine highest sales point for graphing scale
   const maxGraphAmount = useMemo(() => {
-    const max = Math.max(...analyticsData.graphData.map((d) => d.amount));
+    const max = Math.max(...(analyticsData.graphData || []).map((d: any) => d.amount || 0));
     return max > 0 ? max * 1.15 : 1000; // 15% padding
   }, [analyticsData.graphData]);
 
   // SVG Graph Coordinate Generation
   const svgPoints = useMemo(() => {
-    const data = analyticsData.graphData;
+    const data = analyticsData.graphData || [];
     const width = 500;
     const height = 180;
     const paddingLeft = 50;
@@ -134,8 +84,8 @@ export default function RestaurantAnalyticsPage() {
     const chartWidth = width - paddingLeft - paddingRight;
     const chartHeight = height - paddingTop - paddingBottom;
 
-    const points = data.map((item, index) => {
-      const x = paddingLeft + (index / (data.length - 1)) * chartWidth;
+    const points = data.map((item: any, index: number) => {
+      const x = paddingLeft + (index / (Math.max(data.length - 1, 1))) * chartWidth;
       const y = maxGraphAmount > 0
         ? height - paddingBottom - (item.amount / maxGraphAmount) * chartHeight
         : height - paddingBottom;
@@ -143,7 +93,7 @@ export default function RestaurantAnalyticsPage() {
     });
 
     const pathString = points.length > 0
-      ? `M ${points[0].x} ${points[0].y} ` + points.slice(1).map((p) => `L ${p.x} ${p.y}`).join(" ")
+      ? `M ${points[0].x} ${points[0].y} ` + points.slice(1).map((p: any) => `L ${p.x} ${p.y}`).join(" ")
       : "";
 
     // Closed path for fill gradient
@@ -157,18 +107,49 @@ export default function RestaurantAnalyticsPage() {
   return (
     <div className="space-y-lg max-w-6xl mx-auto p-4 md:p-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-md bg-gradient-to-r from-orange-500/10 to-primary/10 p-lg rounded-3xl border border-outline-variant/30">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-md bg-gradient-to-r from-orange-500/10 via-primary/10 to-amber-500/10 p-6 rounded-3xl border border-outline-variant/30 shadow-xs">
         <div className="space-y-xs">
           <div className="flex items-center gap-2 text-primary font-bold">
             <TrendingUp className="w-5 h-5 animate-pulse" />
-            <span>Business Intelligence Portal</span>
+            <span>Real-time Business Intelligence Portal</span>
           </div>
-          <h1 className="font-headline-md text-headline-md text-on-background font-extrabold">
-            Performance & Analytics
+          <h1 className="font-headline-md text-2xl md:text-3xl text-on-background font-extrabold">
+            {response?.restaurantName || "Restaurant"} Performance & Analytics
           </h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            Analyze customer preferences, top-performing products, and weekly sales metrics.
+          <p className="font-body-md text-xs md:text-sm text-on-surface-variant">
+            Track gross sales, net earnings, best-selling dishes, and weekly customer trends.
           </p>
+        </div>
+
+        {/* Time Range Filter Pills */}
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs shrink-0 self-start sm:self-center">
+          <button
+            onClick={() => setTimeRange("7days")}
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+              timeRange === "7days"
+                ? "bg-primary text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Last 7 Days
+          </button>
+          <button
+            onClick={() => setTimeRange("30days")}
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+              timeRange === "30days"
+                ? "bg-primary text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Last 30 Days
+          </button>
+          <button
+            onClick={() => refetch()}
+            className="p-1.5 text-slate-500 hover:text-primary transition-colors cursor-pointer rounded-xl hover:bg-slate-100"
+            title="Refresh Data"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
