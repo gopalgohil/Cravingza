@@ -132,7 +132,6 @@ export default function AdminLayout({
           <div className="pt-3 border-t border-outline-variant/40 mt-3">
             <Link
               href="/home"
-              target="_blank"
               title="Customer Site"
               className="flex items-center gap-md px-md py-3 rounded-2xl font-body-md text-body-md text-amber-800 bg-amber-50 hover:bg-amber-100/80 font-bold border border-amber-200/80 transition-all shadow-xs group relative"
             >
@@ -229,7 +228,6 @@ export default function AdminLayout({
 
                   <Link
                     href="/home"
-                    target="_blank"
                     onClick={() => setIsProfileMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-body-sm font-semibold text-amber-800 bg-amber-50/60 hover:bg-amber-100/80 transition-all"
                   >
@@ -312,7 +310,6 @@ export default function AdminLayout({
                 <div className="pt-3 border-t border-outline-variant/40 mt-3">
                   <Link
                     href="/home"
-                    target="_blank"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-md px-md py-3 rounded-2xl font-body-md text-body-md text-amber-800 bg-amber-50 hover:bg-amber-100/80 font-bold border border-amber-200/80 transition-all shadow-xs"
                   >
