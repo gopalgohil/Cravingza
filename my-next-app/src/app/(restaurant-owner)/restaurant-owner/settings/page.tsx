@@ -439,34 +439,18 @@ export default function RestaurantSettingsPage() {
             </div>
           </div>
 
-          {/* Delivery Settings (Time & Fee) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">
-                Estimated Delivery Time
-              </label>
-              <input
-                type="text"
-                value={deliveryTime}
-                onChange={(e) => setDeliveryTime(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-slate-900 text-sm font-medium transition-all"
-                placeholder="e.g. 15-25 min"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">
-                Delivery Fee (₹)
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={deliveryFee}
-                onChange={(e) => setDeliveryFee(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-slate-900 text-sm font-medium transition-all"
-                placeholder="e.g. 29"
-              />
-            </div>
+          {/* Estimated Delivery Time */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-700">
+              Estimated Delivery Time
+            </label>
+            <input
+              type="text"
+              value={deliveryTime}
+              onChange={(e) => setDeliveryTime(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-slate-900 text-sm font-medium transition-all"
+              placeholder="e.g. 15-25 min"
+            />
           </div>
 
           {/* Cuisine Tags */}

@@ -362,9 +362,7 @@ function HomeContent() {
                         {isClosed ? "store_down" : "schedule"}
                       </span>
                       <span className="font-caption text-caption text-on-surface-variant">
-                        {isClosed
-                          ? "Not accepting orders right now"
-                          : `${restaurant.deliveryTime} • ${restaurant.deliveryFee === 0 ? "Free delivery" : `₹${Math.round(restaurant.deliveryFee)} delivery`}`}
+                        {isClosed ? "Not accepting orders right now" : restaurant.deliveryTime || "15-25 min"}
                       </span>
                     </div>
                   </div>
