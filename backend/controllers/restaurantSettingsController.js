@@ -17,6 +17,8 @@ const profileSchema = z.object({
   address: z.string().optional(),
   coverImageUrl: z.string().optional(),
   image: z.string().optional(),
+  deliveryTime: z.string().optional(),
+  deliveryFee: z.coerce.number().optional(),
 });
 
 const payoutSchema = z.object({
@@ -60,7 +62,7 @@ const updateRestaurantProfile = async (req, res, next) => {
       });
     }
 
-    const { name, description, cuisineTags, address, coverImageUrl, image } = validation.data;
+    const { name, description, cuisineTags, address, coverImageUrl, image, deliveryTime, deliveryFee } = validation.data;
 
     if (name !== undefined) restaurant.name = name;
     if (description !== undefined) restaurant.description = description;
@@ -73,6 +75,8 @@ const updateRestaurantProfile = async (req, res, next) => {
     if (finalImage !== undefined) {
       restaurant.image = finalImage;
     }
+    if (deliveryTime !== undefined) restaurant.deliveryTime = deliveryTime;
+    if (deliveryFee !== undefined) restaurant.deliveryFee = deliveryFee;
 
     await restaurant.save();
 

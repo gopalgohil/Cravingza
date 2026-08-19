@@ -498,7 +498,7 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["AdminUsers"],
     }),
-    updateRestaurantProfile: builder.mutation<any, { name?: string; description?: string; cuisineTags?: string[]; address?: string; coverImageUrl?: string }>({
+    updateRestaurantProfile: builder.mutation<any, { name?: string; description?: string; cuisineTags?: string[]; address?: string; coverImageUrl?: string; deliveryTime?: string; deliveryFee?: number }>({
       query: (data) => ({
         url: "/restaurant/profile",
         method: "PATCH",

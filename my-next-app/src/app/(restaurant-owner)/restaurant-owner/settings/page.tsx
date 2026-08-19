@@ -6,7 +6,6 @@ import { useAppStore } from "@/lib/store";
 import {
   useGetMyApplicationQuery,
   useUpdateRestaurantProfileMutation,
-  useUpdateBusinessHoursMutation,
   useUpdateRestaurantStatusMutation,
   useGetPayoutDetailsQuery,
   useUpdatePayoutDetailsMutation,
@@ -18,32 +17,6 @@ import {
 import { toast } from "sonner";
 import { sanitizePhone, isValidPhone } from "@/lib/validators";
 
-interface DaySchedule {
-  isOpen: boolean;
-  openTime: string;
-  closeTime: string;
-}
-
-interface BusinessHoursState {
-  monday: DaySchedule;
-  tuesday: DaySchedule;
-  wednesday: DaySchedule;
-  thursday: DaySchedule;
-  friday: DaySchedule;
-  saturday: DaySchedule;
-  sunday: DaySchedule;
-}
-
-const defaultHours: BusinessHoursState = {
-  monday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
-  tuesday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
-  wednesday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
-  thursday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
-  friday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
-  saturday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
-  sunday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
-};
-
 export default function RestaurantSettingsPage() {
   const router = useRouter();
   const { user, setUser, clearCart, setAddress } = useAppStore();
@@ -54,7 +27,6 @@ export default function RestaurantSettingsPage() {
 
   // RTK Query Mutations
   const [updateProfile, { isLoading: isProfileUpdating }] = useUpdateRestaurantProfileMutation();
-  const [updateBusinessHours, { isLoading: isHoursUpdating }] = useUpdateBusinessHoursMutation();
   const [updateStatus, { isLoading: isStatusUpdating }] = useUpdateRestaurantStatusMutation();
   const { data: payoutResponse, isLoading: isPayoutLoading } = useGetPayoutDetailsQuery();
   const [updatePayout, { isLoading: isPayoutUpdating }] = useUpdatePayoutDetailsMutation();
@@ -72,15 +44,14 @@ export default function RestaurantSettingsPage() {
   const [cuisineTagsInput, setCuisineTagsInput] = useState("");
   const [addressInput, setAddressInput] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState("15-25 min");
+  const [deliveryFee, setDeliveryFee] = useState<number | string>(29);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
 
   // 2. Status Toggle
   const [isOpen, setIsOpen] = useState(true);
 
-  // 3. Business Hours
-  const [hours, setHours] = useState<BusinessHoursState>(defaultHours);
-
-  // 4. Owner Account
+  // 3. Owner Account
   const [ownerName, setOwnerName] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
   const [phoneTouched, setPhoneTouched] = useState(false);
@@ -94,12 +65,12 @@ export default function RestaurantSettingsPage() {
   const [orderUpdates, setOrderUpdates] = useState(true);
   const [promotionalOffers, setPromotionalOffers] = useState(true);
 
-  // 5. Payout Details
+  // 4. Payout Details
   const [accountHolderName, setAccountHolderName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [ifscCode, setIfscCode] = useState("");
 
-  // 6. Danger Zone Modal
+  // 5. Danger Zone Modal
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [closureReason, setClosureReason] = useState("");
 
@@ -111,19 +82,9 @@ export default function RestaurantSettingsPage() {
       setCuisineTagsInput((restaurant.cuisineTags || []).join(", "));
       setAddressInput(restaurant.location?.address || "");
       setCoverImageUrl(restaurant.image || "");
+      setDeliveryTime(restaurant.deliveryTime || "15-25 min");
+      setDeliveryFee(restaurant.deliveryFee !== undefined ? restaurant.deliveryFee : 29);
       setIsOpen(restaurant.isOpen !== undefined ? restaurant.isOpen : true);
-
-      if (restaurant.businessHours) {
-        setHours({
-          monday: restaurant.businessHours.monday || defaultHours.monday,
-          tuesday: restaurant.businessHours.tuesday || defaultHours.tuesday,
-          wednesday: restaurant.businessHours.wednesday || defaultHours.wednesday,
-          thursday: restaurant.businessHours.thursday || defaultHours.thursday,
-          friday: restaurant.businessHours.friday || defaultHours.friday,
-          saturday: restaurant.businessHours.saturday || defaultHours.saturday,
-          sunday: restaurant.businessHours.sunday || defaultHours.sunday,
-        });
-      }
     }
   }, [restaurant]);
 
@@ -194,6 +155,8 @@ export default function RestaurantSettingsPage() {
         cuisineTags: tags,
         address: addressInput,
         coverImageUrl,
+        deliveryTime,
+        deliveryFee: Number(deliveryFee) || 0,
       }).unwrap();
 
       toast.success(res.message || "Restaurant profile updated successfully!");
@@ -212,41 +175,6 @@ export default function RestaurantSettingsPage() {
     } catch (err: any) {
       setIsOpen(!newStatus); // Revert on failure
       toast.error(err?.data?.message || "Failed to toggle status.");
-    }
-  };
-
-  // 3. Business Hours
-  const handleDayChange = (day: keyof BusinessHoursState, field: keyof DaySchedule, value: any) => {
-    setHours((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleCopyMondayToAll = () => {
-    const mondayVal = hours.monday;
-    setHours({
-      monday: { ...mondayVal },
-      tuesday: { ...mondayVal },
-      wednesday: { ...mondayVal },
-      thursday: { ...mondayVal },
-      friday: { ...mondayVal },
-      saturday: { ...mondayVal },
-      sunday: { ...mondayVal },
-    });
-    toast.success("Copied Monday's schedule to all days!");
-  };
-
-  const handleSaveHours = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await updateBusinessHours({ businessHours: hours }).unwrap();
-      toast.success(res.message || "Business hours updated successfully!");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to update business hours.");
     }
   };
 
@@ -374,16 +302,6 @@ export default function RestaurantSettingsPage() {
     );
   }
 
-  const daysList: Array<{ key: keyof BusinessHoursState; label: string }> = [
-    { key: "monday", label: "Monday" },
-    { key: "tuesday", label: "Tuesday" },
-    { key: "wednesday", label: "Wednesday" },
-    { key: "thursday", label: "Thursday" },
-    { key: "friday", label: "Friday" },
-    { key: "saturday", label: "Saturday" },
-    { key: "sunday", label: "Sunday" },
-  ];
-
   return (
     <div className="max-w-5xl mx-auto space-y-xl pb-24">
       {/* Page Title & Breadcrumb */}
@@ -393,7 +311,7 @@ export default function RestaurantSettingsPage() {
             Restaurant & Account Settings
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Manage your store profile, weekly schedule, bank payout details, and security.
+            Manage your store profile, delivery settings, bank payout details, and security.
           </p>
         </div>
       </div>
@@ -521,6 +439,36 @@ export default function RestaurantSettingsPage() {
             </div>
           </div>
 
+          {/* Delivery Settings (Time & Fee) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">
+                Estimated Delivery Time
+              </label>
+              <input
+                type="text"
+                value={deliveryTime}
+                onChange={(e) => setDeliveryTime(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-slate-900 text-sm font-medium transition-all"
+                placeholder="e.g. 15-25 min"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">
+                Delivery Fee (₹)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={deliveryFee}
+                onChange={(e) => setDeliveryFee(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-slate-900 text-sm font-medium transition-all"
+                placeholder="e.g. 29"
+              />
+            </div>
+          </div>
+
           {/* Cuisine Tags */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-700">
@@ -562,106 +510,7 @@ export default function RestaurantSettingsPage() {
         </form>
       </section>
 
-      {/* ── SECTION 2: BUSINESS HOURS ─────────────────────────────────────────── */}
-      <section className="bg-white rounded-3xl border border-outline-variant/40 p-6 md:p-8 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary text-2xl">schedule</span>
-            <div>
-              <h2 className="font-headline-sm text-lg font-bold text-slate-900">Weekly Business Hours</h2>
-              <p className="text-xs text-slate-500">Configure your standard opening and closing times for each day.</p>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={handleCopyMondayToAll}
-            className="text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base text-amber-600">content_copy</span>
-            <span>Copy Monday to All Days</span>
-          </button>
-        </div>
-
-        <form onSubmit={handleSaveHours} className="space-y-6">
-          <div className="space-y-3">
-            {daysList.map(({ key, label }) => {
-              const daySched = hours[key] || defaultHours[key];
-              return (
-                <div
-                  key={key}
-                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl border transition-all gap-3 sm:gap-4 ${
-                    daySched.isOpen
-                      ? "bg-slate-50/70 border-slate-200/80"
-                      : "bg-slate-100/40 border-slate-200/40 opacity-75"
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full sm:w-36">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id={`check-${key}`}
-                        checked={daySched.isOpen}
-                        onChange={(e) => handleDayChange(key, "isOpen", e.target.checked)}
-                        className="w-4 h-4 accent-primary rounded cursor-pointer"
-                      />
-                      <label htmlFor={`check-${key}`} className="font-bold text-sm text-slate-800 cursor-pointer">
-                        {label}
-                      </label>
-                    </div>
-
-                    {!daySched.isOpen && (
-                      <span className="sm:hidden text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded-full">
-                        Closed
-                      </span>
-                    )}
-                  </div>
-
-                  {daySched.isOpen ? (
-                    <div className="grid grid-cols-2 gap-2.5 sm:flex sm:items-center sm:gap-3 w-full sm:w-auto">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <span className="text-[11px] sm:text-xs font-bold text-slate-500">Open:</span>
-                        <input
-                          type="time"
-                          value={daySched.openTime}
-                          onChange={(e) => handleDayChange(key, "openTime", e.target.value)}
-                          required
-                          className="w-full sm:w-auto px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs text-slate-900 focus:border-primary outline-none"
-                        />
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <span className="text-[11px] sm:text-xs font-bold text-slate-500">Close:</span>
-                        <input
-                          type="time"
-                          value={daySched.closeTime}
-                          onChange={(e) => handleDayChange(key, "closeTime", e.target.value)}
-                          required
-                          className="w-full sm:w-auto px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-xs text-slate-900 focus:border-primary outline-none"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="hidden sm:inline-block text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1 rounded-full">
-                      Closed All Day
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isHoursUpdating}
-              className="bg-primary hover:bg-primary/95 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-primary/20 active:scale-95 text-sm cursor-pointer flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-lg">schedule</span>
-              <span>{isHoursUpdating ? "Saving Schedule..." : "Save Business Hours"}</span>
-            </button>
-          </div>
-        </form>
-      </section>
 
       {/* ── SECTION 3: ACCOUNT & SECURITY ────────────────────────────────────── */}
       <section className="bg-white rounded-3xl border border-outline-variant/40 p-6 md:p-8 shadow-xs space-y-8">
