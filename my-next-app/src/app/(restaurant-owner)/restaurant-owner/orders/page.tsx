@@ -57,7 +57,7 @@ const OrderCardSkeleton = () => (
 );
 
 export default function RestaurantOrdersPage() {
-  const { data: orders = [], isLoading, error } = useGetMerchantOrdersQuery();
+  const { data: orders = [], isLoading, error } = useGetMerchantOrdersQuery(undefined, { pollingInterval: 3000 });
   const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
 
   const [activeTab, setActiveTab] = useState<string>("all");
