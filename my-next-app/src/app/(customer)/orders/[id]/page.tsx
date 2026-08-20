@@ -143,12 +143,18 @@ export default function OrderDetailsPage({ params }: PageProps) {
       const unavailableNames: string[] = [];
 
       for (const item of order.items) {
+        const targetItemId =
+          typeof item.menuItem === "object" && item.menuItem?._id
+            ? String(item.menuItem._id)
+            : String(item.menuItem || "");
+
         const matchingMenuItem = availableMenu.find(
-          (menuItem: any) => menuItem._id === item.menuItem
+          (menuItem: any) => String(menuItem._id) === targetItemId
         );
-        if (matchingMenuItem) {
+
+        if (matchingMenuItem && matchingMenuItem.isAvailable !== false) {
           itemsToAdd.push({
-            menuItemId: item.menuItem,
+            menuItemId: targetItemId,
             quantity: item.quantity,
             name: item.name,
           });
