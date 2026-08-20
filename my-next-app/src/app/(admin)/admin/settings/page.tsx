@@ -9,7 +9,7 @@ import {
 } from "@/lib/redux/apiSlice";
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"general" | "commission" | "notifications" | "security">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "commission" | "security">("general");
 
   const { data: response, isLoading } = useGetAdminSettingsQuery();
   const [updateSettings, { isLoading: isSaving }] = useUpdateAdminSettingsMutation();
@@ -41,11 +41,6 @@ export default function AdminSettingsPage() {
       if (s.taxPercent !== undefined) setTaxPercent(String(s.taxPercent));
     }
   }, [response]);
-
-  // Notification Settings State
-  const [emailAlerts, setEmailAlerts] = useState(true);
-  const [pushAlerts, setPushAlerts] = useState(true);
-  const [newPartnerAlerts, setNewPartnerAlerts] = useState(true);
 
   // Security State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -145,7 +140,6 @@ export default function AdminSettingsPage() {
         {[
           { id: "general", label: "General & Platform", icon: "tune" },
           { id: "commission", label: "Commission & Fees", icon: "percent" },
-          { id: "notifications", label: "Notifications", icon: "notifications" },
           { id: "security", label: "Security", icon: "shield" },
         ].map((tab) => (
           <button
@@ -337,76 +331,7 @@ export default function AdminSettingsPage() {
         </form>
       )}
 
-      {/* Tab 3: Notifications */}
-      {activeTab === "notifications" && (
-        <form onSubmit={handleSaveSettings} className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-xs space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="font-bold text-lg text-slate-800">Notification Preferences</h2>
-            <p className="text-xs text-slate-500">Control system-generated emails and push notifications</p>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
-              <div>
-                <span className="font-bold text-slate-800 text-sm">System Email Alerts</span>
-                <p className="text-xs text-slate-500">Send automatic emails for new partner approvals and system updates</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEmailAlerts(!emailAlerts)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  emailAlerts ? "bg-primary" : "bg-slate-300"
-                }`}
-              >
-                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${emailAlerts ? "translate-x-5" : "translate-x-0"}`} />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
-              <div>
-                <span className="font-bold text-slate-800 text-sm">Web Push Notifications</span>
-                <p className="text-xs text-slate-500">Receive real-time push alerts on browser for high priority events</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPushAlerts(!pushAlerts)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  pushAlerts ? "bg-primary" : "bg-slate-300"
-                }`}
-              >
-                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${pushAlerts ? "translate-x-5" : "translate-x-0"}`} />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/60">
-              <div>
-                <span className="font-bold text-slate-800 text-sm">New Partner Application Alerts</span>
-                <p className="text-xs text-slate-500">Notify admin when a new restaurant or rider submits an application</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setNewPartnerAlerts(!newPartnerAlerts)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  newPartnerAlerts ? "bg-primary" : "bg-slate-300"
-                }`}
-              >
-                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${newPartnerAlerts ? "translate-x-5" : "translate-x-0"}`} />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-primary/20 flex items-center gap-2 cursor-pointer"
-            >
-              {isSaving ? <span className="material-symbols-outlined text-lg animate-spin">autorenew</span> : <span className="material-symbols-outlined text-lg">save</span>}
-              Save Preferences
-            </button>
-          </div>
-        </form>
-      )}
 
       {/* Tab 4: Security */}
       {activeTab === "security" && (
