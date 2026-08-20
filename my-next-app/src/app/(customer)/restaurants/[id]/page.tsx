@@ -164,29 +164,14 @@ export default function RestaurantDetailsPage({ params }: PageProps) {
 
   return (
     <div className="space-y-xl max-w-max-width mx-auto py-6 pb-24 md:pb-12">
-      {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between gap-4">
-        <button
-          onClick={() => router.push("/home")}
-          className="flex items-center gap-xs text-primary font-label-md text-label-md hover:underline cursor-pointer select-none font-bold"
-        >
-          <span className="material-symbols-outlined text-md">arrow_back</span>
-          Back to Restaurants
-        </button>
-
-        {/* Top Right Cart Icon */}
-        <Link
-          href="/cart"
-          className="relative w-10 h-10 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/95 hover:to-orange-500/95 text-white rounded-xl active:scale-95 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 flex items-center justify-center cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>shopping_cart</span>
-          {cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0) > 0 && (
-            <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm" suppressHydrationWarning>
-              {cart.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
-            </span>
-          )}
-        </Link>
-      </div>
+      {/* Back Button */}
+      <button
+        onClick={() => router.push("/home")}
+        className="flex items-center gap-xs text-primary font-label-md text-label-md hover:underline cursor-pointer select-none"
+      >
+        <span className="material-symbols-outlined text-md">arrow_back</span>
+        Back to Restaurants
+      </button>
 
       {/* Hero Banner */}
       <div className="relative aspect-[21/9] md:aspect-[3/1] rounded-2xl overflow-hidden shadow-md">
