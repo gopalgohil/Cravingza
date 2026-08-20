@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   useGetAdminSettingsQuery,
   useUpdateAdminSettingsMutation,
+  useUpdatePasswordMutation,
 } from "@/lib/redux/apiSlice";
 
 export default function AdminSettingsPage() {
@@ -12,6 +13,7 @@ export default function AdminSettingsPage() {
 
   const { data: response, isLoading } = useGetAdminSettingsQuery();
   const [updateSettings, { isLoading: isSaving }] = useUpdateAdminSettingsMutation();
+  const [updatePassword, { isLoading: isPassSaving }] = useUpdatePasswordMutation();
 
   // General Settings State
   const [platformName, setPlatformName] = useState("Cravingza");
@@ -96,8 +98,6 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const [isPassSaving, setIsPassSaving] = useState(false);
-
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword) {
@@ -112,14 +112,16 @@ export default function AdminSettingsPage() {
       toast.error("New passwords do not match");
       return;
     }
-    setIsPassSaving(true);
-    setTimeout(() => {
-      setIsPassSaving(false);
+    try {
+      const res = await updatePassword({ currentPassword, newPassword }).unwrap();
+      toast.success(res?.message || "Admin password updated successfully!");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("Admin password updated successfully!");
-    }, 600);
+    } catch (err: any) {
+      console.error("Failed to update password:", err);
+      toast.error(err?.data?.message || "Failed to update password. Incorrect current password.");
+    }
   };
 
   return (
