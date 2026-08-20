@@ -62,15 +62,11 @@ const updateRestaurantProfile = async (req, res, next) => {
       });
     }
 
-    const { name, description, cuisineTags, address, coverImageUrl, image, deliveryTime, deliveryFee } = validation.data;
+    const { name, description, cuisineTags, coverImageUrl, image, deliveryTime, deliveryFee } = validation.data;
 
     if (name !== undefined) restaurant.name = name;
     if (description !== undefined) restaurant.description = description;
     if (cuisineTags !== undefined) restaurant.cuisineTags = cuisineTags;
-    if (address !== undefined) {
-      restaurant.location = restaurant.location || {};
-      restaurant.location.address = address;
-    }
     const finalImage = coverImageUrl || image;
     if (finalImage !== undefined) {
       restaurant.image = finalImage;

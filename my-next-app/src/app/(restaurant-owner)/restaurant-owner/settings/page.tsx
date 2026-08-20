@@ -153,7 +153,6 @@ export default function RestaurantSettingsPage() {
         name,
         description,
         cuisineTags: tags,
-        address: addressInput,
         coverImageUrl,
         deliveryTime,
         deliveryFee: Number(deliveryFee) || 0,
@@ -424,18 +423,29 @@ export default function RestaurantSettingsPage() {
               />
             </div>
 
-            {/* Address */}
+            {/* Address (Permanent & Locked) */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">
-                Full Street Address
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700">
+                  Full Street Address (Registered)
+                </label>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  <span className="material-symbols-outlined text-xs">lock</span>
+                  Locked
+                </span>
+              </div>
               <input
                 type="text"
                 value={addressInput}
-                onChange={(e) => setAddressInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-slate-900 text-sm font-medium transition-all"
-                placeholder="e.g. 42 Food Street, Central Avenue"
+                disabled
+                readOnly
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 font-medium text-sm outline-none cursor-not-allowed select-none"
+                placeholder="Registered Store Address"
               />
+              <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">info</span>
+                Store address submitted during partner registration is permanent & cannot be edited. Contact Cravingza Support for relocation.
+              </p>
             </div>
           </div>
 
