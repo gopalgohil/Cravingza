@@ -11,6 +11,7 @@ import {
   useVerifyRazorpayPaymentMutation,
   useApplyCouponMutation,
   useGetAddressesQuery,
+  useGetPublicSettingsQuery,
   Address,
 } from "@/lib/redux/apiSlice";
 import { useAppStore } from "@/lib/store";
@@ -42,6 +43,7 @@ export default function CheckoutPage() {
   const [verifyRazorpayPayment, { isLoading: isVerifying }] = useVerifyRazorpayPaymentMutation();
   const [applyCouponMutation, { isLoading: isApplyingCoupon }] = useApplyCouponMutation();
 
+  const { data: publicSettingsRes } = useGetPublicSettingsQuery();
   const { data: addressesRes, isLoading: isLoadingAddresses } = useGetAddressesQuery(undefined, {
     skip: !user,
   });
@@ -99,13 +101,25 @@ export default function CheckoutPage() {
   const cartItems = cart.items;
   const restaurant = cart.restaurant;
 
-  // Calculations (matching backend orderController: taxes = 5%, totalAmount = subtotal - discount + deliveryFee + taxes)
+  // Dynamic calculations matching backend orderController & Super Admin settings
   const subtotal = cart.subtotal || 0;
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const discountedSubtotal = Math.max(0, subtotal - discountAmount);
   const isFreeDelivery = appliedCoupon?.isFreeDelivery || appliedCoupon?.category === "delivery";
-  const deliveryFee = isFreeDelivery ? 0 : (restaurant?.deliveryFee || 0);
-  const taxAmount = discountedSubtotal * 0.05; // 5% tax on discounted subtotal
+
+  const baseDeliveryFee =
+    publicSettingsRes?.data?.baseDeliveryFee !== undefined
+      ? Number(publicSettingsRes.data.baseDeliveryFee)
+      : (restaurant?.deliveryFee ?? 30);
+
+  const deliveryFee = isFreeDelivery ? 0 : baseDeliveryFee;
+
+  const taxPercent =
+    publicSettingsRes?.data?.taxPercent !== undefined
+      ? Number(publicSettingsRes.data.taxPercent)
+      : 5;
+
+  const taxAmount = (discountedSubtotal * taxPercent) / 100;
   const total = discountedSubtotal + deliveryFee + taxAmount;
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
@@ -623,7 +637,7 @@ export default function CheckoutPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Taxes (5%)</span>
+                <span className="text-on-surface-variant">Taxes ({taxPercent}%)</span>
                 <span className="text-on-surface font-semibold">₹{taxAmount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-t border-outline-variant pt-md font-bold text-headline-sm">

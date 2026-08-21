@@ -56,12 +56,31 @@ export default function CartPage() {
   const restaurant = cart.restaurant;
   const cartItems = cart.items;
 
-  // Pricing calculations
+  // Pricing calculations (matching backend & Super Admin settings)
   const subtotal = cart.subtotal || 0;
-  const deliveryFee = restaurant?.deliveryFee || 0;
-  const serviceFee = subtotal > 0 ? 1.99 : 0;
+
+  const baseDeliveryFee =
+    settingsRes?.data?.baseDeliveryFee !== undefined
+      ? Number(settingsRes.data.baseDeliveryFee)
+      : (restaurant?.deliveryFee ?? 30);
+
+  const deliveryFee = baseDeliveryFee;
+
+  const serviceFeePercent =
+    settingsRes?.data?.serviceFeePercent !== undefined
+      ? Number(settingsRes.data.serviceFeePercent)
+      : 5;
+
+  const serviceFee = subtotal > 0 ? (subtotal * serviceFeePercent) / 100 : 0;
+
   const discountAmount = subtotal * (discountPercent / 100);
-  const taxAmount = (subtotal - discountAmount) * 0.08; // 8% tax
+
+  const taxPercent =
+    settingsRes?.data?.taxPercent !== undefined
+      ? Number(settingsRes.data.taxPercent)
+      : 5;
+
+  const taxAmount = (subtotal - discountAmount) * (taxPercent / 100);
   const total = subtotal - discountAmount + deliveryFee + serviceFee + taxAmount;
 
   const handleApplyPromo = (e: React.FormEvent) => {
@@ -294,7 +313,7 @@ export default function CartPage() {
               )}
 
               <div className="flex justify-between items-center">
-                <span>Taxes</span>
+                <span>Taxes ({taxPercent}%)</span>
                 <span className="font-semibold text-on-surface">₹{taxAmount.toFixed(2)}</span>
               </div>
 
