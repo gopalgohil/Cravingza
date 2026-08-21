@@ -46,12 +46,14 @@ export default function ApprovalsPage() {
   const {
     data: restaurantListData,
     isLoading: restaurantListLoading,
+    isFetching: restaurantListFetching,
     refetch: refetchRestaurantList,
   } = useGetAdminRestaurantsQuery(activeStatus, { skip: activeType !== "restaurants" });
 
   const {
     data: restaurantDetailData,
     isLoading: restaurantDetailLoading,
+    isFetching: restaurantDetailFetching,
   } = useGetAdminRestaurantByIdQuery(selectedId, {
     skip: activeType !== "restaurants" || !selectedId,
   });
@@ -63,12 +65,14 @@ export default function ApprovalsPage() {
   const {
     data: deliveryListData,
     isLoading: deliveryListLoading,
+    isFetching: deliveryListFetching,
     refetch: refetchDeliveryList,
   } = useGetAdminDeliveryProfilesQuery(activeStatus, { skip: activeType !== "delivery_partners" });
 
   const {
     data: deliveryDetailData,
     isLoading: deliveryDetailLoading,
+    isFetching: deliveryDetailFetching,
   } = useGetAdminDeliveryProfileByIdQuery(selectedId, {
     skip: activeType !== "delivery_partners" || !selectedId,
   });
@@ -98,8 +102,12 @@ export default function ApprovalsPage() {
 
   // Derived datasets
   const isRestaurants = activeType === "restaurants";
-  const listLoading = isRestaurants ? restaurantListLoading : deliveryListLoading;
-  const detailLoading = isRestaurants ? restaurantDetailLoading : deliveryDetailLoading;
+  const listLoading = isRestaurants
+    ? restaurantListLoading || restaurantListFetching
+    : deliveryListLoading || deliveryListFetching;
+  const detailLoading = isRestaurants
+    ? restaurantDetailLoading || restaurantDetailFetching
+    : deliveryDetailLoading || deliveryDetailFetching;
 
   const items = isRestaurants ? restaurantListData?.data || [] : deliveryListData?.data || [];
   const counts = isRestaurants
@@ -142,15 +150,19 @@ export default function ApprovalsPage() {
   }, [items, selectedId, activeType, activeStatus, router]);
 
   const handleTypeChange = (type: string) => {
+    setIsPageChanging(true);
     setActiveType(type);
     setSelectedId("");
     router.push(`/admin/approvals?type=${type}&status=${activeStatus}`);
+    setTimeout(() => setIsPageChanging(false), 300);
   };
 
   const handleStatusChange = (status: string) => {
+    setIsPageChanging(true);
     setActiveStatus(status);
     setSelectedId("");
     router.push(`/admin/approvals?type=${activeType}&status=${status}`);
+    setTimeout(() => setIsPageChanging(false), 300);
   };
 
   const handleSelectItem = (id: string) => {
