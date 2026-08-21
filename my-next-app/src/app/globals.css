@@ -253,3 +253,53 @@ body {
     display: none;
   }
 }
+
+/* ─── Cravingza Theme Sonner Toasts ──────────────────────────── */
+[data-sonner-toaster] {
+  font-family: var(--font-sans) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: 20px !important;
+  padding: 14px 18px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  box-shadow: 0 20px 30px -5px rgba(39, 24, 20, 0.12), 0 8px 15px -3px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  background: #ffffff !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  background-color: #ffffff !important;
+  color: #881337 !important;
+  border: 1.5px solid #ffe4e6 !important;
+  border-left: 5px solid #f43f5e !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] {
+  color: #f43f5e !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  background-color: #ffffff !important;
+  color: #064e3b !important;
+  border: 1.5px solid #d1fae5 !important;
+  border-left: 5px solid #10b981 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] {
+  color: #10b981 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] {
+  background-color: #ffffff !important;
+  color: #7c2d12 !important;
+  border: 1.5px solid #ffedd5 !important;
+  border-left: 5px solid #b52603 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] [data-icon] {
+  color: #b52603 !important;
+}
+
