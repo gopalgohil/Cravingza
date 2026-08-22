@@ -302,32 +302,9 @@ const login = async (req, res) => {
       });
     }
 
-    // Check if user is locked
-    if (user.lockUntil && user.lockUntil > Date.now()) {
-      return res.status(423).json({
-        success: false,
-        message: "Too many failed attempts. Please wait 5 minutes before trying again.",
-        errors: [],
-      });
-    }
-
     // Verify password
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
-      user.loginAttempts = (user.loginAttempts || 0) + 1;
-      
-      if (user.loginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes lock
-        await user.save();
-        return res.status(423).json({
-          success: false,
-          message: "Too many failed attempts. Please wait 5 minutes before trying again.",
-          errors: [],
-        });
-      }
-      
-      await user.save();
-      
       return res.status(401).json({
         success: false,
         message: "Incorrect email or password.",
@@ -344,11 +321,6 @@ const login = async (req, res) => {
         data: { email: user.email },
       });
     }
-
-    // Reset login attempts on successful login
-    user.loginAttempts = 0;
-    user.lockUntil = null;
-    await user.save();
 
     // Generate JWT
     const token = jwt.sign(
