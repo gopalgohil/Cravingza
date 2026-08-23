@@ -232,8 +232,8 @@ export default function RestaurantOwnerLayout({
     { label: "Settings", href: "/settings", icon: "settings" },
   ];
 
-  const displayName = typeof window !== "undefined"
-    ? (application?.name || localStorage.getItem("cravingza_restaurant_name") || "Chef's Bistro")
+  const displayName = mounted
+    ? (application?.name || (typeof window !== "undefined" ? localStorage.getItem("cravingza_restaurant_name") : null) || "Chef's Bistro")
     : "Chef's Bistro";
   const displayInitials = displayName.substring(0, 2).toUpperCase();
 
