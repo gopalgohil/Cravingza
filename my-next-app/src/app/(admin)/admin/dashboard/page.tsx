@@ -6,7 +6,8 @@ import { useGetAdminDashboardQuery } from "@/lib/redux/apiSlice";
 
 export default function AdminDashboardPage() {
   const { data, isLoading, error, refetch } = useGetAdminDashboardQuery(undefined, {
-    pollingInterval: 15000, // Refresh dashboard every 15s
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
 
   if (isLoading) {

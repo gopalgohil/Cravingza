@@ -52,7 +52,7 @@ const RecentOrdersTableSkeleton = () => (
 );
 
 export default function RestaurantDashboardPage() {
-  const { data: orders = [], isLoading: isOrdersLoading, error: ordersError } = useGetMerchantOrdersQuery(undefined, { pollingInterval: 3000 });
+  const { data: orders = [], isLoading: isOrdersLoading, error: ordersError } = useGetMerchantOrdersQuery(undefined, { refetchOnMountOrArgChange: true, refetchOnFocus: true });
   const { data: menuItems = [], isLoading: isMenuLoading } = useGetMyMenuQuery();
   const [updateOrderStatus, { isLoading: isUpdatingStatus }] = useUpdateOrderStatusMutation();
 

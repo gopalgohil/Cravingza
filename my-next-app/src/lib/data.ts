@@ -1,6 +1,3 @@
-import restaurantsData from "./data/restaurants.json";
-import menuItemsData from "./data/menuItems.json";
-
 export interface MenuItem {
   id: string;
   restaurantId: string;
@@ -24,18 +21,4 @@ export interface Restaurant {
   menu: MenuItem[];
 }
 
-export const mockRestaurants: Restaurant[] = (restaurantsData as any[]).map((r) => ({
-  ...r,
-  menu: (menuItemsData as any[])
-    .filter((m) => m.restaurantId === r.id)
-    .map((m) => ({
-      id: m.id,
-      restaurantId: m.restaurantId,
-      name: m.name,
-      price: m.price,
-      description: m.description,
-      image: m.image,
-      popular: m.popular,
-    })),
-}));
-
+export const mockRestaurants: Restaurant[] = [];

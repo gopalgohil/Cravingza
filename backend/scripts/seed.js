@@ -77,6 +77,7 @@ const restaurantsData = [
     ],
   },
   {
+    _id: new mongoose.Types.ObjectId("6a71cf8dab29fa8868772237"),
     name: "Burger Boss",
     description: "Gourmet smash burgers, truffle fries, and signature milkshakes.",
     cuisineTags: ["Burgers", "Fast Food", "American"],
@@ -597,7 +598,7 @@ const restaurantsData = [
         image: "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&auto=format&fit=crop&q=80",
         isVeg: true,
         isBestSeller: true,
-      }, u
+      },
     ],
   },
 ];
@@ -607,18 +608,6 @@ async function seed() {
     console.log("Connecting to MongoDB database...");
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected successfully.");
-
-    // Clear existing
-    console.log("Clearing existing restaurants and menu items...");
-    await Restaurant.deleteMany({});
-    await MenuItem.deleteMany({});
-    console.log("Existing data cleared.");
-
-    // SAFEGUARD: Do NOT delete existing real orders placed by users
-    const existingOrderCount = await Order.countDocuments();
-    if (existingOrderCount > 0) {
-      console.log(`Preserving ${existingOrderCount} existing orders in database.`);
-    }
 
     const targetOwner = await User.findOne({ email: "gopalgohel249@gmail.com" });
     if (targetOwner) {
@@ -635,12 +624,10 @@ async function seed() {
     for (const rData of restaurantsData) {
       const { menu, ...restDetails } = rData;
 
-      // Link Burger Boss to gopalgohel249@gmail.com if found
       if (restDetails.name === "Burger Boss" && targetOwner) {
         restDetails.owner = targetOwner._id;
       }
 
-      // Ensure demo documents are attached if missing
       if (!restDetails.documents) {
         restDetails.documents = {
           fssaiLicense: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80",
@@ -648,191 +635,39 @@ async function seed() {
         };
       }
 
-      // Save restaurant
-      const restaurant = new Restaurant(restDetails);
-      await restaurant.save();
-      console.log(`Seeded Restaurant: ${restaurant.name}${restDetails.owner ? " (Owner Linked)" : ""}`);
+      let restaurant = await Restaurant.findOne({ name: restDetails.name });
+      if (!restaurant) {
+        restaurant = new Restaurant(restDetails);
+        await restaurant.save();
+        console.log(`Seeded Restaurant: ${restaurant.name}${restDetails.owner ? " (Owner Linked)" : ""}`);
+      } else {
+        if (restDetails.name === "Burger Boss" && targetOwner) {
+          restaurant.owner = targetOwner._id;
+        }
+        restaurant.approvalStatus = "approved";
+        await restaurant.save();
+        console.log(`Updated Restaurant: ${restaurant.name}`);
+      }
 
-      // Save menu items
       const createdMenuItems = [];
       for (const mItem of menu) {
-        const menuItem = new MenuItem({
-          ...mItem,
-          restaurant: restaurant._id,
-        });
-        await menuItem.save();
+        let menuItem = await MenuItem.findOne({ restaurant: restaurant._id, name: mItem.name });
+        if (!menuItem) {
+          menuItem = new MenuItem({
+            ...mItem,
+            restaurant: restaurant._id,
+          });
+          await menuItem.save();
+        }
         createdMenuItems.push(menuItem);
       }
-      console.log(`  Seeded ${menu.length} menu items.`);
-
-      // Seed 12 comprehensive sample orders for this restaurant across all statuses & dates
-      if (sampleCustomer && createdMenuItems.length > 0) {
-        const m1 = createdMenuItems[0];
-        const m2 = createdMenuItems[1] || createdMenuItems[0];
-        const m3 = createdMenuItems[2] || createdMenuItems[0];
-
-        const sampleOrdersData = [
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [
-              { menuItem: m1._id, name: m1.name, price: m1.price, quantity: 2 },
-              { menuItem: m2._id, name: m2.name, price: m2.price, quantity: 1 },
-            ],
-            deliveryAddress: { label: "Home", addressLine: "45 MG Road, Suite 302", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "cod", paymentStatus: "pending",
-            subtotal: Math.round((m1.price * 2 + m2.price) * 100) / 100,
-            deliveryFee: 30, taxes: 15,
-            totalAmount: Math.round((m1.price * 2 + m2.price + 45) * 100) / 100,
-            status: "placed", createdAt: new Date(Date.now() - 120000), // 2 mins ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [
-              { menuItem: m3._id, name: m3.name, price: m3.price, quantity: 1 },
-              { menuItem: m1._id, name: m1.name, price: m1.price, quantity: 1 },
-            ],
-            deliveryAddress: { label: "Work", addressLine: "Building C, Cyber City", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "razorpay", paymentStatus: "paid",
-            subtotal: Math.round((m3.price + m1.price) * 100) / 100,
-            deliveryFee: 25, taxes: 12,
-            totalAmount: Math.round((m3.price + m1.price + 37) * 100) / 100,
-            status: "placed", createdAt: new Date(Date.now() - 600000), // 10 mins ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [{ menuItem: m1._id, name: m1.name, price: m1.price, quantity: 1 }],
-            deliveryAddress: { label: "Work", addressLine: "Tech Park, Building B", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "razorpay", paymentStatus: "paid",
-            subtotal: Math.round(m1.price * 100) / 100,
-            deliveryFee: 30, taxes: 10,
-            totalAmount: Math.round((m1.price + 40) * 100) / 100,
-            status: "accepted", createdAt: new Date(Date.now() - 1500000), // 25 mins ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [{ menuItem: m2._id, name: m2.name, price: m2.price, quantity: 2 }],
-            deliveryAddress: { label: "Home", addressLine: "88 Orchid Towers", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "cod", paymentStatus: "pending",
-            subtotal: Math.round((m2.price * 2) * 100) / 100,
-            deliveryFee: 30, taxes: 18,
-            totalAmount: Math.round((m2.price * 2 + 48) * 100) / 100,
-            status: "preparing", createdAt: new Date(Date.now() - 2100000), // 35 mins ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [{ menuItem: m3._id, name: m3.name, price: m3.price, quantity: 3 }],
-            deliveryAddress: { label: "Home", addressLine: "14 Palm Avenue", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "razorpay", paymentStatus: "paid",
-            subtotal: Math.round((m3.price * 3) * 100) / 100,
-            deliveryFee: 0, taxes: 25,
-            totalAmount: Math.round((m3.price * 3 + 25) * 100) / 100,
-            status: "ready_for_pickup", createdAt: new Date(Date.now() - 2700000), // 45 mins ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [
-              { menuItem: m1._id, name: m1.name, price: m1.price, quantity: 1 },
-              { menuItem: m2._id, name: m2.name, price: m2.price, quantity: 2 },
-            ],
-            deliveryAddress: { label: "Work", addressLine: "DLF Cyber Hub", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "razorpay", paymentStatus: "paid",
-            subtotal: Math.round((m1.price + m2.price * 2) * 100) / 100,
-            deliveryFee: 30, taxes: 22,
-            totalAmount: Math.round((m1.price + m2.price * 2 + 52) * 100) / 100,
-            status: "out_for_delivery", createdAt: new Date(Date.now() - 3300000), // 55 mins ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [{ menuItem: m2._id, name: m2.name, price: m2.price, quantity: 2 }],
-            deliveryAddress: { label: "Home", addressLine: "12 Park Avenue", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "razorpay", paymentStatus: "paid",
-            subtotal: Math.round((m2.price * 2) * 100) / 100,
-            deliveryFee: 0, taxes: 20,
-            totalAmount: Math.round((m2.price * 2 + 20) * 100) / 100,
-            status: "delivered", createdAt: new Date(Date.now() - 7200000), // 2 hours ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [
-              { menuItem: m1._id, name: m1.name, price: m1.price, quantity: 2 },
-              { menuItem: m3._id, name: m3.name, price: m3.price, quantity: 1 },
-            ],
-            deliveryAddress: { label: "Home", addressLine: "77 Heritage Residency", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "cod", paymentStatus: "paid",
-            subtotal: Math.round((m1.price * 2 + m3.price) * 100) / 100,
-            deliveryFee: 40, taxes: 30,
-            totalAmount: Math.round((m1.price * 2 + m3.price + 70) * 100) / 100,
-            status: "delivered", createdAt: new Date(Date.now() - 18000000), // 5 hours ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [{ menuItem: m1._id, name: m1.name, price: m1.price, quantity: 3 }],
-            deliveryAddress: { label: "Work", addressLine: "Block A Sector 62", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "razorpay", paymentStatus: "paid",
-            subtotal: Math.round((m1.price * 3) * 100) / 100,
-            deliveryFee: 20, taxes: 25,
-            totalAmount: Math.round((m1.price * 3 + 45) * 100) / 100,
-            status: "delivered", createdAt: new Date(Date.now() - 86400000), // Yesterday
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [{ menuItem: m2._id, name: m2.name, price: m2.price, quantity: 1 }],
-            deliveryAddress: { label: "Home", addressLine: "302 Green Park", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "cod", paymentStatus: "paid",
-            subtotal: Math.round(m2.price * 100) / 100,
-            deliveryFee: 30, taxes: 10,
-            totalAmount: Math.round((m2.price + 40) * 100) / 100,
-            status: "delivered", createdAt: new Date(Date.now() - 172800000), // 2 days ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [
-              { menuItem: m2._id, name: m2.name, price: m2.price, quantity: 2 },
-              { menuItem: m3._id, name: m3.name, price: m3.price, quantity: 2 },
-            ],
-            deliveryAddress: { label: "Home", addressLine: "19 Sunrise Villa", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "razorpay", paymentStatus: "paid",
-            subtotal: Math.round((m2.price * 2 + m3.price * 2) * 100) / 100,
-            deliveryFee: 0, taxes: 40,
-            totalAmount: Math.round((m2.price * 2 + m3.price * 2 + 40) * 100) / 100,
-            status: "delivered", createdAt: new Date(Date.now() - 259200000), // 3 days ago
-          },
-          {
-            customer: sampleCustomer._id,
-            restaurant: restaurant._id,
-            items: [{ menuItem: m1._id, name: m1.name, price: m1.price, quantity: 1 }],
-            deliveryAddress: { label: "Work", addressLine: "Unit 501 Infotech", city: "Metro City", phone: "9876543210" },
-            paymentMethod: "cod", paymentStatus: "pending",
-            subtotal: Math.round(m1.price * 100) / 100,
-            deliveryFee: 30, taxes: 10,
-            totalAmount: Math.round((m1.price + 40) * 100) / 100,
-            status: "cancelled", cancellationReason: "Customer requested cancellation before restaurant acceptance.",
-            createdAt: new Date(Date.now() - 345600000), // 4 days ago
-          },
-        ];
-
-        for (const oData of sampleOrdersData) {
-          await Order.create(oData);
-        }
-        console.log(`  Seeded 12 comprehensive sample orders for ${restaurant.name}.`);
-      }
+      console.log(`  Seeded/Verified ${menu.length} menu items for ${restaurant.name}.`);
     }
 
-    console.log("Database seeded successfully!");
+    console.log("Seeding complete! All rich restaurants restored.");
     process.exit(0);
   } catch (error) {
-    console.error("Seeding error:", error);
+    console.error("Seeding Error:", error);
     process.exit(1);
   }
 }

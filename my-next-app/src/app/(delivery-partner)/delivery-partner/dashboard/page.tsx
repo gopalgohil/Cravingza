@@ -18,7 +18,8 @@ export default function DeliveryDashboardPage() {
     isError,
     refetch,
   } = useGetDeliveryDashboardQuery(undefined, {
-    pollingInterval: 15000, // Poll every 15s for new orders/status
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
 
   const [updateStatus, { isLoading: isUpdating }] = useUpdateDeliveryStatusMutation();

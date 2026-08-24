@@ -9,7 +9,8 @@ const ITEMS_PER_PAGE = 4;
 
 export default function RiderEarningsPage() {
   const { data: response, isLoading, isError, refetch } = useGetDeliveryEarningsQuery(undefined, {
-    pollingInterval: 15000,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
 
   const [activeFilter, setActiveFilter] = useState<"all" | "today" | "week">("all");

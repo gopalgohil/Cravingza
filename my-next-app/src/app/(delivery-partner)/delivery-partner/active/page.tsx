@@ -17,7 +17,8 @@ export default function ActiveDeliveryPage() {
     isError,
     refetch,
   } = useGetActiveDeliveryQuery(undefined, {
-    pollingInterval: 10000,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
 
   const [updateStatus, { isLoading: isUpdating }] = useUpdateActiveDeliveryStatusMutation();

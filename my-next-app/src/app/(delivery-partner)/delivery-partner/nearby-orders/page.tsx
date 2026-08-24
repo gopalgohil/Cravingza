@@ -22,7 +22,8 @@ export default function NearbyOrdersPage() {
     isFetching,
     refetch,
   } = useGetNearbyOrdersQuery(undefined, {
-    pollingInterval: 8000, // 8-second real-time polling
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
   });
 
   const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();

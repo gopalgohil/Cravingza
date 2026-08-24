@@ -20,11 +20,11 @@ export default function NotificationMenu() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const prevIsTabVisible = useRef(isTabVisible);
 
-  // Poll notifications every 30 seconds (30000ms)
-  // Pauses automatically if user is unauthenticated OR tab is not visible
+  // Fetch notifications on mount & when bell icon is clicked
+  // Stops aggressive background server polling spam
   const { data: response, refetch } = useGetNotificationsListQuery(undefined, {
-    skip: !user || !isTabVisible,
-    pollingInterval: 10000, // Poll every 10 seconds (no refresh needed)
+    skip: !user,
+    refetchOnMountOrArgChange: true,
   });
 
   const [markRead] = useMarkNotificationsReadMutation();
