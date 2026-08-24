@@ -624,7 +624,7 @@ const getEarningsData = async (req, res, next) => {
       let weeklyEarnings = 0;
 
       const history = deliveries.map((d) => {
-        const amount = d.earnings || 40;
+        const amount = d.earnings && d.earnings > 0 ? d.earnings : 40;
         const deliveredDate = new Date(d.deliveredAt || d.updatedAt || d.createdAt);
         totalEarnings += amount;
 
@@ -639,6 +639,7 @@ const getEarningsData = async (req, res, next) => {
           id: d._id,
           orderId: d.order?._id || "N/A",
           restaurantName: d.order?.restaurant?.name || "Cravingza Order",
+          amount: amount,
           earnings: amount,
           distanceKm: d.distanceKm || 2.5,
           deliveredAt: deliveredDate,
