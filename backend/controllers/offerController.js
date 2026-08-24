@@ -123,14 +123,14 @@ const applyCoupon = async (req, res, next) => {
           maxDiscountAmount: 150,
           category: "flat",
         };
-      } else if (cleanCode === "FREEDEL") {
+      } else if (cleanCode === "FREEDEL" || cleanCode === "REEDEL50" || cleanCode === "FREEDEL50" || cleanCode.includes("REDEL")) {
         coupon = {
-          code: "FREEDEL",
-          title: "Free Delivery",
+          code: cleanCode,
+          title: "Free Delivery + ₹50 OFF",
           discountType: "fixed",
-          discountValue: 25,
+          discountValue: 50,
           minOrderAmount: 0,
-          maxDiscountAmount: 25,
+          maxDiscountAmount: 50,
           category: "delivery",
         };
       }
