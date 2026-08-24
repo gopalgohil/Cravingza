@@ -4,7 +4,9 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { useGetMyDeliveryApplicationQuery } from "@/lib/redux/apiSlice";
+import { useGetMyDeliveryApplicationQuery, apiSlice } from "@/lib/redux/apiSlice";
+import { useDispatch } from "react-redux";
+import { subscribeToWebOrderUpdates } from "@/lib/socket";
 import { toast } from "sonner";
 import NotificationMenu from "@/components/customer/NotificationMenu";
 
@@ -18,9 +20,18 @@ export default function DeliveryPartnerLayout({
   const { user, setUser, authChecked, clearCart, setAddress } = useAppStore();
   const [mounted, setMounted] = useState(false);
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    const unsubscribeSocket = subscribeToWebOrderUpdates((orderData) => {
+      console.log("⚡ [Delivery Partner Web] Real-Time Socket.io Order Event Received:", orderData);
+      dispatch(apiSlice.util.invalidateTags(["Delivery", "Orders", "Notifications"]));
+    });
+
+    return () => unsubscribeSocket();
+  }, [dispatch]);
 
   // Fetch delivery application details
   const {
