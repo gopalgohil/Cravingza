@@ -6,6 +6,7 @@ import Coupon from "../models/Coupon.js";
 import User from "../models/User.js";
 import { notifyUserDual, notifyOnlineDeliveryPartners } from "../lib/push.js";
 import razorpayInstance from "../lib/razorpay.js";
+import { emitOrderUpdate } from "../services/socketService.js";
 
 const createOrder = async (req, res, next) => {
   try {
@@ -411,6 +412,13 @@ const updateOrderStatus = async (req, res, next) => {
       } catch (pushErr) {
         console.error("Web push dispatch failed:", pushErr);
       }
+    }
+
+    // ⚡ Real-Time Socket.io Event Broadcast to Mobile & Web Apps
+    try {
+      emitOrderUpdate(order);
+    } catch (socketErr) {
+      console.error("Socket emit error:", socketErr);
     }
 
     return res.status(200).json({
