@@ -143,13 +143,30 @@ const applyCoupon = async (req, res, next) => {
       });
     }
 
-    // Check if one-time coupon was already used by this user
+    // 🔒 Strictly enforce ONE-TIME per account usage across all orders
+    if (req.user?._id) {
+      const Order = (await import("../models/Order.js")).default;
+      const alreadyUsedOrder = await Order.findOne({
+        customer: req.user._id,
+        couponCode: cleanCode,
+        status: { $ne: "cancelled" },
+      });
+
+      if (alreadyUsedOrder) {
+        return res.status(400).json({
+          success: false,
+          message: `Coupon code "${cleanCode}" has already been used on a previous order. Each coupon code can only be used ONCE per account!`,
+        });
+      }
+    }
+
+    // Check if one-time coupon was already marked in DB
     if (coupon.isOneTimePerUser && coupon.usedByUsers && req.user?._id) {
       const alreadyUsed = coupon.usedByUsers.some((userId) => userId.toString() === req.user._id.toString());
       if (alreadyUsed) {
         return res.status(400).json({
           success: false,
-          message: `You have already used coupon ${coupon.code} on a previous order.`,
+          message: `You have already used coupon code ${coupon.code} on a previous order.`,
         });
       }
     }
@@ -182,10 +199,13 @@ const applyCoupon = async (req, res, next) => {
 
     discountAmount = Math.min(discountAmount, subtotal); // Cannot exceed subtotal
 
+    const isFreeDel = coupon.category === "delivery" || cleanCode.includes("FREEDEL") || cleanCode.includes("REEDEL");
+
     return res.status(200).json({
       success: true,
-      message: `Coupon ${coupon.code} applied successfully! Saved ₹${Math.round(discountAmount * 100) / 100}`,
+      message: `Coupon ${coupon.code} applied successfully! Saved ₹${Math.round(discountAmount * 100) / 100}${isFreeDel ? " + Free Delivery" : ""}`,
       discountAmount: Math.round(discountAmount * 100) / 100,
+      isFreeDelivery: isFreeDel,
       data: {
         code: coupon.code,
         title: coupon.title,
@@ -195,7 +215,7 @@ const applyCoupon = async (req, res, next) => {
         subtotal,
         finalSubtotal: Math.max(0, Math.round((subtotal - discountAmount) * 100) / 100),
         category: coupon.category,
-        isFreeDelivery: coupon.category === "delivery",
+        isFreeDelivery: isFreeDel,
       },
     });
   } catch (error) {
