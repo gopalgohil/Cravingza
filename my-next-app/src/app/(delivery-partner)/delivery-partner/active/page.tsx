@@ -316,7 +316,7 @@ export default function ActiveDeliveryPage() {
           {order.items?.map((item: any, idx: number) => (
             <div key={idx} className="flex justify-between items-center text-slate-700 font-medium">
               <span>{item.quantity}x {item.name}</span>
-              <span className="font-bold text-slate-900">₹{(item.price * item.quantity).toFixed(2)}</span>
+              <span className="font-bold text-slate-900">₹{Number((item.price || 0) * (item.quantity || 1)).toFixed(2)}</span>
             </div>
           ))}
         </div>
@@ -326,7 +326,7 @@ export default function ActiveDeliveryPage() {
             <span className="material-symbols-outlined text-emerald-600">payments</span>
             <span className="font-bold text-slate-700 text-xs uppercase">Collect Cash from Customer</span>
           </div>
-          <span className="text-lg font-extrabold text-primary">₹{order.totalAmount?.toFixed(2)}</span>
+          <span className="text-lg font-extrabold text-primary">₹{Number(order.totalAmount || 0).toFixed(2)}</span>
         </div>
       </div>
     </div>

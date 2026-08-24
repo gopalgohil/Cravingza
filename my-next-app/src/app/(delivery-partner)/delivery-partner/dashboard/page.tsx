@@ -232,7 +232,7 @@ export default function DeliveryDashboardPage() {
               </span>
             </div>
             <div className="text-2xl md:text-3xl font-extrabold text-slate-900">
-              ₹{earningsToday.toFixed(2)}
+              ₹{Number(earningsToday || 0).toFixed(2)}
             </div>
             <p className="text-[11px] text-slate-400 mt-1 font-medium">Payout today</p>
           </div>
