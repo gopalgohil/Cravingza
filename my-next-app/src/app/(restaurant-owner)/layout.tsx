@@ -4,7 +4,9 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { useGetMyApplicationQuery } from "@/lib/redux/apiSlice";
+import { useGetMyApplicationQuery, apiSlice } from "@/lib/redux/apiSlice";
+import { useDispatch } from "react-redux";
+import { subscribeToWebOrderUpdates } from "@/lib/socket";
 import { toast } from "sonner";
 import NotificationMenu from "@/components/customer/NotificationMenu";
 
@@ -64,6 +66,19 @@ export default function RestaurantOwnerLayout({
   // Profile Dropdown state
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const dispatch = useDispatch();
+
+  // Real-Time WebSockets (Socket.io) Instant Sync for Partner Web Console
+  useEffect(() => {
+    const unsubscribeSocket = subscribeToWebOrderUpdates((orderData) => {
+      console.log("⚡ [Partner Portal Web] Real-Time Socket.io Order Update Received:", orderData);
+      dispatch(apiSlice.util.invalidateTags(["MerchantOrders", "Orders", "AdminDashboard", "Notifications"]));
+      toast.info(`🔔 Live Order Alert: Status updated to ${orderData?.status?.toUpperCase() || "NEW"}`);
+    });
+
+    return () => unsubscribeSocket();
+  }, [dispatch]);
 
   // Close profile dropdown on click outside
   useEffect(() => {
