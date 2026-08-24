@@ -37,7 +37,7 @@ export default function RootLayout({
         <ReduxProvider>
           {children}
         </ReduxProvider>
-        <Toaster position="top-center" duration={3500} />
+        <Toaster position="top-center" duration={3000} visibleToasts={1} closeButton />
       </body>
     </html>
   );

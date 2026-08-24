@@ -74,7 +74,6 @@ export default function RestaurantOwnerLayout({
     const unsubscribeSocket = subscribeToWebOrderUpdates((orderData) => {
       console.log("⚡ [Partner Portal Web] Real-Time Socket.io Order Update Received:", orderData);
       dispatch(apiSlice.util.invalidateTags(["MerchantOrders", "Orders", "AdminDashboard", "Notifications"]));
-      toast.info(`🔔 Live Order Alert: Status updated to ${orderData?.status?.toUpperCase() || "NEW"}`);
     });
 
     return () => unsubscribeSocket();
