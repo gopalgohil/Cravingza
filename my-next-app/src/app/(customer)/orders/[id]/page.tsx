@@ -449,10 +449,9 @@ export default function OrderDetailsPage({ params }: PageProps) {
             {/* Delivery Address Block */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-1.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <span className="material-symbols-outlined text-base text-primary">location_on</span>
                 <span>Delivery Address</span>
               </div>
-              <div className="text-slate-900 font-semibold text-sm leading-snug pl-5">
+              <div className="text-slate-900 font-semibold text-sm leading-snug">
                 {order.deliveryAddress?.label && (
                   <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase mr-2 border border-primary/20">
                     {order.deliveryAddress.label}
@@ -537,9 +536,8 @@ export default function OrderDetailsPage({ params }: PageProps) {
               <div className="pt-3 space-y-3">
                 <button
                   onClick={handleReorder}
-                  className="w-full py-3.5 bg-gradient-to-r from-primary to-orange-600 hover:from-primary/95 hover:to-orange-600/95 text-white rounded-2xl font-bold text-sm transition-all shadow-md shadow-primary/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-gradient-to-r from-primary to-orange-600 hover:from-primary/95 hover:to-orange-600/95 text-white rounded-2xl font-bold text-sm transition-all shadow-md shadow-primary/20 active:scale-95 cursor-pointer flex items-center justify-center"
                 >
-                  <span className="material-symbols-outlined text-lg">autorenew</span>
                   <span>Reorder Food</span>
                 </button>
 
@@ -547,9 +545,8 @@ export default function OrderDetailsPage({ params }: PageProps) {
                 {canCancel ? (
                   <button
                     onClick={() => setIsCancelModalOpen(true)}
-                    className="w-full py-3.5 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 rounded-2xl font-bold text-sm transition-all active:scale-95 cursor-pointer text-center flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 rounded-2xl font-bold text-sm transition-all active:scale-95 cursor-pointer text-center flex items-center justify-center"
                   >
-                    <span className="material-symbols-outlined text-lg text-rose-500">cancel</span>
                     <span>Cancel Order</span>
                   </button>
                 ) : !isTerminal ? (
