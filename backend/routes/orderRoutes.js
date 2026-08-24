@@ -7,11 +7,15 @@ import {
   getMerchantOrders,
   updateOrderStatus,
   cancelOrder,
+  getMerchantDashboardStats,
 } from "../controllers/orderController.js";
 import { protect } from "../middlewares/auth.js";
 
 // Protect all order routes
 router.use(protect);
+
+router.get("/merchant/dashboard", getMerchantDashboardStats);
+router.get("/restaurant-owner/dashboard", getMerchantDashboardStats);
 
 /**
  * @swagger
