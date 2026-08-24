@@ -93,7 +93,12 @@ export const useAppStore = create<AppState>((set) => ({
         localStorage.removeItem("cravingza_token");
       }
     }
-    set({ user });
+    const defaultAddrObj = (user as any)?.addresses?.find((a: any) => a.isDefault) || (user as any)?.addresses?.[0];
+    const defaultAddrStr = defaultAddrObj ? `${defaultAddrObj.addressLine}, ${defaultAddrObj.city}` : "";
+    set((state) => ({
+      user,
+      address: defaultAddrStr || state.address,
+    }));
   },
   authChecked: false,
   setAuthChecked: (authChecked) => set({ authChecked }),

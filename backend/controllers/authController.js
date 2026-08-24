@@ -349,6 +349,7 @@ const login = async (req, res) => {
           phone: user.phone || "",
           role: user.role,
           avatar: user.avatar || null,
+          addresses: user.addresses || [],
         },
       },
     });
