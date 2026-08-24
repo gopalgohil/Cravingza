@@ -199,6 +199,13 @@ const createOrder = async (req, res, next) => {
     cart.restaurant = null;
     await cart.save();
 
+    // ⚡ Real-Time Socket.io Event Broadcast to Restaurant Admin & Mobile/Web Apps
+    try {
+      emitOrderUpdate(order);
+    } catch (socketErr) {
+      console.error("Socket emit error on createOrder:", socketErr);
+    }
+
     return res.status(201).json({
       success: true,
       message: "Order placed successfully",
