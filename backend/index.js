@@ -21,6 +21,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js";
+import couponRoutes from "./routes/couponRoutes.js";
 import { getPublicSettings } from "./controllers/adminController.js";
 import setupSwagger from "./config/swagger.js";
 
@@ -67,6 +68,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/offers", offerRoutes);
+app.use("/api/coupons", couponRoutes);
 app.get("/api/settings", getPublicSettings);
 
 // Swagger API Documentation
