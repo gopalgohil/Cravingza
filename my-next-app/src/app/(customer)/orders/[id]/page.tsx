@@ -14,6 +14,7 @@ import {
 } from "@/lib/redux/apiSlice";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { subscribeToWebOrderUpdates } from "@/lib/socket";
 import LiveTrackingMap from "@/components/customer/LiveTrackingMap";
 import SingleOrderLoading from "./loading";
 import {
@@ -34,10 +35,9 @@ export default function OrderDetailsPage({ params }: PageProps) {
   const [currentStatus, setCurrentStatus] = useState<string | null>(null);
   const isTerminal = isTerminalOrderStatus(currentStatus || "");
 
-  // Fetch single order details with conditional 5-second polling (stops automatically when terminal)
+  // Fetch single order details via RTK Query
   const { data: response, isLoading, isError, refetch } = useGetOrderQuery(id, {
     skip: !user || !id,
-    pollingInterval: isTerminal ? undefined : 5000,
   });
 
   const order = response?.data;
@@ -47,6 +47,21 @@ export default function OrderDetailsPage({ params }: PageProps) {
       setCurrentStatus(order.status);
     }
   }, [order?.status]);
+
+  // Real-time WebSocket listener for order status updates
+  useEffect(() => {
+    if (!id) return;
+    const unsubscribe = subscribeToWebOrderUpdates((updatedOrder) => {
+      const updatedId = updatedOrder._id || updatedOrder.id;
+      if (updatedId === id) {
+        refetch();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [id, refetch]);
 
   // Current Cart details for conflict checks
   const { data: cartResponse } = useGetCartQuery(undefined, { skip: !user });

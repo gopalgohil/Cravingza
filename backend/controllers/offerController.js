@@ -61,14 +61,16 @@ const DEFAULT_COUPONS = [
 const getOffers = async (req, res, next) => {
   try {
     let coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } })
-      .populate("restaurant", "name image location")
+      .select("-usedByUsers -__v")
+      .populate("restaurant", "name image location.address location.city")
       .sort({ createdAt: -1 });
 
     if (coupons.length === 0) {
       console.log("[Offers] Seeding default coupons...");
       await Coupon.insertMany(DEFAULT_COUPONS);
       coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } })
-        .populate("restaurant", "name image location")
+        .select("-usedByUsers -__v")
+        .populate("restaurant", "name image location.address location.city")
         .sort({ createdAt: -1 });
     }
 

@@ -5,6 +5,12 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const PUBLIC_RESTAURANT_LIST_FIELDS =
+  "name description cuisineTags image location rating reviewCount deliveryTime deliveryFee minOrderAmount offerDiscountPercentage offerMaxDiscount offerMinOrderAmount offerLabel isOpen";
+
+const PUBLIC_RESTAURANT_DETAIL_FIELDS =
+  "name description cuisineTags image location rating reviewCount deliveryTime deliveryFee minOrderAmount offerDiscountPercentage offerMaxDiscount offerMinOrderAmount offerLabel isOpen";
+
 const getRestaurants = async (req, res, next) => {
   try {
     const { cuisine, search, sort } = req.query;
@@ -39,7 +45,9 @@ const getRestaurants = async (req, res, next) => {
       sortOption = { isOpen: -1, createdAt: -1 };
     }
 
-    const restaurants = await Restaurant.find(query).sort(sortOption);
+    const restaurants = await Restaurant.find(query)
+      .select(PUBLIC_RESTAURANT_LIST_FIELDS)
+      .sort(sortOption);
 
     return res.status(200).json({
       success: true,
@@ -52,13 +60,14 @@ const getRestaurants = async (req, res, next) => {
 
 const getRestaurantById = async (req, res, next) => {
   try {
-    const restaurant = await Restaurant.findById(req.params.id);
-    if (
-      !restaurant ||
-      restaurant.approvalStatus !== "approved" ||
-      restaurant.adminDeactivated ||
-      restaurant.ownerClosedPermanently
-    ) {
+    const restaurant = await Restaurant.findOne({
+      _id: req.params.id,
+      approvalStatus: "approved",
+      adminDeactivated: { $ne: true },
+      ownerClosedPermanently: { $ne: true },
+    }).select(PUBLIC_RESTAURANT_DETAIL_FIELDS);
+
+    if (!restaurant) {
       return res.status(404).json({
         success: false,
         message: "Restaurant not found",

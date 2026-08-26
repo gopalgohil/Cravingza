@@ -1,3 +1,4 @@
+// Firebase Admin SDK Configuration
 import admin from "firebase-admin";
 
 if (!admin.apps.length) {

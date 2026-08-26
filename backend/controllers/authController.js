@@ -398,7 +398,16 @@ const getProfile = async (req, res) => {
       success: true,
       message: "Profile retrieved successfully",
       data: {
-        user: req.user,
+        user: {
+          id: req.user._id,
+          name: req.user.name,
+          email: req.user.email,
+          phone: req.user.phone || "",
+          role: req.user.role,
+          avatar: req.user.avatar || null,
+          isVerified: req.user.isVerified,
+          addresses: req.user.addresses || [],
+        },
       },
     });
   } catch (error) {

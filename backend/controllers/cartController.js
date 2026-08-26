@@ -3,11 +3,15 @@ import MenuItem from "../models/MenuItem.js";
 import Restaurant from "../models/Restaurant.js";
 import mongoose from "mongoose";
 
+const RESTAURANT_PUBLIC_FIELDS =
+  "name image rating reviewCount deliveryTime deliveryFee minOrderAmount isOpen location.address location.city offerDiscountPercentage offerMaxDiscount offerMinOrderAmount offerLabel";
+const MENUITEM_PUBLIC_FIELDS = "name price image isVeg description category";
+
 const getCart = async (req, res, next) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id })
-      .populate("restaurant")
-      .populate("items.menuItem");
+      .populate("restaurant", RESTAURANT_PUBLIC_FIELDS)
+      .populate("items.menuItem", MENUITEM_PUBLIC_FIELDS);
 
     if (!cart) {
       return res.status(200).json({
@@ -53,7 +57,7 @@ const addToCart = async (req, res, next) => {
 
     // Single-restaurant rule check
     if (cart.restaurant && cart.restaurant.toString() !== menuItem.restaurant.toString()) {
-      const currentRestaurant = await Restaurant.findById(cart.restaurant);
+      const currentRestaurant = await Restaurant.findById(cart.restaurant).select("name image");
       return res.status(409).json({
         success: false,
         conflict: true,
@@ -84,8 +88,8 @@ const addToCart = async (req, res, next) => {
     }
 
     await cart.save();
-    await cart.populate("restaurant");
-    await cart.populate("items.menuItem");
+    await cart.populate("restaurant", RESTAURANT_PUBLIC_FIELDS);
+    await cart.populate("items.menuItem", MENUITEM_PUBLIC_FIELDS);
 
     return res.status(200).json({
       success: true,
@@ -137,8 +141,8 @@ const updateCartItem = async (req, res, next) => {
     }
 
     await cart.save();
-    await cart.populate("restaurant");
-    await cart.populate("items.menuItem");
+    await cart.populate("restaurant", RESTAURANT_PUBLIC_FIELDS);
+    await cart.populate("items.menuItem", MENUITEM_PUBLIC_FIELDS);
 
     return res.status(200).json({
       success: true,
@@ -180,8 +184,8 @@ const removeCartItem = async (req, res, next) => {
     }
 
     await cart.save();
-    await cart.populate("restaurant");
-    await cart.populate("items.menuItem");
+    await cart.populate("restaurant", RESTAURANT_PUBLIC_FIELDS);
+    await cart.populate("items.menuItem", MENUITEM_PUBLIC_FIELDS);
 
     return res.status(200).json({
       success: true,
@@ -251,8 +255,8 @@ const replaceCart = async (req, res, next) => {
     cart.restaurant = menuItem.restaurant;
 
     await cart.save();
-    await cart.populate("restaurant");
-    await cart.populate("items.menuItem");
+    await cart.populate("restaurant", RESTAURANT_PUBLIC_FIELDS);
+    await cart.populate("items.menuItem", MENUITEM_PUBLIC_FIELDS);
 
     return res.status(200).json({
       success: true,

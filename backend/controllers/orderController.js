@@ -217,10 +217,13 @@ const createOrder = async (req, res, next) => {
   }
 };
 
+const RESTAURANT_PUBLIC_FIELDS =
+  "name image rating reviewCount deliveryTime deliveryFee minOrderAmount isOpen location.address location.city";
+
 const getOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ customer: req.user._id })
-      .populate("restaurant")
+      .populate("restaurant", RESTAURANT_PUBLIC_FIELDS)
       .populate("review")
       .sort({ createdAt: -1 });
 
@@ -236,8 +239,8 @@ const getOrders = async (req, res, next) => {
 const getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate("restaurant")
-      .populate("items.menuItem")
+      .populate("restaurant", RESTAURANT_PUBLIC_FIELDS)
+      .populate("items.menuItem", "name price image isVeg description category")
       .populate("review");
 
     if (!order) {

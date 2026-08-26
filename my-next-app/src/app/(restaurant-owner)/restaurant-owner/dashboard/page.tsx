@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import DashboardStatCard from "@/components/restaurant-owner/DashboardStatCard";
 
 const RecentOrdersTableSkeleton = () => (
   <>
@@ -194,99 +195,73 @@ export default function RestaurantDashboardPage() {
       {/* Stats Cards Grid */}
       {!isLoading && !ordersError && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
-          {/* Card 1: Total Sales */}
-          <div className="bg-white p-md rounded-2xl border border-outline-variant/30 shadow-sm flex items-center justify-between">
-            <div className="space-y-xs">
-              <span className="font-label-md text-label-md text-on-surface-variant font-bold">
-                Total Earnings
-              </span>
-              <h2 className="font-headline-sm text-headline-sm font-black text-on-background">
-                ₹{stats.totalEarnings.toLocaleString("en-IN")}
-              </h2>
-              <span className="flex items-center gap-1 text-caption text-green-600 font-bold">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>Delivered Sales</span>
-              </span>
-            </div>
-            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center border border-green-200/50">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
+          <DashboardStatCard
+            title="Total Earnings"
+            value={`₹${stats.totalEarnings.toLocaleString("en-IN")}`}
+            icon={<DollarSign className="w-6 h-6" />}
+            iconBgClass="bg-green-50 text-green-600 border-green-200/50"
+            badge={{
+              icon: <TrendingUp className="w-3.5 h-3.5" />,
+              label: "Delivered Sales",
+              colorClass: "text-green-600",
+            }}
+          />
 
-          {/* Card 2: Total Orders */}
-          <div className="bg-white p-md rounded-2xl border border-outline-variant/30 shadow-sm flex items-center justify-between">
-            <div className="space-y-xs">
-              <span className="font-label-md text-label-md text-on-surface-variant font-bold">
-                Total Orders
-              </span>
-              <h2 className="font-headline-sm text-headline-sm font-black text-on-background">
-                {stats.totalOrders}
-              </h2>
-              <span className="flex items-center gap-1 text-caption text-indigo-600 font-bold">
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>All Orders Lifetime</span>
-              </span>
-            </div>
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-200/50">
-              <ShoppingBag className="w-6 h-6" />
-            </div>
-          </div>
+          <DashboardStatCard
+            title="Total Orders"
+            value={stats.totalOrders}
+            icon={<ShoppingBag className="w-6 h-6" />}
+            iconBgClass="bg-indigo-50 text-indigo-600 border-indigo-200/50"
+            badge={{
+              icon: <ShoppingBag className="w-3.5 h-3.5" />,
+              label: "All Orders Lifetime",
+              colorClass: "text-indigo-600",
+            }}
+          />
 
-          {/* Card 3: Active Orders */}
-          <div className="bg-white p-md rounded-2xl border border-outline-variant/30 shadow-sm flex items-center justify-between">
-            <div className="space-y-xs">
-              <span className="font-label-md text-label-md text-on-surface-variant font-bold">
-                Active Kitchen Orders
-              </span>
-              <h2 className="font-headline-sm text-headline-sm font-black text-on-background">
-                {stats.activeOrders}
-              </h2>
-              {stats.pendingOrders > 0 ? (
-                <span className="flex items-center gap-1 text-caption text-orange-600 font-bold animate-pulse">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{stats.pendingOrders} new waiting acceptance</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-caption text-slate-500 font-bold">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Fully caught up</span>
-                </span>
-              )}
-            </div>
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
+          <DashboardStatCard
+            title="Active Kitchen Orders"
+            value={stats.activeOrders}
+            icon={<ChefHat className="w-6 h-6" />}
+            iconBgClass={
               stats.pendingOrders > 0
                 ? "bg-orange-50 text-orange-600 border-orange-200/50 animate-bounce"
                 : "bg-amber-50 text-amber-600 border-amber-200/50"
-            }`}>
-              <ChefHat className="w-6 h-6" />
-            </div>
-          </div>
+            }
+            badge={
+              stats.pendingOrders > 0
+                ? {
+                    icon: <Clock className="w-3.5 h-3.5" />,
+                    label: `${stats.pendingOrders} new waiting acceptance`,
+                    colorClass: "text-orange-600 animate-pulse",
+                  }
+                : {
+                    icon: <CheckCircle className="w-3.5 h-3.5" />,
+                    label: "Fully caught up",
+                    colorClass: "text-slate-500",
+                  }
+            }
+          />
 
-          {/* Card 4: Menu Items */}
-          <div className="bg-white p-md rounded-2xl border border-outline-variant/30 shadow-sm flex items-center justify-between">
-            <div className="space-y-xs">
-              <span className="font-label-md text-label-md text-on-surface-variant font-bold">
-                Active Menu Cards
-              </span>
-              <h2 className="font-headline-sm text-headline-sm font-black text-on-background">
-                {stats.totalMenuItems}
-              </h2>
-              {stats.outOfStockItems > 0 ? (
-                <span className="flex items-center gap-1 text-caption text-red-600 font-bold">
-                  <TrendingDown className="w-3.5 h-3.5" />
-                  <span>{stats.outOfStockItems} items out of stock</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-caption text-green-600 font-bold">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>All items available</span>
-                </span>
-              )}
-            </div>
-            <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center border border-slate-200/50">
-              <Utensils className="w-6 h-6" />
-            </div>
-          </div>
+          <DashboardStatCard
+            title="Active Menu Cards"
+            value={stats.totalMenuItems}
+            icon={<Utensils className="w-6 h-6" />}
+            iconBgClass="bg-teal-50 text-teal-600 border-teal-200/50"
+            badge={
+              stats.outOfStockItems > 0
+                ? {
+                    icon: <TrendingDown className="w-3.5 h-3.5" />,
+                    label: `${stats.outOfStockItems} items out of stock`,
+                    colorClass: "text-red-600",
+                  }
+                : {
+                    icon: <CheckCircle className="w-3.5 h-3.5" />,
+                    label: "All items available",
+                    colorClass: "text-green-600",
+                  }
+            }
+          />
         </div>
       )}
 
