@@ -43,10 +43,18 @@ export default function RestaurantSettingsPage() {
   const [description, setDescription] = useState("");
   const [cuisineTagsInput, setCuisineTagsInput] = useState("");
   const [addressInput, setAddressInput] = useState("");
+  const [cityInput, setCityInput] = useState("Vadodara");
+  const [pincodeInput, setPincodeInput] = useState("390023");
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [deliveryTime, setDeliveryTime] = useState("15-25 min");
   const [deliveryFee, setDeliveryFee] = useState<number | string>(29);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  // Address Edit Modal Popup States
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [modalStreet, setModalStreet] = useState("");
+  const [modalCity, setModalCity] = useState("");
+  const [modalPincode, setModalPincode] = useState("");
 
   // 2. Status Toggle
   const [isOpen, setIsOpen] = useState(true);
@@ -80,7 +88,9 @@ export default function RestaurantSettingsPage() {
       setName(restaurant.name || "");
       setDescription(restaurant.description || "");
       setCuisineTagsInput((restaurant.cuisineTags || []).join(", "));
-      setAddressInput(restaurant.location?.address || "");
+      setAddressInput(restaurant.location?.address || restaurant.address || "");
+      setCityInput(restaurant.location?.city || restaurant.city || "Vadodara");
+      setPincodeInput(restaurant.location?.zipCode || restaurant.location?.pincode || restaurant.pincode || "390023");
       setCoverImageUrl(restaurant.image || "");
       setDeliveryTime(restaurant.deliveryTime || "15-25 min");
       setDeliveryFee(restaurant.deliveryFee !== undefined ? restaurant.deliveryFee : 29);
@@ -423,29 +433,32 @@ export default function RestaurantSettingsPage() {
               />
             </div>
 
-            {/* Address (Permanent & Locked) */}
+            {/* Address & Location Card */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold text-slate-700">
-                  Full Street Address (Registered)
+                  📍 Restaurant Address & Pincode
                 </label>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                  <span className="material-symbols-outlined text-xs">lock</span>
-                  Locked
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalStreet(addressInput);
+                    setModalCity(cityInput);
+                    setModalPincode(pincodeInput);
+                    setIsAddressModalOpen(true);
+                  }}
+                  className="px-3 py-1 rounded-lg text-xs font-extrabold bg-primary/10 text-primary hover:bg-primary/20 transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                  <span>Edit Address</span>
+                </button>
               </div>
-              <input
-                type="text"
-                value={addressInput}
-                disabled
-                readOnly
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 font-medium text-sm outline-none cursor-not-allowed select-none"
-                placeholder="Registered Store Address"
-              />
-              <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">info</span>
-                Store address submitted during partner registration is permanent & cannot be edited. Contact Cravingza Support for relocation.
-              </p>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <p className="text-xs font-bold text-slate-800">{addressInput || "No street address saved"}</p>
+                <p className="text-xs font-medium text-slate-500">
+                  {cityInput} {cityInput && pincodeInput ? " • " : ""}Pincode: <span className="font-bold text-primary">{pincodeInput}</span>
+                </p>
+              </div>
             </div>
           </div>
 
@@ -820,6 +833,108 @@ export default function RestaurantSettingsPage() {
                 className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md shadow-rose-600/20 active:scale-95 disabled:opacity-50"
               >
                 {isClosing ? "Closing..." : "Confirm & Close Store"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADDRESS EDIT MODAL POPUP ─────────────────────── */}
+      {isAddressModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  📍
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900">Edit Restaurant Address</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddressModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-sm font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Street / Building / Area Address <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={modalStreet}
+                  onChange={(e) => setModalStreet(e.target.value)}
+                  placeholder="e.g. 101 Burger Boulevard, Sector 18"
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-900 focus:border-primary outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    City / Region <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={modalCity}
+                    onChange={(e) => setModalCity(e.target.value)}
+                    placeholder="e.g. Vadodara"
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-900 focus:border-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Pincode <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={modalPincode}
+                    onChange={(e) => setModalPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="390023"
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-900 focus:border-primary outline-none font-semibold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddressModalOpen(false)}
+                className="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!modalStreet.trim()) return toast.error("Please enter street address");
+                  const cleanPin = modalPincode.replace(/\D/g, "");
+                  if (cleanPin.length !== 6) return toast.error("Pincode must be exactly 6 digits");
+                  try {
+                    await updateProfile({
+                      address: modalStreet.trim(),
+                      city: modalCity.trim() || "Vadodara",
+                      pincode: cleanPin,
+                      zipCode: cleanPin,
+                    }).unwrap();
+                    setAddressInput(modalStreet.trim());
+                    setCityInput(modalCity.trim() || "Vadodara");
+                    setPincodeInput(cleanPin);
+                    setIsAddressModalOpen(false);
+                    toast.success("Restaurant address & pincode updated!");
+                  } catch (err: any) {
+                    toast.error(err?.data?.message || "Failed to update address");
+                  }
+                }}
+                className="flex-1 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-xs shadow-md shadow-primary/20 cursor-pointer"
+              >
+                Save Address
               </button>
             </div>
           </div>
