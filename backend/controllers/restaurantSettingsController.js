@@ -15,6 +15,9 @@ const profileSchema = z.object({
   description: z.string().optional().default(""),
   cuisineTags: z.array(z.string()).optional(),
   address: z.string().optional(),
+  city: z.string().optional(),
+  pincode: z.string().optional(),
+  zipCode: z.string().optional(),
   coverImageUrl: z.string().optional(),
   image: z.string().optional(),
   deliveryTime: z.string().optional(),
@@ -62,7 +65,7 @@ const updateRestaurantProfile = async (req, res, next) => {
       });
     }
 
-    const { name, description, cuisineTags, coverImageUrl, image, deliveryTime, deliveryFee } = validation.data;
+    const { name, description, cuisineTags, coverImageUrl, image, deliveryTime, deliveryFee, address, city, pincode, zipCode } = validation.data;
 
     if (name !== undefined) restaurant.name = name;
     if (description !== undefined) restaurant.description = description;
@@ -73,6 +76,17 @@ const updateRestaurantProfile = async (req, res, next) => {
     }
     if (deliveryTime !== undefined) restaurant.deliveryTime = deliveryTime;
     if (deliveryFee !== undefined) restaurant.deliveryFee = deliveryFee;
+
+    if (address !== undefined || city !== undefined) {
+      if (!restaurant.location) restaurant.location = { address: "", city: "", lat: 0, lng: 0 };
+      if (address !== undefined) restaurant.location.address = address;
+      if (city !== undefined) restaurant.location.city = city;
+    }
+
+    const finalPin = pincode || zipCode;
+    if (finalPin !== undefined) {
+      restaurant.pincode = finalPin;
+    }
 
     await restaurant.save();
 
