@@ -374,7 +374,7 @@ export default function NearbyOrdersPage() {
                     Items & Total Bill
                   </span>
                   <span className="font-semibold text-slate-800 block mt-1">
-                    {order.itemsCount} items • Total ₹{order.totalAmount}
+                    {order.itemsCount} items • Total ₹{Number(order.totalAmount || 0).toFixed(2)}
                   </span>
                 </div>
               </div>

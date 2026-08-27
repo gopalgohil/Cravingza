@@ -277,7 +277,7 @@ export default function RestaurantOrdersPage() {
               const itemsSubtotal = (order.items || []).reduce((sum: number, it: any) => sum + Number(it.price || 0) * Number(it.quantity || 1), 0);
               const delFee = Number(order.deliveryFee ?? 30);
               const taxVal = Number(order.taxes && Number(order.taxes) < (itemsSubtotal * 0.2) ? order.taxes : (itemsSubtotal * 0.05));
-              const displayTotal = (itemsSubtotal > 0 ? itemsSubtotal + delFee + taxVal : Number(order.totalAmount || 0)).toFixed(2);
+              const displayTotal = Number(order.totalAmount || 0).toFixed(2);
               const displaySubtotal = (itemsSubtotal > 0 ? itemsSubtotal : Number(order.subtotal || 0)).toFixed(2);
               const displayTax = (itemsSubtotal > 0 ? taxVal : Number(order.taxes || 0)).toFixed(2);
 

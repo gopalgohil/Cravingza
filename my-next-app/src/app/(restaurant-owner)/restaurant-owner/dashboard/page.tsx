@@ -339,12 +339,7 @@ export default function RestaurantDashboardPage() {
 
                               {/* Total Price */}
                               <td className="p-4 font-black text-on-background">
-                                ₹{(() => {
-                                  const sub = (order.items || []).reduce((s: number, it: any) => s + Number(it.price || 0) * Number(it.quantity || 1), 0);
-                                  const del = Number(order.deliveryFee ?? 30);
-                                  const tax = Number(order.taxes && Number(order.taxes) < (sub * 0.2) ? order.taxes : (sub * 0.05));
-                                  return sub > 0 ? (sub + del + tax).toFixed(2) : Number(order.totalAmount || 0).toFixed(2);
-                                })()}
+                                ₹{Number(order.totalAmount || 0).toFixed(2)}
                               </td>
 
                               {/* Status & Payment badge */}
@@ -514,12 +509,7 @@ export default function RestaurantDashboardPage() {
                             <div>
                               <span className="text-[11px] text-on-surface-variant block">Total Amount</span>
                               <span className="font-black text-on-background text-base">
-                                ₹{(() => {
-                                  const sub = (order.items || []).reduce((s: number, it: any) => s + Number(it.price || 0) * Number(it.quantity || 1), 0);
-                                  const del = Number(order.deliveryFee ?? 30);
-                                  const tax = Number(order.taxes && Number(order.taxes) < (sub * 0.2) ? order.taxes : (sub * 0.05));
-                                  return sub > 0 ? (sub + del + tax).toFixed(2) : Number(order.totalAmount || 0).toFixed(2);
-                                })()}
+                                ₹{Number(order.totalAmount || 0).toFixed(2)}
                               </span>
                             </div>
 

@@ -518,16 +518,20 @@ export default function OrderDetailsPage({ params }: PageProps) {
                 </span>
               </div>
               <div className="flex justify-between text-xs text-slate-600">
-                <span>Taxes & Charges (5%)</span>
-                <span className="font-semibold text-slate-900">₹{order.taxes.toFixed(2)}</span>
+                <span>Taxes (5%)</span>
+                <span className="font-semibold text-slate-900">₹{(order.taxes || 0).toFixed(2)}</span>
               </div>
+              {order.serviceFee > 0 && (
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Platform Fee</span>
+                  <span className="font-semibold text-slate-900">₹{order.serviceFee.toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between border-t border-slate-200/80 pt-3 text-base">
                 <span className="font-extrabold text-slate-900">Total Bill</span>
                 <span className="font-black text-xl text-primary">
-                  ₹{(((order.subtotal || 0) - (order.discount || 0) + (order.deliveryFee || 0) + (order.taxes || 0)) > 0
-                    ? ((order.subtotal || 0) - (order.discount || 0) + (order.deliveryFee || 0) + (order.taxes || 0))
-                    : order.totalAmount).toFixed(2)}
+                  ₹{Number(order.totalAmount || 0).toFixed(2)}
                 </span>
               </div>
 

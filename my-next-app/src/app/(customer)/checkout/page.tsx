@@ -130,8 +130,14 @@ export default function CheckoutPage() {
       ? Number(publicSettingsRes.data.taxPercent)
       : 5;
 
+  const serviceFeePercent =
+    publicSettingsRes?.data?.serviceFeePercent !== undefined
+      ? Number(publicSettingsRes.data.serviceFeePercent)
+      : 5;
+
+  const serviceFee = subtotal > 0 ? (discountedSubtotal * serviceFeePercent) / 100 : 0;
   const taxAmount = (discountedSubtotal * taxPercent) / 100;
-  const total = discountedSubtotal + deliveryFee + taxAmount;
+  const total = discountedSubtotal + deliveryFee + serviceFee + taxAmount;
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -779,6 +785,12 @@ export default function CheckoutPage() {
                 <span className="text-on-surface-variant">Taxes ({taxPercent}%)</span>
                 <span className="text-on-surface font-semibold">₹{taxAmount.toFixed(2)}</span>
               </div>
+              {serviceFee > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-on-surface-variant">Platform Fee ({serviceFeePercent}%)</span>
+                  <span className="text-on-surface font-semibold">₹{serviceFee.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-outline-variant pt-md font-bold text-headline-sm">
                 <span className="text-on-surface">Total</span>
                 <span className="text-primary font-bold">₹{total.toFixed(2)}</span>

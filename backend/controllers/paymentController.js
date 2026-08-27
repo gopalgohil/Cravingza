@@ -4,6 +4,7 @@ import Cart from "../models/Cart.js";
 import Restaurant from "../models/Restaurant.js";
 import Order from "../models/Order.js";
 import Coupon from "../models/Coupon.js";
+import SystemSettings from "../models/SystemSettings.js";
 import { notifyUserDual } from "../lib/push.js";
 
 /**
@@ -60,11 +61,24 @@ const createRazorpayOrder = async (req, res, next) => {
       }
     }
 
+    const settings = await SystemSettings.getSettings();
+
     discountAmount = Math.round(discountAmount * 100) / 100;
-    const deliveryFee = isFreeDelivery ? 0 : (restaurant.deliveryFee || 0);
     const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-    const taxes = Math.round((discountedSubtotal * 0.05) * 100) / 100;
-    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
+
+    const deliveryFee = isFreeDelivery
+      ? 0
+      : settings.baseDeliveryFee !== undefined
+      ? settings.baseDeliveryFee
+      : (restaurant.deliveryFee || 30);
+
+    const serviceFeePercent = settings.serviceFeePercent !== undefined ? settings.serviceFeePercent : 5;
+    const serviceFee = Math.round(((discountedSubtotal * serviceFeePercent) / 100) * 100) / 100;
+
+    const taxPercent = settings.taxPercent !== undefined ? settings.taxPercent : 5;
+    const taxes = Math.round(((discountedSubtotal * taxPercent) / 100) * 100) / 100;
+
+    const totalAmount = Math.round((discountedSubtotal + serviceFee + deliveryFee + taxes) * 100) / 100;
     const totalInPaise = Math.round(totalAmount * 100);
 
     const options = {
@@ -178,11 +192,24 @@ const verifyRazorpayPayment = async (req, res, next) => {
       }
     }
 
+    const settings = await SystemSettings.getSettings();
+
     discountAmount = Math.round(discountAmount * 100) / 100;
-    const deliveryFee = isFreeDelivery ? 0 : (restaurant.deliveryFee || 0);
     const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-    const taxes = Math.round((discountedSubtotal * 0.05) * 100) / 100;
-    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
+
+    const deliveryFee = isFreeDelivery
+      ? 0
+      : settings.baseDeliveryFee !== undefined
+      ? settings.baseDeliveryFee
+      : (restaurant.deliveryFee || 30);
+
+    const serviceFeePercent = settings.serviceFeePercent !== undefined ? settings.serviceFeePercent : 5;
+    const serviceFee = Math.round(((discountedSubtotal * serviceFeePercent) / 100) * 100) / 100;
+
+    const taxPercent = settings.taxPercent !== undefined ? settings.taxPercent : 5;
+    const taxes = Math.round(((discountedSubtotal * taxPercent) / 100) * 100) / 100;
+
+    const totalAmount = Math.round((discountedSubtotal + serviceFee + deliveryFee + taxes) * 100) / 100;
 
     const orderItems = cart.items.map((item) => ({
       menuItem: item.menuItem,
@@ -206,6 +233,7 @@ const verifyRazorpayPayment = async (req, res, next) => {
       couponCode: appliedCouponCode,
       discount: discountAmount,
       deliveryFee,
+      serviceFee,
       taxes,
       totalAmount,
       status: "placed",
