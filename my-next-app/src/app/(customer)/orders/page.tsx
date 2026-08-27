@@ -240,12 +240,19 @@ export default function OrdersPage() {
       const unavailableNames: string[] = [];
 
       for (const item of order.items) {
+        const targetId =
+          typeof item.menuItem === "object" && item.menuItem !== null
+            ? item.menuItem._id
+            : item.menuItem;
+
         const matchingMenuItem = availableMenu.find(
-          (menuItem: any) => menuItem._id === item.menuItem
+          (menuItem: any) =>
+            String(menuItem._id) === String(targetId) && menuItem.isAvailable !== false
         );
+
         if (matchingMenuItem) {
           itemsToAdd.push({
-            menuItemId: item.menuItem,
+            menuItemId: String(targetId),
             quantity: item.quantity,
             name: item.name,
           });
