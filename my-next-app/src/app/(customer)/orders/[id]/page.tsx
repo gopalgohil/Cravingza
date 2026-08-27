@@ -517,7 +517,11 @@ export default function OrderDetailsPage({ params }: PageProps) {
 
               <div className="flex items-center justify-between border-t border-slate-200/80 pt-3 text-base">
                 <span className="font-extrabold text-slate-900">Total Bill</span>
-                <span className="font-black text-xl text-primary">₹{order.totalAmount.toFixed(2)}</span>
+                <span className="font-black text-xl text-primary">
+                  ₹{(((order.subtotal || 0) - (order.discount || 0) + (order.deliveryFee || 0) + (order.taxes || 0)) > 0
+                    ? ((order.subtotal || 0) - (order.discount || 0) + (order.deliveryFee || 0) + (order.taxes || 0))
+                    : order.totalAmount).toFixed(2)}
+                </span>
               </div>
 
               {/* Review details if already rated */}
