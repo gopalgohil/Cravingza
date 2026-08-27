@@ -273,34 +273,32 @@ export default function RestaurantOrdersPage() {
                   key={order._id}
                   className="bg-white border rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-200 border-outline-variant/30 hover:shadow-md animate-fade-in"
                 >
-                {/* Card Top / Meta */}
-                <div className="p-md space-y-md border-b border-outline-variant/20">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-xs">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-body-md font-extrabold text-on-surface-variant">
+                {(() => {
+              const itemsSubtotal = (order.items || []).reduce((sum: number, it: any) => sum + Number(it.price || 0) * Number(it.quantity || 1), 0);
+              const delFee = Number(order.deliveryFee ?? 30);
+              const taxVal = Number(order.taxes && Number(order.taxes) < (itemsSubtotal * 0.2) ? order.taxes : (itemsSubtotal * 0.05));
+              const displayTotal = (itemsSubtotal > 0 ? itemsSubtotal + delFee + taxVal : Number(order.totalAmount || 0)).toFixed(2);
+              const displaySubtotal = (itemsSubtotal > 0 ? itemsSubtotal : Number(order.subtotal || 0)).toFixed(2);
+              const displayTax = (itemsSubtotal > 0 ? taxVal : Number(order.taxes || 0)).toFixed(2);
+
+              return (
+                <>
+                  <div className="p-md border-b border-outline-variant/15 flex items-center justify-between bg-surface-container-lowest">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-title-md font-black text-on-background">
                           #{order._id.slice(-6).toUpperCase()}
                         </span>
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-caption font-extrabold border ${getStatusStyle(
+                          className={`px-2.5 py-0.5 rounded-full text-caption font-bold border ${getStatusStyle(
                             order.status
                           )}`}
                         >
                           {formatStatus(order.status)}
                         </span>
-
-                        {/* Industry Standard Payment Status Badge */}
-                        {order.paymentMethod === "razorpay" ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>PAID ONLINE</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                            <span>CASH ON DELIVERY</span>
-                          </span>
-                        )}
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                          {order.paymentMethod === "razorpay" ? "ONLINE" : "COD"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-caption text-on-surface-variant/70">
                         <Calendar className="w-3.5 h-3.5" />
@@ -312,71 +310,75 @@ export default function RestaurantOrdersPage() {
                       <span className="text-caption text-on-surface-variant block font-bold">Total Amount</span>
                       <span className="text-headline-xs font-black text-on-background flex items-center justify-end">
                         <IndianRupee className="w-4 h-4 mt-0.5" />
-                        {order.totalAmount.toFixed(0)}
+                        {displayTotal}
                       </span>
                     </div>
                   </div>
 
                   {/* Customer Info */}
-                  <div className="bg-slate-50/50 p-3 rounded-2xl border border-outline-variant/15 space-y-2">
-                    <div className="font-bold text-body-sm text-on-background flex items-center justify-between">
-                      <span>{order.customer?.name || "Guest User"}</span>
-                      {order.customer?.phone && (
-                        <a
-                          href={`tel:${order.customer.phone}`}
-                          className="text-primary hover:underline flex items-center gap-1 text-xs"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          <span>Call Customer</span>
-                        </a>
-                      )}
-                    </div>
-                    <div className="text-caption text-on-surface-variant flex items-start gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      <span>
-                        {order.deliveryAddress.addressLine}, {order.deliveryAddress.city}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Body / Dishes List */}
-                <div className="p-md space-y-sm flex-1">
-                  <span className="font-label-md text-label-md text-on-surface-variant font-bold block">
-                    Items Summary
-                  </span>
-                  <div className="divide-y divide-outline-variant/10">
-                    {order.items.map((item) => (
-                      <div key={item._id} className="py-2.5 flex items-center justify-between text-body-sm">
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 bg-primary/5 text-primary rounded-lg font-black text-xs flex items-center justify-center border border-primary/10 shrink-0">
-                            x{item.quantity}
-                          </span>
-                          <span className="font-semibold text-on-background">{item.name}</span>
-                        </div>
-                        <span className="font-bold text-on-surface-variant">
-                          ₹{(item.price * item.quantity).toFixed(0)}
+                  <div className="p-md space-y-md">
+                    <div className="bg-slate-50/50 p-3 rounded-2xl border border-outline-variant/15 space-y-2">
+                      <div className="font-bold text-body-sm text-on-background flex items-center justify-between">
+                        <span>{order.customer?.name || "Guest User"}</span>
+                        {order.customer?.phone && (
+                          <a
+                            href={`tel:${order.customer.phone}`}
+                            className="text-primary hover:underline flex items-center gap-1 text-xs"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>Call Customer</span>
+                          </a>
+                        )}
+                      </div>
+                      <div className="text-caption text-on-surface-variant flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                        <span>
+                          {order.deliveryAddress.addressLine}, {order.deliveryAddress.city}
                         </span>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                    
+                    {/* Card Body / Dishes List */}
+                    <div className="space-y-sm">
+                      <span className="font-label-md text-label-md text-on-surface-variant font-bold block">
+                        Items Summary
+                      </span>
+                      <div className="divide-y divide-outline-variant/10">
+                        {order.items.map((item) => (
+                          <div key={item._id} className="py-2.5 flex items-center justify-between text-body-sm">
+                            <div className="flex items-center gap-3">
+                              <span className="w-6 h-6 bg-primary/5 text-primary rounded-lg font-black text-xs flex items-center justify-center border border-primary/10 shrink-0">
+                                x{item.quantity}
+                              </span>
+                              <span className="font-semibold text-on-background">{item.name}</span>
+                            </div>
+                            <span className="font-bold text-on-surface-variant">
+                              ₹{Number(item.price * item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
 
-                  {/* Cost summary table */}
-                  <div className="pt-2 border-t border-outline-variant/10 text-caption text-on-surface-variant/80 space-y-1">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span>₹{order.subtotal.toFixed(0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Delivery Charges</span>
-                      <span>₹{order.deliveryFee.toFixed(0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Taxes & GST (5%)</span>
-                      <span>₹{order.taxes.toFixed(0)}</span>
+                      {/* Cost summary table */}
+                      <div className="pt-2 border-t border-outline-variant/10 text-caption text-on-surface-variant/80 space-y-1">
+                        <div className="flex justify-between">
+                          <span>Subtotal</span>
+                          <span>₹{displaySubtotal}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Delivery Charges</span>
+                          <span>₹{delFee.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Taxes & GST (5%)</span>
+                          <span>₹{displayTax}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </>
+              );
+            })()}
 
                 {/* Card Bottom / Action Buttons */}
                 <div className="p-md bg-slate-50/50 border-t border-outline-variant/20 flex items-center justify-between">
