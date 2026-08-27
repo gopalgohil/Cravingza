@@ -571,8 +571,9 @@ export default function CheckoutPage() {
                             maxLength={6}
                             value={newAddrPincode}
                             onChange={(e) => {
-                              setNewAddrPincode(e.target.value);
-                              const full = `${newAddrLine ? newAddrLine + ", " : ""}${newAddrCity}${e.target.value ? " - " + e.target.value : ""}`;
+                              const cleanPin = e.target.value.replace(/\D/g, '').slice(0, 6);
+                              setNewAddrPincode(cleanPin);
+                              const full = `${newAddrLine ? newAddrLine + ", " : ""}${newAddrCity}${cleanPin ? " - " + cleanPin : ""}`;
                               setDeliveryAddress(full);
                               setAddress(full);
                             }}
