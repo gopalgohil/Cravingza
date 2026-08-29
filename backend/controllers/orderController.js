@@ -117,8 +117,8 @@ const createOrder = async (req, res, next) => {
     const taxPercent = settings.taxPercent !== undefined ? settings.taxPercent : 5;
     const taxes = Math.round(((discountedSubtotal * taxPercent) / 100) * 100) / 100;
 
-    // Total Amount paid by Customer
-    const totalAmount = Math.round((discountedSubtotal + serviceFee + deliveryFee + taxes) * 100) / 100;
+    // Total Amount paid by Customer (Subtotal + Delivery Fee + Taxes)
+    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
 
     // Restaurant Commission deducted by Super Admin from Food Subtotal
     const commissionRate = settings.restaurantCommissionRate !== undefined ? settings.restaurantCommissionRate : 15;

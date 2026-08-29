@@ -339,7 +339,13 @@ export default function RestaurantDashboardPage() {
 
                               {/* Total Price */}
                               <td className="p-4 font-black text-on-background">
-                                ₹{Number(order.totalAmount || 0).toFixed(2)}
+                                ₹{(() => {
+                                  const itemsSubtotal = (order.items || []).reduce((sum: number, it: any) => sum + Number(it.price || 0) * Number(it.quantity || 1), 0);
+                                  const delFee = Number(order.deliveryFee ?? 30);
+                                  const taxVal = Number(order.taxes && Number(order.taxes) < (itemsSubtotal * 0.2) ? order.taxes : (itemsSubtotal * 0.05));
+                                  const calcBillTotal = itemsSubtotal + delFee + taxVal;
+                                  return (calcBillTotal > 0 ? calcBillTotal : Number(order.totalAmount || 0)).toFixed(2);
+                                })()}
                               </td>
 
                               {/* Status & Payment badge */}

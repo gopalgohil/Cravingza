@@ -78,7 +78,7 @@ const createRazorpayOrder = async (req, res, next) => {
     const taxPercent = settings.taxPercent !== undefined ? settings.taxPercent : 5;
     const taxes = Math.round(((discountedSubtotal * taxPercent) / 100) * 100) / 100;
 
-    const totalAmount = Math.round((discountedSubtotal + serviceFee + deliveryFee + taxes) * 100) / 100;
+    const totalAmount = Math.round((discountedSubtotal + deliveryFee + taxes) * 100) / 100;
     const totalInPaise = Math.round(totalAmount * 100);
 
     const options = {
