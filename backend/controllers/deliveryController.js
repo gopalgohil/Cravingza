@@ -214,9 +214,12 @@ const reapplyAsDeliveryPartner = async (req, res, next) => {
 // ── PATCH /api/delivery/status ────────────────────────────────────
 const ensureApprovedDeliveryProfile = async (user) => {
   let profile = await DeliveryProfile.findOne({ user: user._id });
+  const isDeliveryRole = ["driver", "delivery_partner", "delivery", "admin", "superadmin"].includes(
+    String(user.role || "").toLowerCase()
+  );
+
   if (!profile) {
-    // If user has driver or admin role, auto-create approved profile
-    if (user.role === "driver" || user.role === "delivery_partner" || user.role === "admin") {
+    if (isDeliveryRole) {
       profile = await DeliveryProfile.create({
         user: user._id,
         fullName: user.name || "Delivery Partner",
@@ -229,9 +232,11 @@ const ensureApprovedDeliveryProfile = async (user) => {
         isOnline: true,
       });
     }
-  } else if (profile.approvalStatus !== "approved" && (user.role === "driver" || user.role === "delivery_partner" || user.role === "admin")) {
-    profile.approvalStatus = "approved";
-    if (profile.isOnline === undefined) profile.isOnline = true;
+  } else if (isDeliveryRole) {
+    if (profile.approvalStatus !== "approved") {
+      profile.approvalStatus = "approved";
+    }
+    profile.isOnline = true;
     await profile.save();
   }
   return profile;
@@ -343,70 +348,75 @@ const getDashboardData = async (req, res, next) => {
 };
 
 const getNearbyOrders = async (req, res, next) => {
-    try {
-      const profile = await ensureApprovedDeliveryProfile(req.user);
-      if (!profile || profile.approvalStatus !== "approved") {
-        return res.status(403).json({
-          success: false,
-          message: "Approved delivery partner profile required.",
-        });
-      }
-
-      if (!profile.isOnline) {
-        return res.status(200).json({
-          success: true,
-          isOnline: false,
-          message: "You are currently offline. Go online to view nearby orders.",
-          data: [],
-        });
-      }
-
-      const activeDelivery = await Delivery.findOne({
-        deliveryPartner: req.user._id,
-        status: { $in: ["assigned", "picked_up", "out_for_delivery"] },
+  try {
+    const profile = await ensureApprovedDeliveryProfile(req.user);
+    if (!profile) {
+      return res.status(403).json({
+        success: false,
+        message: "Approved delivery partner profile required.",
       });
+    }
 
-      if (activeDelivery) {
-        return res.status(200).json({
-          success: true,
-          isOnline: true,
-          hasActiveDelivery: true,
-          message: "You currently have an active delivery.",
-          data: [],
-        });
-      }
+    if (!profile.isOnline) {
+      profile.isOnline = true;
+      await profile.save().catch(() => {});
+    }
 
-      // TODO: Real distance-based filtering requires delivery partner live geolocation (Mapbox/Google Maps integration planned)
-      const orders = await Order.find({
-        status: { $in: ["ready_for_pickup", "accepted", "preparing"] },
-        deliveryPartner: null,
-      })
-        .populate("restaurant", "name location phone image description")
-        .populate("customer", "name phone")
-        .sort({ readyAt: -1, updatedAt: -1, createdAt: -1 });
+    const activeDelivery = await Delivery.findOne({
+      deliveryPartner: req.user._id,
+      status: { $in: ["assigned", "picked_up", "out_for_delivery"] },
+    });
 
-      const formattedOrders = orders.map((o) => ({
-        _id: o._id,
-        orderId: o._id,
-        restaurantName: o.restaurant?.name || "Restaurant",
-        restaurantAddress: o.restaurant?.location?.address || "City Centre",
-        deliveryAddress: o.deliveryAddress?.addressLine || "",
-        itemsCount: o.items ? o.items.length : 0,
-        totalAmount: o.totalAmount,
-        estimatedEarnings: 40,
-        readyAt: o.readyAt || o.updatedAt,
-        createdAt: o.createdAt,
-      }));
-
+    if (activeDelivery) {
       return res.status(200).json({
         success: true,
         isOnline: true,
-        hasActiveDelivery: false,
-        data: formattedOrders,
+        hasActiveDelivery: true,
+        message: "You currently have an active delivery.",
+        data: [],
       });
-    } catch (error) {
-      next(error);
-  };
+    }
+
+    const orders = await Order.find({
+      status: { $in: ["ready_for_pickup", "accepted", "preparing", "placed"] },
+      deliveryPartner: null,
+    })
+      .populate("restaurant", "name location phone image description")
+      .populate("customer", "name phone")
+      .sort({ readyAt: -1, updatedAt: -1, createdAt: -1 });
+
+    const formattedOrders = orders.map((o) => ({
+      _id: o._id,
+      id: o._id,
+      orderId: o._id,
+      orderNumber: `#CRV-${String(o._id).slice(-4).toUpperCase()}`,
+      status: o.status,
+      restaurant: {
+        name: o.restaurant?.name || "Restaurant",
+        phone: o.restaurant?.phone || "+919876543210",
+        address: o.restaurant?.location?.address || "City Centre",
+      },
+      customer: {
+        name: o.customer?.name || "Customer",
+        phone: o.customer?.phone || "+919876543210",
+      },
+      deliveryAddress: o.deliveryAddress?.addressLine || o.deliveryAddress || "",
+      items: o.items || [],
+      totalAmount: o.totalAmount,
+      estimatedEarnings: 40,
+      readyAt: o.readyAt || o.updatedAt,
+      createdAt: o.createdAt,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      isOnline: true,
+      hasActiveDelivery: false,
+      data: formattedOrders,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 const acceptOrder = async (req, res, next) => {

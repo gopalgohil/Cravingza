@@ -755,12 +755,13 @@ export const approveDeliveryPartner = async (req, res, next) => {
     }
 
     profile.approvalStatus = "approved";
+    profile.isOnline = true;
     profile.reviewedAt = new Date();
     profile.reviewedBy = req.user._id;
     profile.rejectionReason = null;
 
     if (profile.user) {
-      await User.findByIdAndUpdate(profile.user, { role: "delivery" });
+      await User.findByIdAndUpdate(profile.user, { role: "delivery", status: "active" });
     }
 
     await profile.save();
