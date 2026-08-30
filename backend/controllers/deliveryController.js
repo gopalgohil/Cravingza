@@ -2,6 +2,7 @@ import DeliveryProfile from "../models/DeliveryProfile.js";
 import Delivery from "../models/Delivery.js";
 import User from "../models/User.js";
 import Order from "../models/Order.js";
+import SystemSettings from "../models/SystemSettings.js";
 import { z } from "zod";
 import { pincodeSchema, phoneSchema } from "../validators/shared.js";
 
@@ -385,28 +386,34 @@ const getNearbyOrders = async (req, res, next) => {
       .populate("customer", "name phone")
       .sort({ readyAt: -1, updatedAt: -1, createdAt: -1 });
 
-    const formattedOrders = orders.map((o) => ({
-      _id: o._id,
-      id: o._id,
-      orderId: o._id,
-      orderNumber: `#CRV-${String(o._id).slice(-4).toUpperCase()}`,
-      status: o.status,
-      restaurant: {
-        name: o.restaurant?.name || "Restaurant",
-        phone: o.restaurant?.phone || "+919876543210",
-        address: o.restaurant?.location?.address || "City Centre",
-      },
-      customer: {
-        name: o.customer?.name || "Customer",
-        phone: o.customer?.phone || "+919876543210",
-      },
-      deliveryAddress: o.deliveryAddress?.addressLine || o.deliveryAddress || "",
-      items: o.items || [],
-      totalAmount: o.totalAmount,
-      estimatedEarnings: 40,
-      readyAt: o.readyAt || o.updatedAt,
-      createdAt: o.createdAt,
-    }));
+    const settings = await SystemSettings.getSettings();
+    const defaultFee = settings.baseDeliveryFee !== undefined ? settings.baseDeliveryFee : 30;
+
+    const formattedOrders = orders.map((o) => {
+      const estimatedEarnings = o.deliveryFee !== undefined && o.deliveryFee > 0 ? o.deliveryFee : defaultFee;
+      return {
+        _id: o._id,
+        id: o._id,
+        orderId: o._id,
+        orderNumber: `#CRV-${String(o._id).slice(-4).toUpperCase()}`,
+        status: o.status,
+        restaurant: {
+          name: o.restaurant?.name || "Restaurant",
+          phone: o.restaurant?.phone || "+919876543210",
+          address: o.restaurant?.location?.address || "City Centre",
+        },
+        customer: {
+          name: o.customer?.name || "Customer",
+          phone: o.customer?.phone || "+919876543210",
+        },
+        deliveryAddress: o.deliveryAddress?.addressLine || o.deliveryAddress || "",
+        items: o.items || [],
+        totalAmount: o.totalAmount,
+        estimatedEarnings,
+        readyAt: o.readyAt || o.updatedAt,
+        createdAt: o.createdAt,
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -465,12 +472,18 @@ const acceptOrder = async (req, res, next) => {
       order.deliveryPartner = req.user._id;
       await order.save();
 
+      const settings = await SystemSettings.getSettings();
+      const defaultFee = settings.baseDeliveryFee !== undefined ? settings.baseDeliveryFee : 30;
+      const earningsToSet = (order.deliveryFee !== undefined && order.deliveryFee > 0)
+        ? order.deliveryFee
+        : defaultFee;
+
       const delivery = await Delivery.create({
         order: order._id,
         deliveryPartner: req.user._id,
         status: "assigned",
         assignedAt: new Date(),
-        earnings: 40,
+        earnings: earningsToSet,
       });
 
       const populatedDelivery = await Delivery.findById(delivery._id).populate({
@@ -556,7 +569,13 @@ const updateActiveDeliveryStatus = async (req, res, next) => {
       await Order.findByIdAndUpdate(delivery.order, { status: "out_for_delivery" });
     } else if (status === "delivered") {
       delivery.deliveredAt = new Date();
-      delivery.earnings = 40;
+      const orderDoc = await Order.findById(delivery.order);
+      const settings = await SystemSettings.getSettings();
+      const defaultFee = settings.baseDeliveryFee !== undefined ? settings.baseDeliveryFee : 30;
+      const earningsToSet = (orderDoc && orderDoc.deliveryFee !== undefined && orderDoc.deliveryFee > 0)
+        ? orderDoc.deliveryFee
+        : defaultFee;
+      delivery.earnings = earningsToSet;
       await Order.findByIdAndUpdate(delivery.order, { status: "delivered" });
     }
 
@@ -633,8 +652,14 @@ const getEarningsData = async (req, res, next) => {
       let todayEarnings = 0;
       let weeklyEarnings = 0;
 
+      const settings = await SystemSettings.getSettings();
+      const defaultFee = settings.baseDeliveryFee !== undefined ? settings.baseDeliveryFee : 30;
+
       const history = deliveries.map((d) => {
-        const amount = d.earnings && d.earnings > 0 ? d.earnings : 40;
+        const orderFee = d.order?.deliveryFee;
+        const amount = d.earnings && d.earnings > 0
+          ? d.earnings
+          : (orderFee && orderFee > 0 ? orderFee : defaultFee);
         const deliveredDate = new Date(d.deliveredAt || d.updatedAt || d.createdAt);
         totalEarnings += amount;
 

@@ -235,7 +235,7 @@ export default function ActiveDeliveryPage() {
             </div>
             <h3 className="text-xl font-extrabold text-emerald-900">Order Completed Successfully! 🎉</h3>
             <p className="text-xs text-emerald-700 font-medium">
-              Payout of <strong className="text-emerald-900">₹{delivery.earnings || 40}</strong> has been credited to your today&apos;s earnings.
+              Payout of <strong className="text-emerald-900">₹{delivery.earnings ?? delivery.order?.deliveryFee ?? 30}</strong> has been credited to your today&apos;s earnings.
             </p>
             <Link
               href="/delivery-partner/dashboard"

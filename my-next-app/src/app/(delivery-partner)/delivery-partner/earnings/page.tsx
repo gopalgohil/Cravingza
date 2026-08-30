@@ -294,7 +294,7 @@ export default function RiderEarningsPage() {
                       <span>Delivered</span>
                     </span>
                     <span className="font-black text-emerald-600 text-base sm:text-lg">
-                      +₹{Number(item.earnings ?? item.amount ?? 40).toFixed(2)}
+                      +₹{Number(item.earnings ?? item.amount ?? 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
