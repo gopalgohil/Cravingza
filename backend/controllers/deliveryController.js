@@ -383,6 +383,7 @@ const getNearbyOrders = async (req, res, next) => {
     const orders = await Order.find({
       status: { $in: ["ready_for_pickup", "ready"] },
       deliveryPartner: null,
+      rejectedBy: { $ne: req.user._id },
     })
       .populate("restaurant", "name location phone ownerPhone image description address city pincode")
       .populate("customer", "name phone")
@@ -826,6 +827,28 @@ const updateDeliveryProfile = async (req, res, next) => {
   }
 };
 
+const declineOrder = async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    if (order) {
+      if (!order.rejectedBy) {
+        order.rejectedBy = [];
+      }
+      if (!order.rejectedBy.includes(req.user._id)) {
+        order.rejectedBy.push(req.user._id);
+        await order.save();
+      }
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Order declined successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   applyAsDeliveryPartner,
   getMyDeliveryApplication,
@@ -839,6 +862,7 @@ export {
   subscribePush,
   getEarningsData,
   updateDeliveryProfile,
+  declineOrder,
 };
 
 export default {
@@ -854,4 +878,5 @@ export default {
   subscribePush,
   getEarningsData,
   updateDeliveryProfile,
+  declineOrder,
 };

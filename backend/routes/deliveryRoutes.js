@@ -14,6 +14,7 @@ import {
   subscribePush,
   getEarningsData,
   updateDeliveryProfile,
+  declineOrder,
 } from "../controllers/deliveryController.js";
 
 /**
@@ -161,5 +162,6 @@ router.get("/my-application", protect, getMyDeliveryApplication);
 router.post("/reapply", protect, reapplyAsDeliveryPartner);
 router.post("/push-subscribe", protect, subscribePush);
 router.patch("/profile", protect, updateDeliveryProfile);
+router.post("/orders/:orderId/decline", protect, declineOrder);
 
 export default router;

@@ -101,6 +101,12 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    rejectedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     readyAt: {
       type: Date,
       default: null,
