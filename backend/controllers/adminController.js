@@ -1048,5 +1048,28 @@ export const cleanDeliveryOrders = async (req, res, next) => {
   }
 };
 
+// POST /api/admin/reset-all-orders - Wipe all orders across platform for fresh start
+export const resetAllOrders = async (req, res, next) => {
+  try {
+    const ordersResult = await Order.deleteMany({});
+    const deliveriesResult = await Delivery.deleteMany({});
+    const cartsResult = await Cart.updateMany({}, { $set: { items: [], restaurant: null } });
+    await DeliveryProfile.updateMany({}, { $set: { isOnline: false } });
+
+    return res.status(200).json({
+      success: true,
+      message: "Platform reset successful! All orders and delivery assignments wiped. System is 100% fresh.",
+      data: {
+        deletedOrdersCount: ordersResult.deletedCount,
+        deletedDeliveriesCount: deliveriesResult.deletedCount,
+        clearedCartsCount: cartsResult.modifiedCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 

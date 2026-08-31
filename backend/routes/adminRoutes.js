@@ -141,6 +141,7 @@ router.get("/users/:id", adminController.getUserById);
 router.patch("/users/:id/status", adminController.updateUserStatus);
 router.delete("/users/:id", adminController.deleteUser);
 router.post("/clean-delivery-orders", adminController.cleanDeliveryOrders);
+router.post("/reset-all-orders", adminController.resetAllOrders);
 
 export default router;
 
