@@ -78,6 +78,9 @@ export interface Order {
 
 export const apiSlice = createApi({
   reducerPath: "api",
+  refetchOnFocus: false,
+  refetchOnReconnect: false,
+  refetchOnMountOrArgChange: false,
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
     credentials: "include", // Crucial for sending JWT cookie

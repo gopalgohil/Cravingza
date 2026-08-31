@@ -137,13 +137,6 @@ export default function OrdersPage() {
     }
   }, [authChecked, user, router]);
 
-  // Refetch orders when component mounts or user changes
-  useEffect(() => {
-    if (user) {
-      refetch();
-    }
-  }, [user, refetch]);
-
   if (!authChecked || !user || isLoading || isNavigating) {
     return <OrdersLoading />;
   }

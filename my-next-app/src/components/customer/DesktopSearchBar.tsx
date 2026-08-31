@@ -20,42 +20,14 @@ function SearchBarContent() {
     }
   }, [pathname, searchParamVal, isFocused]);
 
-  // Handle debounced search routing as user types
-  useEffect(() => {
-    const currentSearch = searchParams.get("search") || "";
-    
-    // Determine effective target search string based on the 3-character threshold
-    const effectiveSearchVal = searchVal.length >= 3 ? searchVal : "";
-
-    if (effectiveSearchVal === currentSearch) return;
-
-    if (effectiveSearchVal === "") {
-      // Clear search instantly if it falls below 3 characters
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("search");
-      const queryString = params.toString();
-      const newUrl = `/home${queryString ? `?${queryString}` : ""}`;
-      router.push(newUrl, { scroll: false });
-    } else {
-      // Debounce user keystrokes when query length is >= 3
-      const handler = setTimeout(() => {
-        if (searchVal.length < 3) return;
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.set("search", searchVal);
-        const newUrl = `/home?${newParams.toString()}`;
-        router.push(newUrl, { scroll: false });
-      }, 350);
-      return () => clearTimeout(handler);
-    }
-  }, [searchVal, router, searchParams]);
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
-    if (searchVal.length >= 3) {
-      params.set("search", searchVal);
+    const query = searchVal.trim();
+    if (query.length >= 3) {
+      params.set("search", query);
       router.push(`/home?${params.toString()}`, { scroll: false });
-    } else {
+    } else if (query.length === 0) {
       params.delete("search");
       const queryString = params.toString();
       router.push(`/home${queryString ? `?${queryString}` : ""}`, { scroll: false });
@@ -65,9 +37,8 @@ function SearchBarContent() {
   return (
     <form
       onSubmit={handleSearchSubmit}
-      className="hidden md:flex flex-1 max-w-md bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl items-center px-md py-2 gap-sm transition-all duration-300 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 shadow-sm focus-within:shadow"
+      className="hidden md:flex flex-1 max-w-md bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-xl items-center px-md py-1.5 gap-sm transition-all duration-300 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 shadow-sm focus-within:shadow"
     >
-      <span className="material-symbols-outlined text-on-surface-variant text-lg">search</span>
       <input
         type="text"
         value={searchVal}
@@ -77,6 +48,13 @@ function SearchBarContent() {
         placeholder="Search restaurants, cuisines..."
         className="w-full bg-transparent border-none text-body-md font-body-md placeholder:text-on-surface-variant/70 focus:outline-none focus:ring-0"
       />
+      <button
+        type="submit"
+        className="flex items-center justify-center p-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95"
+        title="Search"
+      >
+        <span className="material-symbols-outlined text-lg">search</span>
+      </button>
     </form>
   );
 }

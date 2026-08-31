@@ -22,9 +22,15 @@ export default function AuthInitializer() {
       // Ignore JSON parse error
     }
 
-    // Step 2: Verify session with server in background
-    // If session is invalid, this will clear the user state
+    // Step 2: Verify session with server ONLY if token or cached user exists
     async function checkAuth() {
+      const hasToken = typeof window !== "undefined" && Boolean(localStorage.getItem("cravingza_token"));
+      if (!hadCachedUser && !hasToken) {
+        setUser(null);
+        setAuthChecked(true);
+        return;
+      }
+
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
         const res = await fetch(`${apiUrl}/auth/profile`, {

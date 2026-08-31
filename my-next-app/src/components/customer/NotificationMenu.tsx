@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { useIsTabVisible } from "@/hooks/useIsTabVisible";
 import {
   useGetNotificationsListQuery,
   useMarkNotificationsReadMutation,
@@ -15,16 +14,12 @@ import { toast } from "sonner";
 export default function NotificationMenu() {
   const router = useRouter();
   const { user } = useAppStore();
-  const isTabVisible = useIsTabVisible();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const prevIsTabVisible = useRef(isTabVisible);
 
   // Fetch notifications on mount & when bell icon is clicked
-  // Stops aggressive background server polling spam
   const { data: response, refetch } = useGetNotificationsListQuery(undefined, {
     skip: !user,
-    refetchOnMountOrArgChange: true,
   });
 
   const [markRead] = useMarkNotificationsReadMutation();
@@ -32,14 +27,6 @@ export default function NotificationMenu() {
 
   const notifications = response?.data || [];
   const unreadCount = response?.unreadCount || 0;
-
-  // Immediate refetch when tab becomes visible again
-  useEffect(() => {
-    if (isTabVisible && !prevIsTabVisible.current && user) {
-      refetch();
-    }
-    prevIsTabVisible.current = isTabVisible;
-  }, [isTabVisible, user, refetch]);
 
   // Request browser Notification permission on mount
   useEffect(() => {

@@ -33,42 +33,10 @@ function HomeContent() {
     }
   }, [urlSearch, isFocused]);
 
-  // Sync mobile input debounced search back to the URL search param
-  useEffect(() => {
-    if (typeof window === "undefined" || window.innerWidth >= 768) return;
-
-    const params = new URLSearchParams(searchParams.toString());
-    const currentSearch = params.get("search") || "";
-    
-    // Determine effective target search string based on the 3-character threshold
-    const targetSearch = searchQuery.trim().length >= 3 ? searchQuery.trim() : "";
-
-    if (targetSearch === currentSearch) return;
-
-    if (targetSearch === "") {
-      params.delete("search");
-      const queryString = params.toString();
-      router.replace(`/home${queryString ? `?${queryString}` : ""}`, { scroll: false });
-    } else {
-      const handler = setTimeout(() => {
-        if (searchQuery.trim().length < 3) return;
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.set("search", searchQuery.trim());
-        router.replace(`/home?${newParams.toString()}`, { scroll: false });
-      }, 350);
-      return () => clearTimeout(handler);
-    }
-  }, [searchQuery, router, searchParams]);
-
   const [isCategoryLoading, setIsCategoryLoading] = useState(false);
 
-  // Compute effective active search query to send to backend
-  // On mobile when input is focused: use live searchQuery (so backspace clears results immediately)
-  // Otherwise: fallback to URL param (handles desktop & unfocused state)
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  const activeSearchQuery = isFocused && isMobile
-    ? (searchQuery.trim().length >= 3 ? searchQuery.trim() : "")
-    : (urlSearch.trim().length >= 3 ? urlSearch.trim() : "");
+  // Active search query from URL parameter (triggered explicitly by search form submit)
+  const activeSearchQuery = urlSearch.trim().length >= 3 ? urlSearch.trim() : "";
 
   // Fetch restaurants from MongoDB using RTK Query
   const { data: response, isLoading, isFetching, isError } = useGetRestaurantsQuery({
@@ -185,9 +153,8 @@ function HomeContent() {
       <div className="md:hidden block mb-md">
         <form
           onSubmit={handleMobileSearchSubmit}
-          className="flex bg-white border border-outline-variant rounded-xl items-center px-md py-3 gap-sm shadow-sm"
+          className="flex bg-white border border-outline-variant rounded-xl items-center px-md py-2 gap-sm shadow-sm"
         >
-          <span className="material-symbols-outlined text-on-surface-variant">search</span>
           <input
             ref={mobileInputRef}
             type="text"
@@ -198,6 +165,13 @@ function HomeContent() {
             placeholder="Search restaurants, cuisines..."
             className="w-full bg-transparent border-none text-body-md font-body-md placeholder:text-on-surface-variant focus:outline-none focus:ring-0"
           />
+          <button
+            type="submit"
+            className="flex items-center justify-center p-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95"
+            title="Search"
+          >
+            <span className="material-symbols-outlined text-lg">search</span>
+          </button>
         </form>
       </div>
 
