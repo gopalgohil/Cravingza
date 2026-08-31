@@ -794,6 +794,38 @@ const getEarningsData = async (req, res, next) => {
     }
 };
 
+const updateDeliveryProfile = async (req, res, next) => {
+  try {
+    const { name, phone, vehicleType, vehicleNumber, city } = req.body;
+
+    if (name || phone) {
+      await User.findByIdAndUpdate(req.user._id, {
+        ...(name && { name: name.trim() }),
+        ...(phone && { phone: phone.trim() }),
+      });
+    }
+
+    const profile = await DeliveryProfile.findOneAndUpdate(
+      { user: req.user._id },
+      {
+        ...(vehicleType && { vehicleType: vehicleType.trim() }),
+        ...(vehicleNumber && { vehicleNumber: vehicleNumber.trim() }),
+        ...(city && { city: city.trim() }),
+        ...(phone && { phone: phone.trim() }),
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery partner profile updated successfully!",
+      data: profile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   applyAsDeliveryPartner,
   getMyDeliveryApplication,
@@ -806,6 +838,7 @@ export {
   updateActiveDeliveryStatus,
   subscribePush,
   getEarningsData,
+  updateDeliveryProfile,
 };
 
 export default {
@@ -820,4 +853,5 @@ export default {
   updateActiveDeliveryStatus,
   subscribePush,
   getEarningsData,
+  updateDeliveryProfile,
 };

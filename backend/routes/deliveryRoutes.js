@@ -13,6 +13,7 @@ import {
   updateActiveDeliveryStatus,
   subscribePush,
   getEarningsData,
+  updateDeliveryProfile,
 } from "../controllers/deliveryController.js";
 
 /**
@@ -159,5 +160,6 @@ router.post("/apply", protect, applyAsDeliveryPartner);
 router.get("/my-application", protect, getMyDeliveryApplication);
 router.post("/reapply", protect, reapplyAsDeliveryPartner);
 router.post("/push-subscribe", protect, subscribePush);
+router.patch("/profile", protect, updateDeliveryProfile);
 
 export default router;
