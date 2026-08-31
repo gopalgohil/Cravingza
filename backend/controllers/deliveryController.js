@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import DeliveryProfile from "../models/DeliveryProfile.js";
 import Delivery from "../models/Delivery.js";
 import User from "../models/User.js";
