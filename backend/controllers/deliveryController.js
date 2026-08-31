@@ -814,7 +814,7 @@ const updateDeliveryProfile = async (req, res, next) => {
         ...(phone && { phone: phone.trim() }),
       },
       { new: true }
-    );
+    ).populate("user", "name email phone role");
 
     return res.status(200).json({
       success: true,
