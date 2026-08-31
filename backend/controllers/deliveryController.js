@@ -3,6 +3,7 @@ import Delivery from "../models/Delivery.js";
 import User from "../models/User.js";
 import Order from "../models/Order.js";
 import SystemSettings from "../models/SystemSettings.js";
+import { emitOrderUpdate } from "../services/socketService.js";
 import { z } from "zod";
 import { pincodeSchema, phoneSchema } from "../validators/shared.js";
 
@@ -494,6 +495,19 @@ const acceptOrder = async (req, res, next) => {
         ],
       });
 
+      // ⚡ Real-time Socket.io Broadcast to Restaurant Admin & Customer Apps
+      try {
+        const orderToEmit = await Order.findById(order._id)
+          .populate("restaurant", "name location phone image")
+          .populate("customer", "name phone")
+          .populate("deliveryPartner", "name phone email");
+        if (orderToEmit) {
+          emitOrderUpdate(orderToEmit);
+        }
+      } catch (sErr) {
+        console.error("Socket emit error on acceptOrder:", sErr.message);
+      }
+
       return res.status(200).json({
         success: true,
         message: "Order accepted successfully!",
@@ -588,6 +602,19 @@ const updateActiveDeliveryStatus = async (req, res, next) => {
         { path: "customer", select: "name phone" },
       ],
     });
+
+    // ⚡ Real-Time Socket.io Broadcast to Restaurant Admin & Customer Apps
+    try {
+      const orderToEmit = await Order.findById(delivery.order)
+        .populate("restaurant", "name location phone image")
+        .populate("customer", "name phone")
+        .populate("deliveryPartner", "name phone email");
+      if (orderToEmit) {
+        emitOrderUpdate(orderToEmit);
+      }
+    } catch (sErr) {
+      console.error("Socket emit error on updateActiveDeliveryStatus:", sErr.message);
+    }
 
     return res.status(200).json({
       success: true,
