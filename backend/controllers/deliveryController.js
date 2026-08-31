@@ -694,6 +694,11 @@ const getEarningsData = async (req, res, next) => {
         });
       }
 
+      // ── Industry Standard Backend Pagination & Filter Query Parameters ──
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const limit = Math.max(1, parseInt(req.query.limit, 10) || 4); // Default 4 per page
+      const filter = (req.query.filter || "all").toLowerCase();
+
       const deliveries = await Delivery.find({
         deliveryPartner: req.user._id,
         status: "delivered",
@@ -715,7 +720,7 @@ const getEarningsData = async (req, res, next) => {
       const settings = await SystemSettings.getSettings();
       const defaultFee = settings.baseDeliveryFee !== undefined ? settings.baseDeliveryFee : 30;
 
-      const history = deliveries.map((d) => {
+      const allHistory = deliveries.map((d) => {
         const orderFee = d.order?.deliveryFee;
         const amount = d.earnings && d.earnings > 0
           ? d.earnings
@@ -742,20 +747,46 @@ const getEarningsData = async (req, res, next) => {
         };
       });
 
+      // Filter history based on tab selection ('all', 'today', 'week')
+      let filteredHistory = allHistory;
+      if (filter === "today") {
+        filteredHistory = allHistory.filter((item) => new Date(item.deliveredAt) >= startOfToday);
+      } else if (filter === "week") {
+        filteredHistory = allHistory.filter((item) => new Date(item.deliveredAt) >= startOfWeek);
+      }
+
+      // Backend Pagination logic
+      const totalItems = filteredHistory.length;
+      const totalPages = Math.ceil(totalItems / limit) || 1;
+      const currentPage = Math.min(page, totalPages);
+      const startIndex = totalItems > 0 ? (currentPage - 1) * limit : 0;
+      const endIndex = Math.min(startIndex + limit, totalItems);
+      const paginatedHistory = filteredHistory.slice(startIndex, endIndex);
+
       return res.status(200).json({
         success: true,
         data: {
           totalEarnings,
           todayEarnings,
           weeklyEarnings,
-          completedCount: history.length,
-          avgPerDelivery: history.length > 0 ? (totalEarnings / history.length).toFixed(2) : "0.00",
+          completedCount: allHistory.length,
+          avgPerDelivery: allHistory.length > 0 ? (totalEarnings / allHistory.length).toFixed(2) : "0.00",
           bankDetails: profile.bankDetails || {
             accountNumber: profile.accountNumber || "N/A",
             ifsc: profile.ifscCode || "N/A",
             bankName: profile.bankName || "HDFC Bank",
           },
-          history,
+          pagination: {
+            currentPage,
+            totalPages,
+            pageSize: limit,
+            totalItems,
+            startIndex: totalItems > 0 ? startIndex + 1 : 0,
+            endIndex,
+            hasNextPage: currentPage < totalPages,
+            hasPrevPage: currentPage > 1,
+          },
+          history: paginatedHistory,
         },
       });
     } catch (error) {
