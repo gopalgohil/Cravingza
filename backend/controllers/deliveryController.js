@@ -463,7 +463,7 @@ const acceptOrder = async (req, res, next) => {
         });
       }
 
-      if (order.deliveryPartner) {
+      if (order.deliveryPartner && order.deliveryPartner.toString() !== req.user._id.toString()) {
         return res.status(409).json({
           success: false,
           message: "This order was just accepted by another partner.",
@@ -551,7 +551,20 @@ const updateActiveDeliveryStatus = async (req, res, next) => {
       out_for_delivery: ["delivered"],
     };
 
-    const delivery = await Delivery.findById(deliveryId);
+    let delivery = null;
+    if (mongoose.Types.ObjectId.isValid(deliveryId)) {
+      delivery = await Delivery.findById(deliveryId);
+      if (!delivery) {
+        delivery = await Delivery.findOne({ order: deliveryId });
+      }
+    }
+    if (!delivery) {
+      delivery = await Delivery.findOne({
+        deliveryPartner: req.user._id,
+        status: { $in: ["assigned", "picked_up", "out_for_delivery"] },
+      });
+    }
+
     if (!delivery) {
       return res.status(404).json({
         success: false,
