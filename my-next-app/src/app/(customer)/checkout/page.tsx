@@ -720,7 +720,7 @@ export default function CheckoutPage() {
                   <span className="material-symbols-outlined text-primary text-sm">local_offer</span>
                   Apply Coupon Code
                 </span>
-                <Link href="/offers" target="_blank" className="text-[11px] font-bold text-primary hover:underline">
+                <Link href="/offers" className="text-[11px] font-bold text-primary hover:underline">
                   View Offers
                 </Link>
               </div>

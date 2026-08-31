@@ -60,19 +60,29 @@ const DEFAULT_COUPONS = [
  */
 const getOffers = async (req, res, next) => {
   try {
-    let coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } })
+    // Ensure all default coupons exist and have extended validity (90 days)
+    const ninetyDays = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    for (const def of DEFAULT_COUPONS) {
+      await Coupon.findOneAndUpdate(
+        { code: def.code },
+        {
+          $setOnInsert: {
+            ...def,
+            isActive: true,
+            validTill: ninetyDays,
+          },
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    const coupons = await Coupon.find({
+      isActive: true,
+      $or: [{ validTill: { $gt: new Date() } }, { validTill: null }, { validTill: { $exists: false } }],
+    })
       .select("-usedByUsers -__v")
       .populate("restaurant", "name image location.address location.city")
       .sort({ createdAt: -1 });
-
-    if (coupons.length === 0) {
-      console.log("[Offers] Seeding default coupons...");
-      await Coupon.insertMany(DEFAULT_COUPONS);
-      coupons = await Coupon.find({ isActive: true, validTill: { $gt: new Date() } })
-        .select("-usedByUsers -__v")
-        .populate("restaurant", "name image location.address location.city")
-        .sort({ createdAt: -1 });
-    }
 
     return res.status(200).json({
       success: true,
