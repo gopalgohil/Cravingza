@@ -493,6 +493,7 @@ const acceptOrder = async (req, res, next) => {
         populate: [
           { path: "restaurant", select: "name location phone image" },
           { path: "customer", select: "name phone" },
+          { path: "items.menuItem", select: "name price image" },
         ],
       });
 
@@ -529,6 +530,7 @@ const getActiveDelivery = async (req, res, next) => {
         populate: [
           { path: "restaurant", select: "name location phone image" },
           { path: "customer", select: "name phone" },
+          { path: "items.menuItem", select: "name price image" },
         ],
       });
 
@@ -614,6 +616,7 @@ const updateActiveDeliveryStatus = async (req, res, next) => {
       populate: [
         { path: "restaurant", select: "name location phone image" },
         { path: "customer", select: "name phone" },
+        { path: "items.menuItem", select: "name price image" },
       ],
     });
 
