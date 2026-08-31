@@ -384,7 +384,7 @@ const getNearbyOrders = async (req, res, next) => {
       status: { $in: ["ready_for_pickup", "ready"] },
       deliveryPartner: null,
     })
-      .populate("restaurant", "name location phone image description")
+      .populate("restaurant", "name location phone ownerPhone image description address city pincode")
       .populate("customer", "name phone")
       .sort({ readyAt: -1, updatedAt: -1, createdAt: -1 });
 
@@ -393,23 +393,39 @@ const getNearbyOrders = async (req, res, next) => {
 
     const formattedOrders = orders.map((o) => {
       const estimatedEarnings = o.deliveryFee !== undefined && o.deliveryFee > 0 ? o.deliveryFee : defaultFee;
+      const restName = o.restaurant?.name || "Restaurant";
+      const restAddress =
+        o.restaurant?.location?.address ||
+        o.restaurant?.address ||
+        [o.restaurant?.location?.city || o.restaurant?.city, o.restaurant?.pincode].filter(Boolean).join(", ") ||
+        "City Centre";
+      const restPhone = o.restaurant?.ownerPhone || o.restaurant?.phone || "+919876543210";
+
       return {
         _id: o._id,
         id: o._id,
         orderId: o._id,
         orderNumber: `#CRV-${String(o._id).slice(-4).toUpperCase()}`,
         status: o.status,
+        restaurantName: restName,
+        restaurantAddress: restAddress,
+        restaurantPhone: restPhone,
         restaurant: {
-          name: o.restaurant?.name || "Restaurant",
-          phone: o.restaurant?.phone || "+919876543210",
-          address: o.restaurant?.location?.address || "City Centre",
+          _id: o.restaurant?._id,
+          name: restName,
+          phone: restPhone,
+          address: restAddress,
+          location: { address: restAddress },
         },
         customer: {
           name: o.customer?.name || "Customer",
           phone: o.customer?.phone || "+919876543210",
         },
-        deliveryAddress: o.deliveryAddress?.addressLine || o.deliveryAddress || "",
+        deliveryAddress: typeof o.deliveryAddress === "object" && o.deliveryAddress !== null
+          ? [o.deliveryAddress.addressLine, o.deliveryAddress.city, o.deliveryAddress.pincode].filter(Boolean).join(", ")
+          : o.deliveryAddress || "",
         items: o.items || [],
+        itemsCount: o.items ? o.items.reduce((acc, item) => acc + (item.quantity || 1), 0) : 0,
         totalAmount: o.totalAmount,
         estimatedEarnings,
         readyAt: o.readyAt || o.updatedAt,

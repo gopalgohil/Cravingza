@@ -69,12 +69,19 @@ export default function NearbyOrdersPage() {
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return availableOrders;
     const q = searchQuery.toLowerCase().trim();
-    return availableOrders.filter((o: any) =>
-      (o.restaurantName || "").toLowerCase().includes(q) ||
-      (o.deliveryAddress || "").toLowerCase().includes(q) ||
-      (o.restaurantAddress || "").toLowerCase().includes(q)
-    );
-  }, [availableOrders, searchQuery]);
+      return availableOrders.filter((o: any) => {
+        const name = o.restaurantName || o.restaurant?.name || "";
+        const addr = o.restaurantAddress || o.restaurant?.address || o.restaurant?.location?.address || "";
+        const deliv = typeof o.deliveryAddress === "object" && o.deliveryAddress !== null
+          ? (o.deliveryAddress.addressLine || "")
+          : (o.deliveryAddress || "");
+        return (
+          name.toLowerCase().includes(q) ||
+          addr.toLowerCase().includes(q) ||
+          deliv.toLowerCase().includes(q)
+        );
+      });
+    }, [availableOrders, searchQuery]);
 
   // Reset to page 1 if search query changes
   useEffect(() => {
@@ -339,14 +346,14 @@ export default function NearbyOrdersPage() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                      <span>{order.restaurantName}</span>
+                      <span>{order.restaurantName || order.restaurant?.name || "Restaurant"}</span>
                       <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
                         Ready for Pickup
                       </span>
                     </h3>
                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                       <span className="material-symbols-outlined text-sm text-slate-400">location_on</span>
-                      <span>{order.restaurantAddress}</span>
+                      <span>{order.restaurantAddress || order.restaurant?.address || order.restaurant?.location?.address || "City Centre"}</span>
                     </p>
                   </div>
                 </div>
@@ -366,7 +373,9 @@ export default function NearbyOrdersPage() {
                     Delivery Destination
                   </span>
                   <span className="font-semibold text-slate-800 leading-relaxed block mt-1">
-                    {order.deliveryAddress || "Customer Address"}
+                    {typeof order.deliveryAddress === "object" && order.deliveryAddress !== null
+                      ? (order.deliveryAddress.addressLine || JSON.stringify(order.deliveryAddress))
+                      : (order.deliveryAddress || "Customer Address")}
                   </span>
                 </div>
                 <div>
@@ -374,7 +383,7 @@ export default function NearbyOrdersPage() {
                     Items & Total Bill
                   </span>
                   <span className="font-semibold text-slate-800 block mt-1">
-                    {order.itemsCount} items • Total ₹{Number(order.totalAmount || 0).toFixed(2)}
+                    {order.itemsCount || (order.items ? order.items.reduce((sum: number, it: any) => sum + (it.quantity || 1), 0) : 0)} items • Total ₹{Number(order.totalAmount || 0).toFixed(2)}
                   </span>
                 </div>
               </div>
