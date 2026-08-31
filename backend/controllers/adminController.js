@@ -997,4 +997,56 @@ export const getPublicSettings = async (req, res, next) => {
   }
 };
 
+// POST /api/admin/clean-delivery-orders - Remove all delivery orders & reset partner assignments
+export const cleanDeliveryOrders = async (req, res, next) => {
+  try {
+    const targetEmails = [
+      "rahul@example.com",
+      "gopalg@intrnal.digifux.io",
+      "gopalg@internal.digifux.io",
+    ];
+
+    const deliveryUsers = await User.find({
+      $or: [
+        { email: { $in: targetEmails.map((e) => new RegExp(`^${e}$`, "i")) } },
+        { role: "delivery" },
+        { role: "driver" },
+      ],
+    });
+
+    const deliveryUserIds = deliveryUsers.map((u) => u._id);
+
+    const deletedDeliveriesResult = await Delivery.deleteMany({
+      $or: [
+        { deliveryPartner: { $in: deliveryUserIds } },
+        { deliveryPartner: { $exists: true } },
+      ],
+    });
+
+    const resetOrdersResult = await Order.updateMany(
+      { deliveryPartner: { $ne: null } },
+      { $set: { deliveryPartner: null } }
+    );
+
+    if (deliveryUserIds.length > 0) {
+      await DeliveryProfile.updateMany(
+        { user: { $in: deliveryUserIds } },
+        { $set: { isOnline: false } }
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "All delivery partner orders and delivery records removed successfully. Dashboards reset to fresh state.",
+      data: {
+        deletedDeliveriesCount: deletedDeliveriesResult.deletedCount,
+        resetOrdersCount: resetOrdersResult.modifiedCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
