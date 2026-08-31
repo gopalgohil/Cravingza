@@ -717,7 +717,8 @@ const getEarningsData = async (req, res, next) => {
         return {
           id: d._id,
           orderId: d.order?._id || "N/A",
-          restaurantName: d.order?.restaurant?.name || "Cravingza Order",
+          orderNumber: d.order?.orderNumber || (d.order?._id ? `#${String(d.order._id).slice(-6).toLowerCase()}` : "#N/A"),
+          restaurantName: d.order?.restaurant?.name || "Burger Boss",
           amount: amount,
           earnings: amount,
           distanceKm: d.distanceKm || 2.5,
