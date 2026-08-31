@@ -74,6 +74,7 @@ export default function CheckoutPage() {
     title: string;
     category?: string;
     isFreeDelivery?: boolean;
+    isOnlineOnly?: boolean;
   } | null>(null);
 
   // Loading simulation states
@@ -149,21 +150,46 @@ export default function CheckoutPage() {
     try {
       const res = await applyCouponMutation({ code: couponCode.trim() }).unwrap();
       const freeDel = res.data.isFreeDelivery || res.data.category === "delivery";
+      const isOnlineOnly = res.data.category === "payment" || res.data.code.includes("RAZOR") || res.data.code.includes("ONLINE");
+
       setAppliedCoupon({
         code: res.data.code,
         discountAmount: res.data.discountAmount,
         title: res.data.title,
         category: res.data.category,
         isFreeDelivery: freeDel,
+        isOnlineOnly,
       });
-      toast.success(
-        `Coupon ${res.data.code} applied! Saved ₹${res.data.discountAmount}${
-          freeDel ? " + Free Delivery" : ""
-        }`
-      );
+
+      if (isOnlineOnly) {
+        setPaymentMethod("razorpay");
+        toast.success(
+          `Coupon ${res.data.code} applied! Payment method set to Pay Online (Razorpay) as this deal requires online payment.`
+        );
+      } else {
+        toast.success(
+          `Coupon ${res.data.code} applied! Saved ₹${res.data.discountAmount}${
+            freeDel ? " + Free Delivery" : ""
+          }`
+        );
+      }
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to apply coupon code.");
     }
+  };
+
+  const handleSelectPaymentMethod = (method: "cash" | "razorpay") => {
+    if (method === "cash" && appliedCoupon) {
+      const isOnlineOnly = appliedCoupon.category === "payment" || appliedCoupon.code.includes("RAZOR") || appliedCoupon.code.includes("ONLINE") || appliedCoupon.isOnlineOnly;
+      if (isOnlineOnly) {
+        setAppliedCoupon(null);
+        setCouponCode("");
+        toast.warning(
+          `Coupon "${appliedCoupon.code}" was removed because it is valid ONLY for Online Payments (Razorpay).`
+        );
+      }
+    }
+    setPaymentMethod(method);
   };
 
   const handleRemoveCoupon = () => {
@@ -640,7 +666,7 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
               <button
                 type="button"
-                onClick={() => setPaymentMethod("razorpay")}
+                onClick={() => handleSelectPaymentMethod("razorpay")}
                 className={`py-4 px-md rounded-2xl border font-label-md text-label-md flex flex-col items-center justify-center gap-xs cursor-pointer transition-all ${
                   paymentMethod === "razorpay"
                     ? "border-primary bg-primary/5 text-primary font-bold shadow-sm ring-2 ring-primary/20"
@@ -656,7 +682,7 @@ export default function CheckoutPage() {
 
               <button
                 type="button"
-                onClick={() => setPaymentMethod("cash")}
+                onClick={() => handleSelectPaymentMethod("cash")}
                 className={`py-4 px-md rounded-2xl border font-label-md text-label-md flex flex-col items-center justify-center gap-xs cursor-pointer transition-all ${
                   paymentMethod === "cash"
                     ? "border-primary bg-primary/5 text-primary font-bold shadow-sm ring-2 ring-primary/20"
@@ -666,7 +692,9 @@ export default function CheckoutPage() {
                 <span className="material-symbols-outlined text-2xl">handshake</span>
                 <span className="font-bold text-sm">Cash on Delivery</span>
                 <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                  Pay at door
+                  {appliedCoupon && (appliedCoupon.category === "payment" || appliedCoupon.code.includes("RAZOR") || appliedCoupon.code.includes("ONLINE") || (appliedCoupon as any).isOnlineOnly)
+                    ? "Removes online coupon"
+                    : "Pay at door"}
                 </span>
               </button>
             </div>

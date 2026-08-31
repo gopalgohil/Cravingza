@@ -71,28 +71,39 @@ const createOrder = async (req, res, next) => {
       const coupon = await Coupon.findOne({
         code: String(couponCode).toUpperCase().trim(),
         isActive: true,
-        validTill: { $gt: new Date() },
+        $or: [{ validTill: { $gt: new Date() } }, { validTill: null }, { validTill: { $exists: false } }],
       });
 
-      if (coupon && subtotal >= coupon.minOrderAmount) {
-        // Track coupon usage per user
-        if (!coupon.usedByUsers.some((uid) => uid.toString() === req.user._id.toString())) {
-          coupon.usedByUsers.push(req.user._id);
-          await coupon.save();
+      if (coupon) {
+        // Enforce Online Payment requirement for payment category coupons (e.g. RAZORPAY20)
+        const isOnlineCoupon = coupon.category === "payment" || coupon.code.includes("RAZOR") || coupon.code.includes("ONLINE");
+        if (isOnlineCoupon && req.body.paymentMethod !== "razorpay") {
+          return res.status(400).json({
+            success: false,
+            message: `Coupon "${coupon.code}" is valid ONLY for Online Payments (Razorpay). Please switch to Online Payment or remove the coupon for Cash on Delivery.`,
+          });
         }
 
-        appliedCouponCode = coupon.code;
-        if (coupon.discountType === "percentage") {
-          discountAmount = (subtotal * coupon.discountValue) / 100;
-          if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
-            discountAmount = coupon.maxDiscountAmount;
+        if (subtotal >= coupon.minOrderAmount) {
+          // Track coupon usage per user
+          if (!coupon.usedByUsers.some((uid) => uid.toString() === req.user._id.toString())) {
+            coupon.usedByUsers.push(req.user._id);
+            await coupon.save();
           }
-        } else {
-          discountAmount = coupon.discountValue;
-        }
-        discountAmount = Math.min(discountAmount, subtotal);
-        if (coupon.category === "delivery") {
-          isFreeDelivery = true;
+
+          appliedCouponCode = coupon.code;
+          if (coupon.discountType === "percentage") {
+            discountAmount = (subtotal * coupon.discountValue) / 100;
+            if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
+              discountAmount = coupon.maxDiscountAmount;
+            }
+          } else {
+            discountAmount = coupon.discountValue;
+          }
+          discountAmount = Math.min(discountAmount, subtotal);
+          if (coupon.category === "delivery") {
+            isFreeDelivery = true;
+          }
         }
       }
     }
