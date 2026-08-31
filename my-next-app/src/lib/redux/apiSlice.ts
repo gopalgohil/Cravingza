@@ -128,7 +128,18 @@ export const apiSlice = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Cart"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled;
+          if (res?.data) {
+            dispatch(
+              apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+                draft.data = res.data;
+              })
+            );
+          }
+        } catch {}
+      },
     }),
     updateCartItem: builder.mutation<any, { menuItemId: string; quantity: number }>({
       query: (body) => ({
@@ -136,21 +147,54 @@ export const apiSlice = createApi({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["Cart"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled;
+          if (res?.data) {
+            dispatch(
+              apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+                draft.data = res.data;
+              })
+            );
+          }
+        } catch {}
+      },
     }),
     removeCartItem: builder.mutation<any, string>({
       query: (menuItemId) => ({
         url: `/cart/remove/${menuItemId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled;
+          if (res?.data) {
+            dispatch(
+              apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+                draft.data = res.data;
+              })
+            );
+          }
+        } catch {}
+      },
     }),
     clearCart: builder.mutation<any, void>({
       query: () => ({
         url: "/cart/clear",
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled;
+          if (res?.data) {
+            dispatch(
+              apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+                draft.data = res.data;
+              })
+            );
+          }
+        } catch {}
+      },
     }),
     replaceCart: builder.mutation<any, { menuItemId: string; quantity: number }>({
       query: (body) => ({
@@ -158,7 +202,18 @@ export const apiSlice = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Cart"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled;
+          if (res?.data) {
+            dispatch(
+              apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+                draft.data = res.data;
+              })
+            );
+          }
+        } catch {}
+      },
     }),
 
     // Order Endpoints
