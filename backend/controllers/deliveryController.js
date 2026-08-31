@@ -380,7 +380,7 @@ const getNearbyOrders = async (req, res, next) => {
     }
 
     const orders = await Order.find({
-      status: { $in: ["ready_for_pickup", "accepted", "preparing", "placed"] },
+      status: { $in: ["ready_for_pickup", "ready"] },
       deliveryPartner: null,
     })
       .populate("restaurant", "name location phone image description")

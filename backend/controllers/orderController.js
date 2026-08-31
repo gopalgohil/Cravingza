@@ -224,6 +224,7 @@ const getOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ customer: req.user._id })
       .populate("restaurant", RESTAURANT_PUBLIC_FIELDS)
+      .populate("deliveryPartner", "name email phone")
       .populate("review")
       .sort({ createdAt: -1 });
 
@@ -240,6 +241,7 @@ const getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("restaurant", RESTAURANT_PUBLIC_FIELDS)
+      .populate("deliveryPartner", "name email phone")
       .populate("items.menuItem", "name price image isVeg description category")
       .populate("review");
 
@@ -289,6 +291,7 @@ const getMerchantOrders = async (req, res, next) => {
 
     const orders = await Order.find({ restaurant: restaurant._id })
       .populate("customer", "name email phone")
+      .populate("deliveryPartner", "name email phone")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
