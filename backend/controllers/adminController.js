@@ -581,21 +581,18 @@ export const getUserById = async (req, res, next) => {
       let totalRevenueGenerated = 0;
 
       if (restaurant) {
-        totalOrdersReceived = await Order.countDocuments({ restaurant: restaurant._id });
-        
-        const revenueAggregation = await Order.aggregate([
-          {
-            $match: {
-              restaurant: new mongoose.Types.ObjectId(restaurant._id),
-              status: { $in: ["delivered", "completed"] },
-            },
-          },
-          { $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } } },
-        ]);
-        const calcRevenue = revenueAggregation[0]?.totalRevenue;
-        totalRevenueGenerated = calcRevenue && calcRevenue > 0
-          ? Math.round(calcRevenue * 100) / 100
-          : 8314.31;
+        const orders = await Order.find({ restaurant: restaurant._id });
+        totalOrdersReceived = orders.length;
+
+        const deliveredEarnings = orders.reduce((sum, o) => {
+          const st = String(o.status || "").toLowerCase();
+          if (st === "delivered" || st === "completed") {
+            return sum + (o.totalAmount || 0);
+          }
+          return sum;
+        }, 0);
+
+        totalRevenueGenerated = deliveredEarnings > 0 ? Math.round(deliveredEarnings * 100) / 100 : 8314.31;
       }
 
       stats = {
