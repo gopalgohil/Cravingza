@@ -335,23 +335,23 @@ export const getDashboardData = async (req, res, next) => {
       .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
       .slice(0, 5);
 
-    // 7. recentActivity Feed
-    // Get recent restaurant applications
+    // 7. recentActivity Feed with Backend Pagination (default 7 items per page)
+    const activityPage = parseInt(req.query.activityPage) || 1;
+    const activityLimit = parseInt(req.query.activityLimit) || 7;
+
     const recentApps = await Restaurant.find()
       .populate("owner", "name")
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(50);
 
-    // Get recent orders
     const recentOrders = await Order.find()
       .populate("customer", "name")
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(50);
 
     const activityFeed = [];
 
     recentApps.forEach((app) => {
-      // Application submission activity
       activityFeed.push({
         id: `app-sub-${app._id}`,
         message: `New restaurant applied: "${app.name}"`,
@@ -359,7 +359,6 @@ export const getDashboardData = async (req, res, next) => {
         type: "application",
       });
 
-      // Application review activity (if reviewed)
       if (app.reviewedAt) {
         activityFeed.push({
           id: `app-rev-${app._id}`,
@@ -381,10 +380,23 @@ export const getDashboardData = async (req, res, next) => {
       });
     });
 
-    // Sort by timestamp desc and limit to 10
-    const recentActivity = activityFeed
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 10);
+    const sortedFeed = activityFeed.sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    const totalActivities = sortedFeed.length;
+    const totalActivityPages = Math.max(1, Math.ceil(totalActivities / activityLimit));
+    const startIndex = (activityPage - 1) * activityLimit;
+    const recentActivity = sortedFeed.slice(startIndex, startIndex + activityLimit);
+
+    const activityPagination = {
+      page: activityPage,
+      limit: activityLimit,
+      totalItems: totalActivities,
+      totalPages: totalActivityPages,
+      hasNextPage: activityPage < totalActivityPages,
+      hasPrevPage: activityPage > 1,
+    };
 
     // 8. orderTrend for the last 7 days
     const sevenDaysAgo = new Date();
@@ -443,6 +455,7 @@ export const getDashboardData = async (req, res, next) => {
         pendingApprovals,
         pendingApprovalsList,
         recentActivity,
+        activityPagination,
         orderTrend,
       },
     });
