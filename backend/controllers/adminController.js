@@ -505,7 +505,7 @@ export const getUsers = async (req, res, next) => {
     const skip = (pageNum - 1) * limitNum;
 
     const users = await User.find(filter)
-      .select("name email phone role status createdAt")
+      .select("name email phone role status avatar isEmailVerified createdAt")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
