@@ -117,8 +117,80 @@ const updateMyRestaurantOffer = async (req, res, next) => {
   }
 };
 
+const getMyRestaurant = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant profile not found for this account.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        restaurant,
+        restaurantName: restaurant.name,
+      },
+      restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateMyRestaurant = async (req, res, next) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) {
+      return res.status(404).json({
+        success: false,
+        message: "Restaurant profile not found for this account.",
+      });
+    }
+
+    const { name, cuisine, phone, email, address, city, pincode, zipCode, openingTime, closingTime, isOpen } = req.body;
+
+    if (name !== undefined) restaurant.name = name;
+    if (phone !== undefined) restaurant.phone = phone;
+    if (email !== undefined) restaurant.email = email;
+    if (openingTime !== undefined) restaurant.openingTime = openingTime;
+    if (closingTime !== undefined) restaurant.closingTime = closingTime;
+    if (isOpen !== undefined) restaurant.isOpen = Boolean(isOpen);
+    if (cuisine !== undefined) {
+      if (Array.isArray(cuisine)) {
+        restaurant.cuisineTags = cuisine;
+      } else if (typeof cuisine === "string") {
+        restaurant.cuisineTags = cuisine.split(",").map((c) => c.trim()).filter(Boolean);
+      }
+    }
+    if (address !== undefined || city !== undefined) {
+      if (!restaurant.location) restaurant.location = { address: "", city: "", lat: 0, lng: 0 };
+      if (address !== undefined) restaurant.location.address = address;
+      if (city !== undefined) restaurant.location.city = city;
+    }
+    if (pincode !== undefined || zipCode !== undefined) {
+      restaurant.pincode = pincode || zipCode;
+    }
+
+    await restaurant.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Restaurant updated successfully",
+      data: restaurant,
+      restaurant,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   getRestaurants,
   getRestaurantById,
   updateMyRestaurantOffer,
+  getMyRestaurant,
+  updateMyRestaurant,
 };
