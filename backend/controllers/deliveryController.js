@@ -238,9 +238,8 @@ const ensureApprovedDeliveryProfile = async (user) => {
   } else if (isDeliveryRole) {
     if (profile.approvalStatus !== "approved") {
       profile.approvalStatus = "approved";
+      await profile.save();
     }
-    profile.isOnline = true;
-    await profile.save();
   }
   return profile;
 };
@@ -361,8 +360,13 @@ const getNearbyOrders = async (req, res, next) => {
     }
 
     if (!profile.isOnline) {
-      profile.isOnline = true;
-      await profile.save().catch(() => {});
+      return res.status(200).json({
+        success: true,
+        isOnline: false,
+        hasActiveDelivery: false,
+        message: "You are currently OFFLINE. Turn duty ONLINE to view order requests.",
+        data: [],
+      });
     }
 
     const activeDelivery = await Delivery.findOne({
@@ -373,7 +377,7 @@ const getNearbyOrders = async (req, res, next) => {
     if (activeDelivery) {
       return res.status(200).json({
         success: true,
-        isOnline: true,
+        isOnline: profile.isOnline,
         hasActiveDelivery: true,
         message: "You currently have an active delivery.",
         data: [],
@@ -436,7 +440,7 @@ const getNearbyOrders = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      isOnline: true,
+      isOnline: profile.isOnline,
       hasActiveDelivery: false,
       data: formattedOrders,
     });
@@ -449,16 +453,10 @@ const acceptOrder = async (req, res, next) => {
     try {
       const profile = await ensureApprovedDeliveryProfile(req.user);
       if (!profile || profile.approvalStatus !== "approved" || !profile.isOnline) {
-        // Force online if profile exists and approved
-        if (profile && profile.approvalStatus === "approved" && !profile.isOnline) {
-          profile.isOnline = true;
-          await profile.save();
-        } else {
-          return res.status(403).json({
-            success: false,
-            message: "Approved and online delivery partner profile required.",
-          });
-        }
+        return res.status(403).json({
+          success: false,
+          message: "Approved and online delivery partner profile required. Please go online first.",
+        });
       }
 
       const existingActive = await Delivery.findOne({
@@ -508,17 +506,17 @@ const acceptOrder = async (req, res, next) => {
       const populatedDelivery = await Delivery.findById(delivery._id).populate({
         path: "order",
         populate: [
-          { path: "restaurant", select: "name location phone image" },
-          { path: "customer", select: "name phone" },
-          { path: "items.menuItem", select: "name price image" },
+          { path: "restaurant", select: "name location phone ownerPhone image description address city pincode" },
+          { path: "customer", select: "name phone email" },
+          { path: "items.menuItem", select: "name price image description" },
         ],
       });
 
       // ⚡ Real-time Socket.io Broadcast to Restaurant Admin & Customer Apps
       try {
         const orderToEmit = await Order.findById(order._id)
-          .populate("restaurant", "name location phone image")
-          .populate("customer", "name phone")
+          .populate("restaurant", "name location phone ownerPhone image description address city pincode")
+          .populate("customer", "name phone email")
           .populate("deliveryPartner", "name phone email");
         if (orderToEmit) {
           emitOrderUpdate(orderToEmit);
@@ -545,9 +543,9 @@ const getActiveDelivery = async (req, res, next) => {
       }).populate({
         path: "order",
         populate: [
-          { path: "restaurant", select: "name location phone image" },
-          { path: "customer", select: "name phone" },
-          { path: "items.menuItem", select: "name price image" },
+          { path: "restaurant", select: "name location phone ownerPhone image description address city pincode" },
+          { path: "customer", select: "name phone email" },
+          { path: "items.menuItem", select: "name price image description" },
         ],
       });
 
@@ -631,17 +629,17 @@ const updateActiveDeliveryStatus = async (req, res, next) => {
     const updated = await Delivery.findById(delivery._id).populate({
       path: "order",
       populate: [
-        { path: "restaurant", select: "name location phone image" },
-        { path: "customer", select: "name phone" },
-        { path: "items.menuItem", select: "name price image" },
+        { path: "restaurant", select: "name location phone ownerPhone image description address city pincode" },
+        { path: "customer", select: "name phone email" },
+        { path: "items.menuItem", select: "name price image description" },
       ],
     });
 
     // ⚡ Real-Time Socket.io Broadcast to Restaurant Admin & Customer Apps
     try {
       const orderToEmit = await Order.findById(delivery.order)
-        .populate("restaurant", "name location phone image")
-        .populate("customer", "name phone")
+        .populate("restaurant", "name location phone ownerPhone image description address city pincode")
+        .populate("customer", "name phone email")
         .populate("deliveryPartner", "name phone email");
       if (orderToEmit) {
         emitOrderUpdate(orderToEmit);

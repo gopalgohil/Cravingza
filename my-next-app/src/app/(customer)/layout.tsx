@@ -14,6 +14,7 @@ import DesktopSearchBar from "@/components/customer/DesktopSearchBar";
 import PageLoader from "@/components/PageLoader";
 import CustomerFooter from "@/components/customer/Footer";
 import NotificationMenu from "@/components/customer/NotificationMenu";
+import { getSocket } from "@/lib/socket";
 
 import { showAttractiveAuthToast } from "@/lib/authToast";
 
@@ -36,7 +37,40 @@ export default function CustomerLayout({
 
   // Fetch global platform settings to detect Maintenance Mode
   const { data: settingsRes } = useGetPublicSettingsQuery();
-  const isMaintenanceMode = Boolean(settingsRes?.data?.maintenanceMode);
+  const [maintenanceActive, setMaintenanceActive] = useState(false);
+
+  useEffect(() => {
+    if (settingsRes?.data) {
+      setMaintenanceActive(Boolean(settingsRes.data.maintenanceMode));
+    }
+  }, [settingsRes]);
+
+  // ⚡ Real-Time Socket Listener for Instant Maintenance Mode Banner Sync
+  useEffect(() => {
+    const socket = getSocket();
+    if (socket) {
+      const handleMaintenance = (data: any) => {
+        console.log("⚡ [Socket] Live Maintenance Mode Update Received:", data);
+        if (typeof data?.maintenanceMode === "boolean") {
+          setMaintenanceActive(data.maintenanceMode);
+        }
+      };
+
+      const handleSettings = (s: any) => {
+        if (typeof s?.maintenanceMode === "boolean") {
+          setMaintenanceActive(s.maintenanceMode);
+        }
+      };
+
+      socket.on("maintenance_mode_updated", handleMaintenance);
+      socket.on("settings_updated", handleSettings);
+
+      return () => {
+        socket.off("maintenance_mode_updated", handleMaintenance);
+        socket.off("settings_updated", handleSettings);
+      };
+    }
+  }, []);
 
   // Auto-fetch cart from database if user is authenticated
   useGetCartQuery(undefined, { skip: !user });
@@ -47,7 +81,7 @@ export default function CustomerLayout({
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-surface">
       {/* Maintenance Mode Alert Banner */}
-      {isMaintenanceMode && (
+      {maintenanceActive && (
         <div className="bg-amber-500 text-white font-bold text-xs sm:text-sm py-2 px-4 text-center flex items-center justify-center gap-2 shadow-md z-50 animate-pulse">
           <span className="material-symbols-outlined text-base sm:text-lg">warning</span>
           <span>Platform Maintenance Active: New order placements are temporarily paused for scheduled updates.</span>

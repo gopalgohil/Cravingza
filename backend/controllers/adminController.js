@@ -5,6 +5,7 @@ import DeliveryProfile from "../models/DeliveryProfile.js";
 import Notification from "../models/Notification.js";
 import SystemSettings from "../models/SystemSettings.js";
 import mongoose from "mongoose";
+import { getIO } from "../services/socketService.js";
 
 // GET /api/admin/restaurants
 export const getRestaurants = async (req, res, next) => {
@@ -963,6 +964,14 @@ export const updateSettings = async (req, res, next) => {
     }
 
     await settings.save();
+
+    // Broadcast live WebSocket event to all connected clients (Web & Mobile Apps)
+    const io = getIO();
+    if (io) {
+      console.log(`📢 [Socket.io] Broadcasting maintenance_mode_updated: ${settings.maintenanceMode}`);
+      io.emit("settings_updated", settings);
+      io.emit("maintenance_mode_updated", { maintenanceMode: settings.maintenanceMode, settings });
+    }
 
     return res.status(200).json({
       success: true,
