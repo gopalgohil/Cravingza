@@ -342,12 +342,12 @@ export const getDashboardData = async (req, res, next) => {
     const recentApps = await Restaurant.find()
       .populate("owner", "name")
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(100);
 
     const recentOrders = await Order.find()
       .populate("customer", "name")
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(100);
 
     const activityFeed = [];
 
