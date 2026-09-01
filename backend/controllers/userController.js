@@ -26,8 +26,12 @@ const profileSchema = z.object({
     .string()
     .trim()
     .min(2, { message: "Name must be at least 2 characters long" })
-    .max(50, { message: "Name cannot exceed 50 characters" }),
-  phone: phoneSchema.optional().or(z.literal("")),
+    .max(50, { message: "Name cannot exceed 50 characters" })
+    .optional()
+    .or(z.literal(""))
+    .or(z.null()),
+  phone: z.string().optional().nullable().or(z.literal("")),
+  avatar: z.string().optional().nullable().or(z.literal("")),
 });
 
 const passwordStrengthSchema = z
@@ -39,23 +43,33 @@ const passwordStrengthSchema = z
  */
 const updateProfile = async (req, res) => {
   try {
-    const validation = profileSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: formatZodErrors(validation.error),
-      });
-    }
+    const { name, phone, avatar } = req.body;
+    console.log("PATCH /api/user/profile payload received:", { userId: req.user?._id, name, phone, avatar });
 
-    const { name, phone } = validation.data;
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    user.name = name;
-    user.phone = phone || null;
+    if (name && typeof name === "string" && name.trim().length >= 2) {
+      user.name = name.trim();
+    }
+
+    if (phone !== undefined && phone !== null && phone !== "") {
+      let cleanPhone = String(phone).trim().replace(/\D/g, "");
+      if (cleanPhone.length === 12 && cleanPhone.startsWith("91")) {
+        cleanPhone = cleanPhone.slice(2);
+      }
+      if (cleanPhone && /^[6-9][0-9]{9}$/.test(cleanPhone)) {
+        user.phone = cleanPhone;
+      }
+    }
+
+    if (avatar && typeof avatar === "string" && avatar.trim().length > 0) {
+      user.avatar = avatar.trim();
+      console.log("✅ Successfully saved avatar URL to MongoDB User document:", user.avatar);
+    }
+
     await user.save();
 
     return res.status(200).json({
