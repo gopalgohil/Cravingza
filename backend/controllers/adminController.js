@@ -473,27 +473,20 @@ export const getDashboardData = async (req, res, next) => {
 // GET /api/admin/users
 export const getUsers = async (req, res, next) => {
   try {
-    const { role, search, status = "all", page = 1, limit = 20 } = req.query;
+    const { role = "all", search, status = "all", page = 1, limit = 50 } = req.query;
 
-    if (!role || !["customer", "owner", "delivery"].includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: "A valid role query parameter is required.",
-      });
+    let filter = {};
+    if (role && role !== "all" && ["customer", "owner", "delivery", "admin"].includes(role)) {
+      filter.role = role;
     }
-
-    let filter = { role };
 
     // Status filter
     if (status === "all") {
       filter.status = { $ne: "deleted" };
-    } else if (["active", "suspended"].includes(status)) {
+    } else if (["active", "blocked", "suspended"].includes(status)) {
       filter.status = status;
     } else {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status query parameter.",
-      });
+      filter.status = { $ne: "deleted" };
     }
 
     // Search filter (name, email, phone)
