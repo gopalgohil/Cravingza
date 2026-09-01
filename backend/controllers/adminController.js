@@ -18,8 +18,10 @@ export const getRestaurants = async (req, res, next) => {
     }
 
     const restaurants = await Restaurant.find(filter)
+      .select("name ownerName ownerEmail ownerPhone phone city cuisines address addressLine location image logo coverImage coverImageUrl approvalStatus adminDeactivated deactivationReason deactivatedAt rejectionReason submittedAt createdAt documents fssaiLicense gstCertificate owner")
       .populate("owner", "name email phone")
-      .sort({ submittedAt: -1, createdAt: -1 });
+      .sort({ submittedAt: -1, createdAt: -1 })
+      .lean();
 
     // Include counts for each status
     const pendingCount = await Restaurant.countDocuments({ approvalStatus: "pending" });
@@ -340,14 +342,18 @@ export const getDashboardData = async (req, res, next) => {
     const activityLimit = parseInt(req.query.activityLimit) || 7;
 
     const recentApps = await Restaurant.find()
+      .select("name approvalStatus rejectionReason reviewedAt submittedAt createdAt owner")
       .populate("owner", "name")
       .sort({ createdAt: -1 })
-      .limit(100);
+      .limit(100)
+      .lean();
 
     const recentOrders = await Order.find()
+      .select("totalAmount createdAt status customer")
       .populate("customer", "name")
       .sort({ createdAt: -1 })
-      .limit(100);
+      .limit(100)
+      .lean();
 
     const activityFeed = [];
 
@@ -506,10 +512,11 @@ export const getUsers = async (req, res, next) => {
     const skip = (pageNum - 1) * limitNum;
 
     const users = await User.find(filter)
-      .select("-password -otpHash -otpExpires")
+      .select("name email phone role status createdAt")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
 
     const totalCount = await User.countDocuments(filter);
 
@@ -707,8 +714,10 @@ export const getDeliveryProfiles = async (req, res, next) => {
     }
 
     const rawProfiles = await DeliveryProfile.find(filter)
+      .select("user phone vehicleType vehicleNumber city pincode documents bankDetails approvalStatus rejectionReason submittedAt createdAt")
       .populate("user", "name email phone role")
-      .sort({ submittedAt: -1, createdAt: -1 });
+      .sort({ submittedAt: -1, createdAt: -1 })
+      .lean();
 
     const profiles = rawProfiles
       .filter((p) => p.user && p.user.role !== "admin")
