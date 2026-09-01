@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import User from "../models/User";
 
 // Load environment variables
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config({ path: path.resolve(".env") });
 
 async function createAdmin() {
   const args = process.argv.slice(2);
