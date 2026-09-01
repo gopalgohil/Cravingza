@@ -35,7 +35,7 @@ const payoutSchema = z.object({
 
 // Helper to find approved restaurant for owner
 async function getApprovedOwnerRestaurant(ownerId) {
-  const restaurant = await Restaurant.findOne({ owner: ownerId });
+  const restaurant = await Restaurant.findOne({ owner: ownerId }).select("+businessHours +payoutDetails");
   if (!restaurant) {
     const err = new Error("Restaurant not found for this account.");
     err.status = 404;

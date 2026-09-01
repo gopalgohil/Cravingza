@@ -67,18 +67,26 @@ const restaurantSchema = new mongoose.Schema(
 
     // ── Owner Settings & Business Fields ─────────────────────────
     businessHours: {
-      monday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
-      tuesday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
-      wednesday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
-      thursday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
-      friday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
-      saturday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
-      sunday: { isOpen: { type: Boolean, default: true }, openTime: { type: String, default: "09:00" }, closeTime: { type: String, default: "22:00" } },
+      type: Object,
+      select: false,
+      default: {
+        monday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
+        tuesday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
+        wednesday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
+        thursday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
+        friday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
+        saturday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
+        sunday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
+      },
     },
     payoutDetails: {
-      accountHolderName: { type: String, default: "" },
-      accountNumber: { type: String, default: "" },
-      ifscCode: { type: String, default: "" },
+      type: Object,
+      select: false,
+      default: {
+        accountHolderName: "",
+        accountNumber: "",
+        ifscCode: "",
+      },
     },
     ownerClosedPermanently: { type: Boolean, default: false },
     ownerClosureReason: { type: String, default: null },
